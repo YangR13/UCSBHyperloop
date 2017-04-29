@@ -189,8 +189,8 @@ void send_data_packet_helper(char *method, int index, char *val, int *position) 
 		}
 		memcpy(Net_Tx_Data + *position, ":", 1);
 		*position += 1;
-		memcpy(Net_Tx_Data + *position, val, 6);
-		*position += 6;
+		memcpy(Net_Tx_Data + *position, val, strlen(val));
+		*position += strlen(val);
 		memcpy(Net_Tx_Data + *position, "\n", 1);
 		*position += 1;
 	}
