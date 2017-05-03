@@ -8,6 +8,7 @@
 #include "gpio.h"
 #include "qpn_port.h"
 #include "subsystems.h"
+#include "actuation.h"
 
 /* Rx Buffer Addresses */
 uint16_t gSn_RX_BASE[] = {
@@ -116,23 +117,23 @@ void Wiz_Check_Network_Registers() {
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = 0xFF; // Dummy data
 	Tx_Buf[7] = Tx_Buf[8] = Tx_Buf[9] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SHAR, 0x0006);
-	printf("MAC Address: %x:%x:%x:%x:%x:%x\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6],
+	DEBUGOUT("MAC Address: %x:%x:%x:%x:%x:%x\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6],
 			Rx_Buf[7], Rx_Buf[8], Rx_Buf[9]);
 
 	/* Read Gateway Address Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
 	spi_Recv_Blocking(GAR, 0x0004);
-	printf("Default Gateway: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+	DEBUGOUT("Default Gateway: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
 
 	/* Read Source Mask Address */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SUBR, 0x0004);
-	printf("Subnet Mask: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+	DEBUGOUT("Subnet Mask: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
 
 	/* Read Source IP Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SIPR, 0x0004);
-	printf("Source IP: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+	DEBUGOUT("Source IP: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
 }
 
 /* Socket Interrupt Initialization */
@@ -172,7 +173,7 @@ void send_method(char *method, char* val, int val_len) {
 	memcpy(Net_Tx_Data + 4, val, val_len);
 	Net_Tx_Data[4 + val_len] = '\n';
 //	int i;
-	//for (i = 0; i < 5 + val_len; i++) {printf("%i:%c\n", i, Net_Tx_Data[i]);}
+	//for (i = 0; i < 5 + val_len; i++) {DEBUGOUT("%i:%c\n", i, Net_Tx_Data[i]);}
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 
 }
@@ -200,73 +201,35 @@ void send_data_ack_helper(char *method, int *position) {
 
 void recvDataPacket() {
 	// TODO: Expand this back to support other subsystems
-	enum control_signals profile[2] = {CS_MAGLEV_ENGAGE, CS_MAGLEV_DISENGAGE};
 	int pos = 0;
 	memset(Net_Tx_Data, 0, 64);
 
 	Wiz_Recv_Blocking(SOCKET_ID, Net_Rx_Data);
 //	int i;
 //	for (i = 0; i < DATA_BUF_SIZE; i++) {
-//		printf("%i:%c\n", i, Net_Rx_Data[i]);
+//		DEBUGOUT("%i:%c\n", i, Net_Rx_Data[i]);
 //	}
-//	printf("Receiving Data Packet!\n");
 
-	if(strcmp((char *)Net_Rx_Data, ENGAGE_ENGINES) == 0){
-		printf("ENGAGE ENGINES SIG RECEIVED\n");
-		dispatch_signal_from_webapp(profile[0]);
-	}
-	if(strcmp((char *)Net_Rx_Data, DISENGAGE_ENGINES) == 0){
-		printf("DISENGAGE ENGINES SIG RECEIVED\n");
-		dispatch_signal_from_webapp(profile[1]);
-	}
+//	DEBUGOUT("Receiving Data Packet!\n");
+
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
-		printf("CALIBRATE_SIG RECEIVED\n");
+		DEBUGOUT("CALIBRATE_SIG RECEIVED\n");
 		getPressureFlag = 1;
 	}
-	/*
-	if(strcmp((char *)Net_Rx_Data, ENGINES_REVED) == 0){
-		printf("ENGINES REVED SIG RECEIVED\n");
-		Q_SIG((QHsm *)&HSM_Hyperloop) = (QSignal)(profile[1]);
-		QHsm_dispatch((QHsm *)&HSM_Hyperloop);
+
+	// Check if the message received matches any state machine control signals, issue it if so.
+	int i;
+	for (i = 0; i < CS_SIZE; i++){
+		if (strcmp(Net_Rx_Data, control_signal_names[i]) == 0){
+			DEBUGOUT(control_signal_names[i]);
+			DEBUGOUT(" RECEIVED\n");
+			dispatch_signal_from_webapp(i); // Corresponding entry in enum control_signals
+		}
 	}
-	if(strcmp((char *)Net_Rx_Data, ENGINES_STOPPED) == 0){
-		printf("ENGINES STOPPED SIG RECEIVED\n");
-		Q_SIG((QHsm *)&HSM_Hyperloop) = (QSignal)(profile[3]);
-		QHsm_dispatch((QHsm *)&HSM_Hyperloop);
-	}
-	if(strcmp((char *)Net_Rx_Data, STOP) == 0){
-		printf("STOP SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, ENGAGE_BRAKES) == 0){
-		printf("ENGAGE BRAKES SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, DISENGAGE_BRAKES) == 0){
-		printf("DISENGAGE BRAKES SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, FORWARD) == 0){
-		printf("FORWARD SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, REVERSE) == 0){
-		printf("REVERSE SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, TERMINATE) == 0){
-		printf("TERMINATE SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, IGNORE) == 0){
-		printf("IGNORE SIG RECEIVED\n");
-	}
-	if(strcmp((char *)Net_Rx_Data, MAXSIG) == 0){
-		printf("MAX SIG RECEIVED\n");
-	}
-//	if(strstr((char *)Net_Rx_Data, EBRAKE) != NULL) {	// Emergency Brake
-//		eBrakeFlag = 1;
-//		printf("Emergency Brake!\n");
-//		send_data_ack_helper(BAK, &pos);
-//	}
-*/
+
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
-		printf("DAC SET RECEIVED\n");
-		printf("DAC recieved: %s\n", Net_Rx_Data);
+		DEBUGOUT("DAC SET RECEIVED\n");
+		DEBUGOUT("DAC recieved: %s\n", Net_Rx_Data);
 		int iterator;
 		float dacValue = 0;
 		for(iterator = 0; iterator < 30; iterator++){
@@ -278,15 +241,15 @@ void recvDataPacket() {
 				}
 			}
 		}
-		printf("dacValue = %f\n", dacValue);
+		DEBUGOUT("dacValue = %f\n", dacValue);
 		set_motor_throttle(0, dacValue);
 		set_motor_throttle(1, dacValue);
 		set_motor_throttle(2, dacValue);
 		set_motor_throttle(3, dacValue);
 	}
 	if(strstr((char *)Net_Rx_Data, INITTIME) != NULL) {	// Initialize Time
-		printf("Initialize Time!\n");
-		printf("Time recieved: %s\n", Net_Rx_Data);
+		DEBUGOUT("Initialize Time!\n");
+		DEBUGOUT("Time recieved: %s\n", Net_Rx_Data);
 		int iterator, yearVal, monthVal, mDayVal, wDayVal, hourVal, minVal, secVal;
 		int timeIterator = 0;
 		// year: 4 dig, month: 0-11, month day: 1-31, week day: 0-6, hour: 0-23, minute: 0-59, second: 0-59
@@ -297,7 +260,7 @@ void recvDataPacket() {
 					yearVal += (int)(Net_Rx_Data[iterator+2] - '0')*100;
 					yearVal += (int)(Net_Rx_Data[iterator+3] - '0')*10;
 					yearVal += (int)(Net_Rx_Data[iterator+4] - '0');
-//					printf("year = %d\n", yearVal);
+//					DEBUGOUT("year = %d\n", yearVal);
 				}
 				if(timeIterator == 1){
 					// One Digit
@@ -310,7 +273,7 @@ void recvDataPacket() {
 						monthVal += (int)(Net_Rx_Data[iterator+2] - '0');
 					}
 					monthVal++;
-//					printf("month = %d\n", monthVal);
+//					DEBUGOUT("month = %d\n", monthVal);
 				}
 				if(timeIterator == 2){
 					// One Digit
@@ -322,12 +285,12 @@ void recvDataPacket() {
 						mDayVal = (int)(Net_Rx_Data[iterator+1] - '0')*10;
 						mDayVal += (int)(Net_Rx_Data[iterator+2] - '0');
 					}
-//					printf("month day = %d\n", mDayVal);
+//					DEBUGOUT("month day = %d\n", mDayVal);
 				}
 				if(timeIterator == 3){
 					wDayVal = (int)(Net_Rx_Data[iterator+1] - '0');
 					wDayVal++;
-//					printf("week day = %d\n", wDayVal);
+//					DEBUGOUT("week day = %d\n", wDayVal);
 				}
 				if(timeIterator == 4){
 					// One Digit
@@ -339,7 +302,7 @@ void recvDataPacket() {
 						hourVal = (int)(Net_Rx_Data[iterator+1] - '0')*10;
 						hourVal += (int)(Net_Rx_Data[iterator+2] - '0');
 					}
-//					printf("hour = %d\n", hourVal);
+//					DEBUGOUT("hour = %d\n", hourVal);
 				}
 				if(timeIterator == 5){
 					// One Digit
@@ -351,7 +314,7 @@ void recvDataPacket() {
 						minVal = (int)(Net_Rx_Data[iterator+1] - '0')*10;
 						minVal += (int)(Net_Rx_Data[iterator+2] - '0');
 					}
-//					printf("minute = %d\n", minVal);
+//					DEBUGOUT("minute = %d\n", minVal);
 				}
 				if(timeIterator == 6){
 					// One Digit
@@ -363,7 +326,7 @@ void recvDataPacket() {
 						secVal = (int)(Net_Rx_Data[iterator+1] - '0')*10;
 						secVal += (int)(Net_Rx_Data[iterator+2] - '0');
 					}
-//					printf("second = %d\n", secVal);
+//					DEBUGOUT("second = %d\n", secVal);
 				}
 				timeIterator++;
 			}
@@ -380,25 +343,6 @@ void recvDataPacket() {
 //		rtc_settime(&theTime);
 		send_data_ack_helper(TAK, &pos);
 	}
-//	if(strstr((char *)Net_Rx_Data, POWRUP) != NULL) {	// Pod Start Flag
-//		powerUpFlag = 1;
-//		send_data_ack_helper(PAK, &pos);
-//		printf("Power Up!\n");
-//	}
-//	if(strstr((char *)Net_Rx_Data, PWRDWN) != NULL) {	// Pod Stop Flag
-//		powerDownFlag = 1;
-//		powerUpFlag = 0;
-//		printf("Power Down!\n");
-//	}
-//	if(strstr((char *)Net_Rx_Data, SERPRO) != NULL) {	// Service Propulsion Start
-//		serPropulsionWheels = 1;
-//		send_data_ack_helper(WAK, &pos);
-//		printf("Service Propulsion Activated!\n");
-//	}
-//	if(strstr((char *)Net_Rx_Data, SERSTP) != NULL) {	// Service Propulsion Stop
-//		serPropulsionWheels = 0;
-//		printf("Service Propulsion Disactivated!\n");
-//	}
 
 	if(pos != 0) {
 		Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
@@ -480,7 +424,7 @@ void sendPrototypePacket(){
 
 	// Copy strings to Net_Tx_Data
 	int pos = 0;
-	memset(Net_Tx_Data, 0, 512); // Make sure this clears enough space
+	memset(Net_Tx_Data, 0, 1024); // Make sure this clears enough space
 
 	/* DAC Output */
 	sprintf(PrototypePacket.dac, "%06.2f", motors[0]->throttle_voltage);
@@ -490,7 +434,7 @@ void sendPrototypePacket(){
 	sprintf(PrototypePacket.sr3, "%06.2f", motors[2]->short_data[0]);
 	sprintf(PrototypePacket.sr4, "%06.2f", motors[3]->short_data[0]);
 	/* Photoelectric */
-	sprintf(PrototypePacket.ph1, "%06.2f", sensorData.photoelectric);
+//	sprintf(PrototypePacket.ph1, "%06.2f", sensorData.photoelectric);
 	/* Current Output */
 	sprintf(PrototypePacket.cu1, "%06.2f", (float)motors[0]->amps);
 	sprintf(PrototypePacket.cu2, "%06.2f", (float)motors[1]->amps);
@@ -518,9 +462,66 @@ void sendPrototypePacket(){
 	sprintf(PrototypePacket.m4tmp2, "%06.f", (float)motors[3]->temperatures[1]);
 	sprintf(PrototypePacket.m4tmp3, "%06.f", (float)motors[3]->temperatures[2]);
 	sprintf(PrototypePacket.m4tmp4, "%06.f", (float)motors[3]->temperatures[3]);
+	/* BMS 0 Voltage */
+	sprintf(PrototypePacket.bms0volt0, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][0]);
+	sprintf(PrototypePacket.bms0volt1, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][1]);
+	sprintf(PrototypePacket.bms0volt2, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][2]);
+	sprintf(PrototypePacket.bms0volt3, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][3]);
+	sprintf(PrototypePacket.bms0volt4, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][4]);
+	sprintf(PrototypePacket.bms0volt5, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][5]);
+	sprintf(PrototypePacket.bms0volt6, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][0]);
+	sprintf(PrototypePacket.bms0volt7, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][1]);
+	sprintf(PrototypePacket.bms0volt8, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][2]);
+	sprintf(PrototypePacket.bms0volt9, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][3]);
+	sprintf(PrototypePacket.bms0volt10, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][4]);
+	sprintf(PrototypePacket.bms0volt11, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][5]);
+	sprintf(PrototypePacket.bms0volt12, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][0]);
+	sprintf(PrototypePacket.bms0volt13, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][1]);
+	sprintf(PrototypePacket.bms0volt14, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][2]);
+	sprintf(PrototypePacket.bms0volt15, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][3]);
+	sprintf(PrototypePacket.bms0volt16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][4]);
+	sprintf(PrototypePacket.bms0volt17, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][5]);
+	/* BMS 0 Temperature */
+	sprintf(PrototypePacket.bms0temp0, "%06.f", (float)maglev_bmses[0]->temperatures[0][0]);
+	sprintf(PrototypePacket.bms0temp1, "%06.f", (float)maglev_bmses[0]->temperatures[0][1]);
+	sprintf(PrototypePacket.bms0temp2, "%06.f", (float)maglev_bmses[0]->temperatures[1][0]);
+	sprintf(PrototypePacket.bms0temp3, "%06.f", (float)maglev_bmses[0]->temperatures[1][1]);
+	sprintf(PrototypePacket.bms0temp4, "%06.f", (float)maglev_bmses[0]->temperatures[2][0]);
+	sprintf(PrototypePacket.bms0temp5, "%06.f", (float)maglev_bmses[0]->temperatures[2][1]);
+	/* BMS 0 Voltage */
+	sprintf(PrototypePacket.bms1volt0, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][0]);
+	sprintf(PrototypePacket.bms1volt1, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][1]);
+	sprintf(PrototypePacket.bms1volt2, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][2]);
+	sprintf(PrototypePacket.bms1volt3, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][3]);
+	sprintf(PrototypePacket.bms1volt4, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][4]);
+	sprintf(PrototypePacket.bms1volt5, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][5]);
+	sprintf(PrototypePacket.bms1volt6, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][0]);
+	sprintf(PrototypePacket.bms1volt7, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][1]);
+	sprintf(PrototypePacket.bms1volt8, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][2]);
+	sprintf(PrototypePacket.bms1volt9, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][3]);
+	sprintf(PrototypePacket.bms1volt10, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][4]);
+	sprintf(PrototypePacket.bms1volt11, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][5]);
+	sprintf(PrototypePacket.bms1volt12, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][0]);
+	sprintf(PrototypePacket.bms1volt13, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][1]);
+	sprintf(PrototypePacket.bms1volt14, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][2]);
+	sprintf(PrototypePacket.bms1volt15, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][3]);
+	sprintf(PrototypePacket.bms1volt16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][4]);
+	sprintf(PrototypePacket.bms1volt17, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][5]);
+	/* BMS 0 Temperature */
+	sprintf(PrototypePacket.bms1temp0, "%06.f", (float)maglev_bmses[1]->temperatures[0][0]);
+	sprintf(PrototypePacket.bms1temp1, "%06.f", (float)maglev_bmses[1]->temperatures[0][1]);
+	sprintf(PrototypePacket.bms1temp2, "%06.f", (float)maglev_bmses[1]->temperatures[1][0]);
+	sprintf(PrototypePacket.bms1temp3, "%06.f", (float)maglev_bmses[1]->temperatures[1][1]);
+	sprintf(PrototypePacket.bms1temp4, "%06.f", (float)maglev_bmses[1]->temperatures[2][0]);
+	sprintf(PrototypePacket.bms1temp5, "%06.f", (float)maglev_bmses[1]->temperatures[2][1]);
 
 	/* DAC Data */
 	send_data_packet_helper(DAC, PrototypePacket.dac, &pos);
+	/* Short Ranging */
+	send_data_packet_helper(SR1, PrototypePacket.sr1, &pos);
+	send_data_packet_helper(SR2, PrototypePacket.sr2, &pos);
+	send_data_packet_helper(SR3, PrototypePacket.sr3, &pos);
+	send_data_packet_helper(SR4, PrototypePacket.sr4, &pos);
 	/* Current Data */
 	send_data_packet_helper(CU1, PrototypePacket.cu1, &pos);
 	send_data_packet_helper(CU2, PrototypePacket.cu2, &pos);
@@ -548,6 +549,62 @@ void sendPrototypePacket(){
 	send_data_packet_helper(T14, PrototypePacket.m4tmp2, &pos);
 	send_data_packet_helper(T15, PrototypePacket.m4tmp3, &pos);
 	send_data_packet_helper(T16, PrototypePacket.m4tmp4, &pos);
+	/* BMS 0 Voltage Data */
+	send_data_packet_helper(V00, PrototypePacket.bms0volt0, &pos);
+	send_data_packet_helper(V01, PrototypePacket.bms0volt1, &pos);
+	send_data_packet_helper(V02, PrototypePacket.bms0volt2, &pos);
+	send_data_packet_helper(V03, PrototypePacket.bms0volt3, &pos);
+	send_data_packet_helper(V04, PrototypePacket.bms0volt4, &pos);
+	send_data_packet_helper(V05, PrototypePacket.bms0volt5, &pos);
+	send_data_packet_helper(V06, PrototypePacket.bms0volt6, &pos);
+	send_data_packet_helper(V07, PrototypePacket.bms0volt7, &pos);
+	send_data_packet_helper(V08, PrototypePacket.bms0volt8, &pos);
+	send_data_packet_helper(V09, PrototypePacket.bms0volt9, &pos);
+	send_data_packet_helper(V0A, PrototypePacket.bms0volt10, &pos);
+	send_data_packet_helper(V0B, PrototypePacket.bms0volt11, &pos);
+	send_data_packet_helper(V0C, PrototypePacket.bms0volt12, &pos);
+	send_data_packet_helper(V0D, PrototypePacket.bms0volt13, &pos);
+	send_data_packet_helper(V0E, PrototypePacket.bms0volt14, &pos);
+	send_data_packet_helper(V0F, PrototypePacket.bms0volt15, &pos);
+	send_data_packet_helper(V0G, PrototypePacket.bms0volt16, &pos);
+	send_data_packet_helper(V0H, PrototypePacket.bms0volt17, &pos);
+	/* BMS 0 Temperature Data*/
+	send_data_packet_helper(T00, PrototypePacket.bms0temp0, &pos);
+	send_data_packet_helper(T01, PrototypePacket.bms0temp1, &pos);
+	send_data_packet_helper(T02, PrototypePacket.bms0temp2, &pos);
+	send_data_packet_helper(T03, PrototypePacket.bms0temp3, &pos);
+	send_data_packet_helper(T04, PrototypePacket.bms0temp4, &pos);
+	send_data_packet_helper(T05, PrototypePacket.bms0temp5, &pos);
+	send_data_packet_helper(T06, PrototypePacket.bms0temp6, &pos);
+	send_data_packet_helper(T07, PrototypePacket.bms0temp7, &pos);
+	/* BMS 1 Voltage Data */
+	send_data_packet_helper(V10, PrototypePacket.bms1volt0, &pos);
+	send_data_packet_helper(V11, PrototypePacket.bms1volt1, &pos);
+	send_data_packet_helper(V12, PrototypePacket.bms1volt2, &pos);
+	send_data_packet_helper(V13, PrototypePacket.bms1volt3, &pos);
+	send_data_packet_helper(V14, PrototypePacket.bms1volt4, &pos);
+	send_data_packet_helper(V15, PrototypePacket.bms1volt5, &pos);
+	send_data_packet_helper(V16, PrototypePacket.bms1volt6, &pos);
+	send_data_packet_helper(V17, PrototypePacket.bms1volt7, &pos);
+	send_data_packet_helper(V18, PrototypePacket.bms1volt8, &pos);
+	send_data_packet_helper(V19, PrototypePacket.bms1volt9, &pos);
+	send_data_packet_helper(V1A, PrototypePacket.bms1volt10, &pos);
+	send_data_packet_helper(V1B, PrototypePacket.bms1volt11, &pos);
+	send_data_packet_helper(V1C, PrototypePacket.bms1volt12, &pos);
+	send_data_packet_helper(V1D, PrototypePacket.bms1volt13, &pos);
+	send_data_packet_helper(V1E, PrototypePacket.bms1volt14, &pos);
+	send_data_packet_helper(V1F, PrototypePacket.bms1volt15, &pos);
+	send_data_packet_helper(V1G, PrototypePacket.bms1volt16, &pos);
+	send_data_packet_helper(V1H, PrototypePacket.bms1volt17, &pos);
+	/* BMS 1 Temperature Data*/
+	send_data_packet_helper(TA0, PrototypePacket.bms1temp0, &pos);
+	send_data_packet_helper(TA1, PrototypePacket.bms1temp1, &pos);
+	send_data_packet_helper(TA2, PrototypePacket.bms1temp2, &pos);
+	send_data_packet_helper(TA3, PrototypePacket.bms1temp3, &pos);
+	send_data_packet_helper(TA4, PrototypePacket.bms1temp4, &pos);
+	send_data_packet_helper(TA5, PrototypePacket.bms1temp5, &pos);
+	send_data_packet_helper(TA6, PrototypePacket.bms1temp6, &pos);
+	send_data_packet_helper(TA7, PrototypePacket.bms1temp7, &pos);
 
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 
@@ -560,12 +617,14 @@ void sendPrototypePacket(){
 //	send_data_packet_helper(SR2, PrototypePacket.sr2, &pos);
 //	send_data_packet_helper(SR3, PrototypePacket.sr3, &pos);
 //	send_data_packet_helper(SR4, PrototypePacket.sr4, &pos);
+	/* BMS data */
+
 	/* Photoelectric Data */
 //	send_data_packet_helper(PH1, PrototypePacket.ph1, &pos);
 
 //	int i;
 //	for (i = 0; i < DATA_BUF_SIZE; i++) {
-//		printf("%i:%c\n", i, Net_Tx_Data[i]);
+//		DEBUGOUT("%i:%c\n", i, Net_Tx_Data[i]);
 //	}
 
 //	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
@@ -603,56 +662,56 @@ void wizIntFunction() {
 			socket_int = Rx_Buf[4];
 			/* Handle Interrupt Request */
 			if( socket_int & SEND_OK ) {	 // Send Completed
-//				printf("send ok interrupt\n");
+//				DEBUGOUT("send ok interrupt\n");
 			}
 			if( socket_int & TIMEOUT ) { // Timeout Occurred
-				printf("Timeout interrupt\n");
+				DEBUGOUT("Timeout interrupt\n");
 			}
 			if( socket_int & RECV_PKT ) {	 // Packet Received
-				printf("Packet interrupt\n");
+				DEBUGOUT("Packet interrupt\n");
 				recvDataPacket();
 			}
 			if( socket_int & DISCON_SKT ) {	 // FIN/FIN ACK Received
-				printf("Discon interrupt\n");
+				DEBUGOUT("Discon interrupt\n");
 				if(connectionOpen)
 					connectionClosed = 1;
 				connectionOpen = 0;
 			}
 			if( socket_int & Sn_CON ) {	 // Socket Connection Completed
-				printf("socket connection completed interrupt\n");
+				DEBUGOUT("socket connection completed interrupt\n");
 				connectionOpen = 1;
 //				Tx_Buf[4] = 0x01 | Tx_Buf[4];
 			}
 //			Tx_Buf[4] = 0xFF;
 //			spi_Recv_Blocking(IR2 + 0x0100*n, 0x0001);
 //			if((Rx_Buf[4] & 0x01) == 0x01) // Bit 1 is connected interrupt
-//				printf("IR2 S0 int\n");
+//				DEBUGOUT("IR2 S0 int\n");
 			/* Clear Socket n Interrupt Register */
 			Tx_Buf[4] = 0xFF;
 			spi_Send_Blocking(Sn_IR_BASE + offset, 0x0001);
 //			if(Wiz_Check_Socket(0)){
-//				printf("Interrupt not cleared\n");
+//				DEBUGOUT("Interrupt not cleared\n");
 //			}
 //			Tx_Buf[4] = 0xFF;
 //			spi_Recv_Blocking(Sn_IMR_BASE + 0x0100*n, 0x0001);
 //			if((Rx_Buf[4] & 0x01) == 0x01) // Bit 1 is connected interrupt
-//				printf("Sn_IMR connect\n");
+//				DEBUGOUT("Sn_IMR connect\n");
 //			if((Rx_Buf[4] & 0x08) == 0x08) // Bit 4 is timeout
-//				printf("Sn_IMR timeout\n");
+//				DEBUGOUT("Sn_IMR timeout\n");
 //			if((Rx_Buf[4] & 0x04) == 0x04) // Bit 3 is data received interrupt
-//				printf("Sn_IMR recv\n");
+//				DEBUGOUT("Sn_IMR recv\n");
 //			Tx_Buf[4] = 0xFF;
 //			spi_Recv_Blocking(IR2 + 0x0100*n, 0x0001);
 //			if((Rx_Buf[4] & 0x01) == 0x01) // Bit 1 is connected interrupt
-//				printf("IR2 S0 int\n");
+//				DEBUGOUT("IR2 S0 int\n");
 //			Tx_Buf[4] = 0xFF;
 //			spi_Recv_Blocking(IMR + 0x0100*n, 0x0001);
 //			if((Rx_Buf[4] & 0x01) == 0x01) // Bit 1 is connected interrupt
-//				printf("IMR S0 int for IR2\n");
+//				DEBUGOUT("IMR S0 int for IR2\n");
 //			Tx_Buf[4] = 0xFF;
 //			spi_Recv_Blocking(Sn_SR_BASE + 0x0100*n, 0x0001);
 //			if((Rx_Buf[4] & 0x17) == 0x17) // Bit 1 is connected interrupt
-//				printf("Socket still established\n");
+//				DEBUGOUT("Socket still established\n");
 		}
 	}
 
@@ -721,10 +780,10 @@ void Wiz_TCP_Init(uint8_t n) {
 	Tx_Buf[4] = 0xFF;
 	spi_Recv_Blocking(Sn_SR_BASE + offset, 0x0001);
 	if(Rx_Buf[4] == 0x13) {
-		printf("Socket %u TCP Initialized Successfully\n", n);
+		DEBUGOUT("Socket %u TCP Initialized Successfully\n", n);
 		activeSockets |= 1 << n;
 	} else
-		printf("Socket %u TCP Initialization Failed\n", n);
+		DEBUGOUT("Socket %u TCP Initialization Failed\n", n);
 }
 
 /* UDP Initialization */
@@ -755,10 +814,10 @@ void Wiz_UDP_Init(uint8_t n) {
 	Tx_Buf[4] = 0xFF;
 	spi_Recv_Blocking(Sn_SR_BASE + offset, 0x0001);
 	if(Rx_Buf[4] == 0x22) {
-		printf("Socket %u UDP Initialized Successfully\n", n);
+		DEBUGOUT("Socket %u UDP Initialized Successfully\n", n);
 		activeSockets |= 1 << n;
 	} else
-		printf("Socket %u UDP Initialization Failed\n", n);
+		DEBUGOUT("Socket %u UDP Initialization Failed\n", n);
 }
 
 void Wiz_Destination_Init(uint8_t n) {
@@ -785,19 +844,19 @@ void Wiz_Address_Check(uint8_t n) {
 	Tx_Buf[4] = Tx_Buf[5] = 0xFF;
 	spi_Recv_Blocking(Sn_PORT_BASE + offset, 0x0002);
 	port = ((uint16_t)Rx_Buf[4] << 8) + (uint16_t)Rx_Buf[5];
-	printf("Socket %u Source Port: %u\n", n, port);
+	DEBUGOUT("Socket %u Source Port: %u\n", n, port);
 
 	/* Read Socket n Destination IP Register (Sn_DIPR) */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF;
 	spi_Recv_Blocking(Sn_DIPR_BASE + offset, 0x0004);
-	printf("Socket %u Destination IP: %u.%u.%u.%u\n", n, Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+	DEBUGOUT("Socket %u Destination IP: %u.%u.%u.%u\n", n, Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
 
 	/* Read Socket n Destination Port Register (Sn_DPORT) */
 	Tx_Buf[4] = Tx_Buf[5] = 0xFF;
 	spi_Recv_Blocking(Sn_DPORT_BASE + offset, 0x0002);
 	port = ((uint16_t)Rx_Buf[4] << 8) + (uint16_t)Rx_Buf[5];
-	printf("Dest Port: %u, %u\n", Rx_Buf[4], Rx_Buf[5]);
-	printf("Socket %u Destination Port: %u\n", n, port);
+	DEBUGOUT("Dest Port: %u, %u\n", Rx_Buf[4], Rx_Buf[5]);
+	DEBUGOUT("Socket %u Destination Port: %u\n", n, port);
 }
 
 /* Create TCP Connection */
@@ -821,13 +880,13 @@ void Wiz_TCP_Connect(uint8_t n) {
 	spi_Send_Blocking(Sn_CR_BASE + offset, 0x0001);
 
 	/* TODO: If this fails, try to establish connection once more */
-	printf("Establishing TCP connection...\n");
+	DEBUGOUT("Establishing TCP connection...\n");
 	do {
 		/* Wait for connection */
 		Rx_Buf[4] = 0xFF;
 		spi_Recv_Blocking(Sn_IR_BASE + offset, 0x0001);
 	} while((Rx_Buf[4] & 0x01) != 0x01);
-	printf("Connected\n");
+	DEBUGOUT("Connected\n");
 }
 
 /* Close TCP Socket */
@@ -987,11 +1046,11 @@ uint8_t Wiz_Check_Socket(uint8_t n) {
 	Tx_Buf[4] = 0xFF;
 	spi_Recv_Blocking(Sn_IR_BASE + 0x0100*n, 0x0001);
 	if((Rx_Buf[4] & 0x01) == 0x01) // Bit 1 is connected interrupt
-		printf("Sn_IR connect\n");
+		DEBUGOUT("Sn_IR connect\n");
 	if((Rx_Buf[4] & 0x08) == 0x08) // Bit 4 is timeout
-		printf("Sn_IR timeout\n");
+		DEBUGOUT("Sn_IR timeout\n");
 	if((Rx_Buf[4] & 0x04) == 0x04){ // Bit 3 is data received interrupt
-		printf("Sn_IR recv\n");
+		DEBUGOUT("Sn_IR recv\n");
 		return 1;
 	}
 	return 0;
@@ -1026,7 +1085,7 @@ void ethernetInit(uint8_t protocol, uint8_t socket) {
 
 	if(protocol) {
 		Wiz_TCP_Connect(socket);
-		printf("Established TCP connection\n");
+		DEBUGOUT("Established TCP connection\n");
 	}
 }
 
