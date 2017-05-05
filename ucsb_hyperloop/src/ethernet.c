@@ -480,7 +480,7 @@ void sendPrototypePacket(){
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 
 	// Copy strings to Net_Tx_Data
-	int pos = 0;
+	pos = 0;
 	memset(Net_Tx_Data, 0, 1024); // Make sure this clears enough space
 	/* BMS 0 Voltage Data */
 	send_data_packet_helper(V00, PrototypePacket.bms0volt0, &pos);
