@@ -67,6 +67,7 @@ int main(void)
         }
 	
         // Service high-level command routines ('go', 'all stop', 'emergency stop')
+        service_go_routine();
 
         // ** DETERMINE STATE MACHINE TRANSITIONS**
         if (collectDataFlag){

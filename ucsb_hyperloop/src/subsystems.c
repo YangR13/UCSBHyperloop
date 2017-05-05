@@ -7,6 +7,7 @@
 #include "initialization.h"
 #include "sensor_data.h"
 #include "logging.h"
+#include "actuation.h"
 
 #define ISSUE_SIG(hsm, sig) do {\
 	Q_SIG((QHsm *)&hsm) = (QSignal)(sig);\
@@ -41,8 +42,6 @@ const char *control_signal_names[] = {
 
 
 void initializeSubsystemStateMachines(){
-
-
 #if BRAKING_ACTIVE
 	initializeBrakingStateMachine();
 #endif
@@ -55,6 +54,7 @@ void initializeSubsystemStateMachines(){
 #if SERVICE_PROPULSION_ACTIVE
 	initializeServicePropulsionStateMachine();
 #endif
+	go_state = 0;
 }
 
 void dispatch_signal_from_webapp(int signal){
@@ -418,24 +418,121 @@ int service_fault_from_sensors(){
 	return 0;
 }
 
+// State variable for the high-level go routine
+int go_state = 0;
 
-void go_routine(){
+void start_go_routine(){
 	// Do some rad stuff.
-	/*
-	• Raise payload actuators
-	• Ensure flag indicating payload is support by actuators has been set
-	• Engage magnetic levitation motors
-	• Ensure magnetic levitation motors are operating correctly
-	• Lower payload actuators
-	• Ensure pod is hovering (magnetic levitation motors are operating and payload linear actuators are lowered)
-	• Ensure pod location or test run time is past predetermined braking threshold
-	• Engage brakes
-	• Ensure pod has come to a stop
-	• Disengage brakes
-	• Disengage magnetic levitation motors
-	*/
+	go_state = 1;
 }
 
+void cease_go_routine(){
+	// Stop going the go routine
+	go_state = 0;
+}
+
+void service_go_routine(){
+	switch (go_state){
+	    case 0: {
+	        // Routine is deactivated, do nothing.
+	        break;
+	    }
+	    case 1: {
+	        // Raise payload actuators
+	        ISSUE_SIG(Payload_Actuator_HSM, PA_ADVANCE);
+	        go_state++;
+	        break;
+	    }
+	    case 2: {
+	        // Wait for payload actuators to be raised fully
+	        //if (PAYLOAD ACTUATORS REACHED END){
+	            go_state++;
+	            break;
+	        //}
+	    }
+	    case 3: {
+	        // Engage magnetic levitation motors
+	        ISSUE_SIG(Maglev_HSM, MAGLEV_ENGAGE);
+	        go_state++;
+	        break;
+	    }
+	    case 4: {
+	        // Check that maglev are operating properly! (via rpm)
+	        go_state++;
+	        break;
+	    }
+	    case 5: {
+	        // Lower payload actuators
+	        ISSUE_SIG(Payload_Actuator_HSM, PA_RETRACT);
+            go_state++;
+            break;
+        }
+        case 6: {
+            // Wait for payload actuators to be lowered fully
+            //if (PAYLOAD ACTUATORS REACHED END){
+                go_state++;
+                break;
+            //}
+        }
+        case 7: {
+            // Payload is now hovering and pod is ready to be pushed!
+            // Possibly set some indicator in the web app for having reached this point.
+
+            // Ensure pod location or test run time is past predetermined braking threshold
+            // if (PAST DESIRED BRAKING DISTANCE / TIME)
+                ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
+
+                // Make sure that the brakes were ALLOWED to be engaged / actually got engaged ?
+                // Otherwise don't advance the signal to the next state here
+                go_state++;
+                break;
+
+                // Also: should this be the same as the 'standard braking routine' (cut maglev too?)
+        }
+        case 8: {
+            // Braking has now been engaged, wait until pod comes to a stop
+            // if (POD STOPPED){
+                go_state++;
+                break;
+            // }
+        }
+        case 9: {
+            // Disengage brakes
+            ISSUE_SIG(Braking_HSM, BRAKES_DISENGAGE);
+            go_state++;
+            break;
+        }
+        case 10: {
+            // Lower service propulsion motor automatically?
+            // Or should everything just wait on the user / controller at this point?
+
+            // End 'go' routine
+            go_state = 0;
+            break;
+        }
+	}
+}
+
+void toggle_all_stop(){
+	// Toggle the "All Stop" flag, which bypasses the state machines to disable all actuation
+    all_stop = !all_stop;
+}
+
+void emergency_pod_stop(){
+	// Run standard full braking routine
+
+	// 1. Set maglev throttle voltage to zero
+	ISSUE_SIG(Maglev_HSM, MAGLEV_DISENGAGE);
+	// 2. Lower payload
+	ISSUE_SIG(Payload_Actuator_HSM, PA_RETRACT);
+
+	// 3. Check contact sensor
+	// *** This will be done in the actuation-side of braking.***
+	// Brakes will never be allowed to go without no-contact condition
+
+	// 4. Actuate the brakes
+	ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
+}
 
 // This assertion function is required for the state machine. It's called if things go haywire.
 void Q_onAssert(char const Q_ROM * const Q_ROM_VAR file, int line) {

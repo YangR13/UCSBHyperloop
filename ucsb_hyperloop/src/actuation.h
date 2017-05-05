@@ -6,6 +6,8 @@
 void performActuation();
 void set_motor_throttle(int motor_num, float voltage);
 
+int all_stop;
+
 void actuate_brakes();
 void actuate_maglev();
 void actuate_payload();

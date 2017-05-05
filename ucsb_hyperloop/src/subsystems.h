@@ -52,6 +52,14 @@ int maglev_fault_from_sensors();
 int payload_fault_from_sensors();
 int service_fault_from_sensors();
 
+// High-level routines
+void start_go_routine();
+void cease_go_routine();
+void service_go_routine();
+void toggle_all_stop();
+void emergency_pod_stop();
+int go_state;
+
 // Assertion function
 void Q_onAssert(char const Q_ROM * const Q_ROM_VAR file, int line);
 
