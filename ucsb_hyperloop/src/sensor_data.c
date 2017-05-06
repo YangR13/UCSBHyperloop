@@ -112,15 +112,14 @@ void collectData(){
 
     	if(y%10 == 0) {
     		// Print sensor data at 1Hz.
-    		//int i;
-    		int i = 1;
-    		//for(i=0; i<NUM_MAGLEV_BMS; i++) {
+    		int i;
+    		for(i=0; i<NUM_MAGLEV_BMS; i++) {
     			DEBUGOUT("BMS %d sensors: \n", i);
     			int j = 0;
     			for (j = 0; j < 3; j++){
     				DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
     			}
-    		//}
+    		}
     		DEBUGOUT("\n");
     	}
     }

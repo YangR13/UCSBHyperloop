@@ -106,6 +106,11 @@
 #define PWR 			"PWR"	// Power
 #define PASSWORD 		"gaucholoop" // Default Password
 /* Web Application Commands */
+#define EBRAKE			"EBRAKE"	// Emergency Brake
+#define POWRUP			"POWRUP"	// Power Up Flag
+#define PWRDWN			"PWRDWN"	// Power Down Flag
+#define SERPRO			"SERPRO"	// Service Propulsion
+#define SERSTP			"SERSTP"	// Service Propulsion Stop
 #define INITTIME		"INITTIME"	// Initialize Timer
 #define SETDAC			"SETDAC"	// Set the DAC value
 /* Web Application Level Acknowledgments */
@@ -117,240 +122,17 @@
 #define SOCKET_ID 		0
 
 /* Prototype methods */
+// Positional
+#define SR				"SR"		// Short Ranging
+#define PH				"PH"		// Photoelectric
+// Motor Boards
 #define DAC				"DAC"		// DAC
-#define SR1				"SR1"		// Short Ranging 1
-#define SR2				"SR2"		// Short Ranging 2
-#define SR3				"SR3"		// Short Ranging 3
-#define SR4				"SR4"		// Short Ranging 4
-#define PH1				"PH1"		// Photoelectric 1
-#define TA1				"TA1"		// Motor 1 Tachometer
-#define TA2				"TA2"		// Motor 2 Tachometer
-#define TA3				"TA3"		// Motor 3 Tachometer
-#define TA4				"TA4"		// Motor 4 Tachometer
-#define CU1				"CU1"		// Motor 1 Current
-#define CU2				"CU2"		// Motor 2 Current
-#define CU3				"CU3"		// Motor 3 Current
-#define CU4				"CU4"		// Motor 4 Current
-#define TM1				"TM1"		// Motor 1 Temperature 1
-#define TM2				"TM2"		// Motor 1 Temperature 2
-#define TM3				"TM3"		// Motor 1 Temperature 3
-#define TM4				"TM4"		// Motor 1 Temperature 4
-#define TM5				"TM5"		// Motor 2 Temperature 1
-#define TM6				"TM6"		// Motor 2 Temperature 2
-#define TM7				"TM7"		// Motor 2 Temperature 3
-#define TM8				"TM8"		// Motor 2 Temperature 4
-#define TM9				"TM9"		// Motor 3 Temperature 1
-#define T10				"T10"		// Motor 3 Temperature 2
-#define T11				"T11"		// Motor 3 Temperature 3
-#define T12				"T12"		// Motor 3 Temperature 4
-#define T13				"T13"		// Motor 4 Temperature 1
-#define T14				"T14"		// Motor 4 Temperature 2
-#define T15				"T15"		// Motor 4 Temperature 3
-#define T16				"T16"		// Motor 4 Temperature 4
-#define V00				"V00"		// BMS0 Voltage 0
-#define V01				"V01"		// BMS0 Voltage 1
-#define V02 			"V02"		// BMS0 Voltage 2
-#define V03				"V03"		// BMS0 Voltage 3
-#define V04				"V04"		// BMS0 Voltage 4
-#define V05				"V05"		// BMS0 Voltage 5
-#define V06				"V06"		// BMS0 Voltage 6
-#define V07				"V07"		// BMS0 Voltage 7
-#define V08				"V08"		// BMS0 Voltage 8
-#define V09				"V09"		// BMS0 Voltage 9
-#define V0A				"V0A"		// BMS0 Voltage 10
-#define V0B				"V0B"		// BMS0 Voltage 11
-#define V0C				"V0C"		// BMS0 Voltage 12
-#define V0D				"V0D"		// BMS0 Voltage 13
-#define V0E				"V0E"		// BMS0 Voltage 14
-#define V0F				"V0F"		// BMS0 Voltage 15
-#define V0G				"V0G"		// BMS0 Voltage 16
-#define V0H				"V0H"		// BMS0 Voltage 17
-#define T00				"T00"		// BMS0 Temperature 0
-#define T01				"T01"		// BMS0 Temperature 1
-#define T02				"T02"		// BMS0 Temperature 2
-#define T03				"T03"		// BMS0 Temperature 3
-#define T04				"T04"		// BMS0 Temperature 4
-#define T05				"T05"		// BMS0 Temperature 5
-#define T06				"T06"		// BMS0 Temperature 6
-#define T07				"T07"		// BMS0 Temperature 7
-#define V10				"V10"		// BMS1 Voltage 0
-#define V11				"V11"		// BMS1 Voltage 1
-#define V12 			"V12"		// BMS1 Voltage 2
-#define V13				"V13"		// BMS1 Voltage 3
-#define V14				"V14"		// BMS1 Voltage 4
-#define V15				"V15"		// BMS1 Voltage 5
-#define V16				"V16"		// BMS1 Voltage 6
-#define V17				"V17"		// BMS1 Voltage 7
-#define V18				"V18"		// BMS1 Voltage 8
-#define V19				"V19"		// BMS1 Voltage 9
-#define V1A				"V1A"		// BMS1 Voltage 10
-#define V1B				"V1B"		// BMS1 Voltage 11
-#define V1C				"V1C"		// BMS1 Voltage 12
-#define V1D				"V1D"		// BMS1 Voltage 13
-#define V1E				"V1E"		// BMS1 Voltage 14
-#define V1F				"V1F"		// BMS1 Voltage 15
-#define V1G				"V1G"		// BMS1 Voltage 16
-#define V1H				"V1H"		// BMS1 Voltage 17
-#define TA0				"TA0"		// BMS1 Temperature 0
-#define TA1				"TA1"		// BMS1 Temperature 1
-#define TA2				"TA2"		// BMS1 Temperature 2
-#define TA3				"TA3"		// BMS1 Temperature 3
-#define TA4				"TA4"		// BMS1 Temperature 4
-#define TA5				"TA5"		// BMS1 Temperature 5
-#define TA6				"TA6"		// BMS1 Temperature 6
-#define TA7				"TA7"		// BMS1 Temperature 7
-#define V00				"V00"		// BMS0 Voltage 0
-#define V01				"V01"		// BMS0 Voltage 1
-#define V02 			"V02"		// BMS0 Voltage 2
-#define V03				"V03"		// BMS0 Voltage 3
-#define V04				"V04"		// BMS0 Voltage 4
-#define V05				"V05"		// BMS0 Voltage 5
-#define V06				"V06"		// BMS0 Voltage 6
-#define V07				"V07"		// BMS0 Voltage 7
-#define V08				"V08"		// BMS0 Voltage 8
-#define V09				"V09"		// BMS0 Voltage 9
-#define V0A				"V0A"		// BMS0 Voltage 10
-#define V0B				"V0B"		// BMS0 Voltage 11
-#define V0C				"V0C"		// BMS0 Voltage 12
-#define V0D				"V0D"		// BMS0 Voltage 13
-#define V0E				"V0E"		// BMS0 Voltage 14
-#define V0F				"V0F"		// BMS0 Voltage 15
-#define V0G				"V0G"		// BMS0 Voltage 16
-#define V0H				"V0H"		// BMS0 Voltage 17
-#define T00				"T00"		// BMS0 Temperature 0
-#define T01				"T01"		// BMS0 Temperature 1
-#define T02				"T02"		// BMS0 Temperature 2
-#define T03				"T03"		// BMS0 Temperature 3
-#define T04				"T04"		// BMS0 Temperature 4
-#define T05				"T05"		// BMS0 Temperature 5
-#define T06				"T06"		// BMS0 Temperature 6
-#define T07				"T07"		// BMS0 Temperature 7
-#define V10				"V10"		// BMS1 Voltage 0
-#define V11				"V11"		// BMS1 Voltage 1
-#define V12 			"V12"		// BMS1 Voltage 2
-#define V13				"V13"		// BMS1 Voltage 3
-#define V14				"V14"		// BMS1 Voltage 4
-#define V15				"V15"		// BMS1 Voltage 5
-#define V16				"V16"		// BMS1 Voltage 6
-#define V17				"V17"		// BMS1 Voltage 7
-#define V18				"V18"		// BMS1 Voltage 8
-#define V19				"V19"		// BMS1 Voltage 9
-#define V1A				"V1A"		// BMS1 Voltage 10
-#define V1B				"V1B"		// BMS1 Voltage 11
-#define V1C				"V1C"		// BMS1 Voltage 12
-#define V1D				"V1D"		// BMS1 Voltage 13
-#define V1E				"V1E"		// BMS1 Voltage 14
-#define V1F				"V1F"		// BMS1 Voltage 15
-#define V1G				"V1G"		// BMS1 Voltage 16
-#define V1H				"V1H"		// BMS1 Voltage 17
-#define TB0				"TB0"		// BMS1 Temperature 0
-#define TB1				"TB1"		// BMS1 Temperature 1
-#define TB2				"TB2"		// BMS1 Temperature 2
-#define TB3				"TB3"		// BMS1 Temperature 3
-#define TB4				"TB4"		// BMS1 Temperature 4
-#define TB5				"TB5"		// BMS1 Temperature 5
-#define TB6				"TB6"		// BMS1 Temperature 6
-#define TB7				"TB7"		// BMS1 Temperature 7
-
-struct prototype_packet {
-	// all pointers are ini
-	// pass in pointer to null terminated data string
-	// packet construction will be taken care of by function
-	// format with ###.## zero padded
-
-	/* DAC Data */
-	char dac[6];	// DAC
-	/* Current Data */
-	char cu1[6];	// Motor 1 Current
-	char cu2[6];	// Motor 2 Current
-	char cu3[6];	// Motor 3 Current
-	char cu4[6];	// Motor 4 Current
-	/* Short Ranging Data */
-	char sr1[6];	// Short Ranging 1
-	char sr2[6];	// Short Ranging 2
-	char sr3[6];	// Short Ranging 3
-	char sr4[6];	// Short Ranging 4
-	/* Photoelectric Data */
-	char ph1[6];     // Photoelectric 1
-	/* Tachometer Data*/
-	char ta1[6]; 	// Motor 1 Tachometer
-	char ta2[6]; 	// Motor 2 Tachometer
-	char ta3[6]; 	// Motor 3 Tachometer
-	char ta4[6]; 	// Motor 4 Tachometer
-	/* Temperature Data */
-	char m1tmp1[6]; // Motor 1 Temperature1
-	char m1tmp2[6]; // Motor 1 Temperature2
-	char m1tmp3[6]; // Motor 1 Temperature3
-	char m1tmp4[6]; // Motor 1 Temperature4
-	char m2tmp1[6]; // Motor 2 Temperature1
-	char m2tmp2[6]; // Motor 2 Temperature2
-	char m2tmp3[6]; // Motor 2 Temperature3
-	char m2tmp4[6]; // Motor 2 Temperature4
-	char m3tmp1[6]; // Motor 3 Temperature1
-	char m3tmp2[6]; // Motor 3 Temperature2
-	char m3tmp3[6]; // Motor 3 Temperature3
-	char m3tmp4[6]; // Motor 3 Temperature4
-	char m4tmp1[6]; // Motor 4 Temperature1
-	char m4tmp2[6]; // Motor 4 Temperature2
-	char m4tmp3[6]; // Motor 4 Temperature3
-	char m4tmp4[6]; // Motor 4 Temperature4
-	/* BMS 0 */
-	char bms0volt0[6]; // BMS 0 Voltage 0
-	char bms0volt1[6]; // BMS 0 Voltage 1
-	char bms0volt2[6]; // BMS 0 Voltage 2
-	char bms0volt3[6]; // BMS 0 Voltage 3
-	char bms0volt4[6]; // BMS 0 Voltage 4
-	char bms0volt5[6]; // BMS 0 Voltage 5
-	char bms0volt6[6]; // BMS 0 Voltage 6
-	char bms0volt7[6]; // BMS 0 Voltage 7
-	char bms0volt8[6]; // BMS 0 Voltage 8
-	char bms0volt9[6]; // BMS 0 Voltage 9
-	char bms0volt10[6]; // BMS 0 Voltage 10
-	char bms0volt11[6]; // BMS 0 Voltage 11
-	char bms0volt12[6]; // BMS 0 Voltage 12
-	char bms0volt13[6]; // BMS 0 Voltage 13
-	char bms0volt14[6]; // BMS 0 Voltage 14
-	char bms0volt15[6]; // BMS 0 Voltage 15
-	char bms0volt16[6]; // BMS 0 Voltage 16
-	char bms0volt17[6]; // BMS 0 Voltage 17
-	char bms0temp0[6]; // BMS 0 Temperature 0
-	char bms0temp1[6]; // BMS 0 Temperature 1
-	char bms0temp2[6]; // BMS 0 Temperature 2
-	char bms0temp3[6]; // BMS 0 Temperature 3
-	char bms0temp4[6]; // BMS 0 Temperature 4
-	char bms0temp5[6]; // BMS 0 Temperature 5
-	char bms0temp6[6]; // BMS 0 Temperature 6
-	char bms0temp7[6]; // BMS 0 Temperature 7
-	/* BMS 1 */
-	char bms1volt0[6]; // BMS 1 Voltage 0
-	char bms1volt1[6]; // BMS 1 Voltage 1
-	char bms1volt2[6]; // BMS 1 Voltage 2
-	char bms1volt3[6]; // BMS 1 Voltage 3
-	char bms1volt4[6]; // BMS 1 Voltage 4
-	char bms1volt5[6]; // BMS 1 Voltage 5
-	char bms1volt6[6]; // BMS 1 Voltage 6
-	char bms1volt7[6]; // BMS 1 Voltage 7
-	char bms1volt8[6]; // BMS 1 Voltage 8
-	char bms1volt9[6]; // BMS 1 Voltage 9
-	char bms1volt10[6]; // BMS 1 Voltage 10
-	char bms1volt11[6]; // BMS 1 Voltage 11
-	char bms1volt12[6]; // BMS 1 Voltage 12
-	char bms1volt13[6]; // BMS 1 Voltage 13
-	char bms1volt14[6]; // BMS 1 Voltage 14
-	char bms1volt15[6]; // BMS 1 Voltage 15
-	char bms1volt16[6]; // BMS 1 Voltage 16
-	char bms1volt17[6]; // BMS 1 Voltage 17
-	char bms1temp0[6]; // BMS 1 Temperature 0
-	char bms1temp1[6]; // BMS 1 Temperature 1
-	char bms1temp2[6]; // BMS 1 Temperature 2
-	char bms1temp3[6]; // BMS 1 Temperature 3
-	char bms1temp4[6]; // BMS 1 Temperature 4
-	char bms1temp5[6]; // BMS 1 Temperature 5
-	char bms1temp6[6]; // BMS 1 Temperature 6
-	char bms1temp7[6]; // BMS 1 Temperature 7
-};
-
-struct prototype_packet PrototypePacket;
+#define TA				"TA"		// Motor Tachometer
+#define CU				"CU"		// Motor Current
+#define TM				"TM"		// Motor Temperature
+// BMS Boards
+#define BMSV			"BMSV"		// BMS Voltage
+#define BMST			"BMST"		// BMS Temperature
 
 extern uint16_t gSn_RX_BASE[];
 extern uint16_t gSn_TX_BASE[];
@@ -377,7 +159,6 @@ uint8_t Net_Rx_Data[DATA_BUF_SIZE];
 void wizIntFunction();
 void rec_method(char *method, char *val, int *val_len);
 void send_method(char *method, char* val, int val_len);
-void sendPrototypePacket();
 void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 void Wiz_Restart();
 void Wiz_Init();
@@ -400,11 +181,16 @@ void spi_Send_Blocking(uint16_t address, uint16_t length);
 void spi_Recv_Blocking(uint16_t address, uint16_t length);
 void TIMER2_IRQHandler(void);
 void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
-void send_data_packet_helper(char *method, char *val, int *position);
+void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position);
 void send_data_ack_helper(char *method, int *position);
 uint8_t Wiz_Check_Socket(uint8_t n);
 uint8_t Wiz_Int_Clear(uint8_t n);
 uint16_t Wiz_Send_Blocking(uint8_t n, uint8_t* message);
 uint16_t Wiz_Recv_Blocking(uint8_t n, uint8_t* message);
+/* Used by logging.c */
+int tx_pos;
+void ethernet_prepare_packet();
+void ethernet_add_data_to_packet(char *method, int index, int sensorNum,char* val);
+void ethernet_send_packet();
 
 #endif
