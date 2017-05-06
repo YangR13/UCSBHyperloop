@@ -214,7 +214,7 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
 		DEBUGOUT("CALIBRATE_SIG RECEIVED\n");
-		getPressureFlag = 1;
+		CALIBRATE_FLAG = 1;
 	}
 
 	// Check if the message received matches any state machine control signals, issue it if so.

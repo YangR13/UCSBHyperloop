@@ -109,6 +109,7 @@ void collectData(){
 		float z_ci = 0.0;
 		//initialization calculations
 		if(CALIBRATE_FLAG){
+			DEBUGOUT("Position Calibrated\n");
 			pitch_i = (z_1i + z_2i - z_0i - z_3i) / 2*(d_F + d_B);
 			roll_i = (z_0i + z_1i - z_2i - z_3i) / 2*(d_L + d_R);
 			z_ci = z_0i - (d_L * roll_i) + (d_F * pitch_i);
@@ -133,7 +134,7 @@ void collectData(){
 		float y_ci = y_0i - (d0 * yaw_i);
 		float y_c = (y_0 - (d0 * yaw)) - y_ci;
 
-
+		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
     if (PHOTO_ELECTRIC_ACTIVE){
