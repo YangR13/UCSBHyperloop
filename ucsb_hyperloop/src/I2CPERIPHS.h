@@ -12,15 +12,18 @@
 #include "Arduino.h"
 #include "Wire.h"
 
+#define AUX_PIN 7
+
 #endif //ARDUINO
 
 #ifdef LPC //LPC LIBRARIES BELOW
 #include "stdlib.h"
 #include "initialization.h"
+#include "gpio.h"
 #include "i2c.h"
 #include "timer.h"
 #include "ranging.h"
-#define NUM_MOTORS 4
+
 //I2C Bus Select
 
 #endif //LPC
@@ -29,19 +32,25 @@
 #ifndef I2CPERIPHS_H_
 #define I2CPERIPHS_H_
 
-#define MAX_THROTTLE_VOLTAGE 5    //[V]
+//Number of Boards
+#define NUM_HUBS 3
+#define NUM_HUB_PORTS 8
+#define NUM_HEMS 4
+#define NUM_MAGLEV_BMS 2
+#define NUM_ELECTRONICS_BMS 1
+#define NUM_18V5_BMS 2
 
-#define NUM_THERMISTORS 4
-#define NUM_SHORTIR 2
+//Thermistor Data
 #define REFERENCE_RESISTANCE 5100 //[ohms]
 #define THERMISTOR_BETA 3380
 #define THERMISTOR_OFFSET -2.126
 
-#define VREF 5.08
-#define AMMETER_SENSITIVITY 8.8		//[mV/A] for the 150B version of the sensor
-#define AMMETER_CONVERSION 0.1136	//[A/mV] 1/AMMETER_SENSITIVITY
-#define AMMETER_VCC 3.3           //Ammeter referenced to 3.3V; everything else runs off 5V
+//Ammeter Data
+#define AMMETER_10A_SENSITIVITY 264
+#define AMMETER_50A_SENSITIVITY 40
+#define AMMETER_150A_SENSITIVITY 8.8		//[mV/A] for the 150amp version of the sensor
 
+//Tachometer Data
 #define TACHOMETER_TICKS 1	// Number of reflective strips on the motor.
 
 //Safety:
@@ -56,20 +65,28 @@
 #define TACHOMETER_AVG_WEIGHT 0.2 //Out of 1 (value = (old_value * AVG_WEIGHT + (1 - AVG_WEIGHT) * new_value) Set to 0 if you don't want exponential averaging.
 #define THERMISTOR_AVG_WEIGHT 0.4 //Out of 1 (value = (old_value * AVG_WEIGHT + (1 - AVG_WEIGHT) * new_value)
 
+#define MAX12BITVAL 4095.0
+
+#define IN 0
+#define OUT 1
+void GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir);
+void GPIO_Write(uint8_t port, uint8_t pin, uint8_t setting);
+uint8_t GPIO_Read(uint8_t port, uint8_t pin);
+
+
 typedef struct {
+  uint8_t identity;
+  
   //I2C Parameters
   uint8_t bus;                    //Which I2C bus
   uint8_t ADC_device_address[1];   //ADC LTC2309 - Thermistors, Ammeter
   uint8_t DAC_device_address[1];   //DAC MCP4725 - Throttle
   uint8_t IOX_device_address[2];   //IOX MCP23017 - Tachometer    {MAGLEV, NAVIGATION}
-  uint8_t BC_RESET_pin;
-  uint8_t PWR_RESET_pin;
-  uint8_t dI2C_READY_pin;
 
   //Data Storage
   float DAC_diagnostic;
-  int temperatures[NUM_THERMISTORS];
-  float short_data[NUM_SHORTIR];
+  int temperatures[4];
+  float short_data[2];
   uint8_t amps;
   uint16_t rpm[2];
 
@@ -79,18 +96,13 @@ typedef struct {
 
   //Control
   float throttle_voltage;
-  uint8_t bc_reset;
-  uint8_t pwr_reset;
+  uint8_t bc_reset_active_high;
 
   //Safety
   uint8_t alarm;
 } HEMS;
 
-#ifdef LPC
-HEMS *motors[4];
-#endif
-
-HEMS* initialize_HEMS(uint8_t I2C_BUS, uint8_t I2C_DIP);  //See below for I2C DIP addressing
+HEMS* initialize_HEMS(uint8_t identity);  //See below for I2C DIP addressing
 uint8_t update_HEMS(HEMS* engine);
 int calculate_temperature(uint16_t therm_adc_val);
 float runtime();
@@ -109,20 +121,25 @@ float runtime();
 
 
 typedef struct{   //Designed for 3x 6S batteries; 
+  uint8_t identity;
+
+  //I2C Parameters
   uint8_t bus;                //Only one allowed per bus, since addresses are hard-wired.
+  
+  //Data Storage
   float battery_voltage[3];   //From left to right on the board.
   float cell_voltages[3][6];
-  float conversion[3][6];    
   int temperatures[3][2];
   uint8_t amps;               //No onboard ammeter; relies on data from HEMS or other.
-  
-  uint8_t relay_active;       //Active Low
-  
+
+  //Controls
+  uint8_t relay_active_low;       //Active Low
+
   float timestamp;
   uint8_t alarm;
 } Maglev_BMS;
 
-Maglev_BMS* initialize_Maglev_BMS();
+Maglev_BMS* initialize_Maglev_BMS(uint8_t identity);
 uint8_t update_Maglev_BMS(Maglev_BMS* bms);
 
 /*ADC LTC2309
@@ -229,6 +246,5 @@ void DAC_write(uint8_t i2c_bus, uint8_t DAC_address, uint16_t output_voltage);
 //IOX Associated Functions:
 void IOX_setup(uint8_t i2c_bus, uint8_t IOX_address);
 uint16_t IOX_read(uint8_t i2c_bus, uint8_t IOX_address);
-void set_motor_throttle(uint8_t motor_num, float voltage);
 
 #endif //I2CPERIPHS_H

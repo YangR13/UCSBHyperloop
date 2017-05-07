@@ -25,6 +25,10 @@ static const char LOG_TYPE_STRINGS[NUM_LOGS][8] = {
 
 static long LOG_POSITIONS[NUM_LOGS][6];
 
+#define FILE_POSITION "position"
+#define FILE_HEMS "maglev"
+#define FILE_BMS "bms"
+
 typedef enum {
 	MAX_EVT
 } Event;

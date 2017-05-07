@@ -101,33 +101,6 @@
 #define REMOTE_PORT1 	0x12
 
 /* Protocol Methods */
-/* Atmospheric data */
-#define BM1 			"BM1"	// Pressure
-#define BM2 			"BM2"	// Pressure
-#define TM1 			"TM1"	// Temperature
-#define TM2 			"TM2"	// Temperature 2
-#define TM3				"TM3"   // Temperature 3
-#define TM4				"TM4"   // Temperature 4
-#define TA1 			"TA1"	// Tachometer 1
-#define TA2 			"TA2"	// Tachometer 2
-#define TA3				"TA3"   // Tachometer 3
-#define TA4				"TA4"   // Tachometer 4
-/* Positional Data */
-#define POX 			"POX"	// x Position
-#define POY 			"POY"	// y Position
-#define POZ 			"POZ"	// z Position
-/* Velocity Data */
-#define VEX 			"VEX"	// x Velocity
-#define VEY 			"VEY"	// y Velocity
-#define VEZ 			"VEZ"	// z Velocity
-/* Acceleration Data */
-#define ACX 			"ACX"	// x Acceleration
-#define ACY 			"ACY"	// y Acceleration
-#define ACZ 			"ACZ"	// z Acceleration
-/* Attitudinal Data */
-#define ROL 			"ROL"	// Roll
-#define PIT 			"PIT"	// Pitch
-#define YAW 			"YAW"	// Yaw
 /* Miscellaneous */
 #define MSG 			"MSG"	// Message
 #define PWR 			"PWR"	// Power
@@ -149,119 +122,20 @@
 #define SOCKET_ID 		0
 
 /* Prototype methods */
-#define DAC				"DAC"		// DAC
+// Positional
 #define SR				"SR"		// Short Ranging
 #define PH				"PH"		// Photoelectric
+// Motor Boards
+#define DAC				"DAC"		// DAC
 #define TA				"TA"		// Motor Tachometer
 #define CU				"CU"		// Motor Current
 #define TM				"TM"		// Motor Temperature
+// BMS Boards
+#define BMSV			"BMSV"		// BMS Voltage
+#define BMST			"BMST"		// BMS Temperature
 
-/* Web App control signals for state machine */
-#define STOP				"STOP_SIG\0"
-// Maglev
-#define ENGAGE_ENGINES		"ENGAGE_ENGINES_SIG\0"
-#define DISENGAGE_ENGINES	"DISENGAGE_ENGINES_SIG\0"
-// Braking
-#define ENGAGE_BRAKES		"ENGAGE_BRAKES_SIG\0"
-#define DISENGAGE_BRAKES	"DISENGAGE_BRAKES_SIG\0"
-#
-// Payload Actuators
-#define ENGINES_REVED		"RAISE_ACTUATORS_SIG\0"
-#define ENGINES_STOPPED		"LOWER_ACTUATORS_SIG\0"
-// Surface Propulsion
-
-#define FORWARD				"FORWARD_SIG\0"
-#define REVERSE				"REVERSE_SIG\0"
-
-#define TERMINATE			"TERMINATE_SIG\0"
-#define IGNORE				"IGNORE_SIG\0"
-#define MAXSIG				"MAX_SIG\0"
-
-struct data_packet {
-	// all pointers are ini
-	// pass in pointer to null terminated data string
-	// packet construction will be taken care of by function
-	// format with ###.## zero padded
-
-	/* Atmospheric Data */
-	char bm1[6];	// Pressure1
-	char bm2[6];	// Pressure2
-	char tm1[6];	// Temperature
-	char tm2[6];	// Temperature2
-	char tm3[6];	// Temperature3
-	char tm4[6];	// Temperature4
-	char ta1[6];	// Tachometer1
-	char ta2[6];	// Tachometer2
-	char ta3[6];	// Tachometer3
-	char ta4[6];	// Tachometer4
-	char pwr[6];	// Power Consumption
-	/* Positional Data */
-	char pox[6];	// x Position
-	char poy[6];	// y Position
-	char poz[6];	// z Position
-	/* Velocity Data */
-	char vex[6];	// x Velocity
-	char vey[6];	// y Velocity
-	char vez[6];	// z Velocity
-	/* Acceleration Data */
-	char acx[6];	// x Acceleration
-	char acy[6];	// y Acceleration
-	char acz[6];	// z Acceleration
-	/* Attitudinal Data */
-	char rol[6];	// Roll
-	char pit[6];	// Pitch
-	char yaw[6];	// Yaw
-
-};
-
-
-struct prototype_packet {
-	// all pointers are ini
-	// pass in pointer to null terminated data string
-	// packet construction will be taken care of by function
-	// format with ###.## zero padded
-
-	/* DAC Data */
-	char dac[6];	// DAC
-	/* Current Data */
-	char cu1[6];	// Motor 1 Current
-	char cu2[6];	// Motor 2 Current
-	char cu3[6];	// Motor 3 Current
-	char cu4[6];	// Motor 4 Current
-	/* Short Ranging Data */
-	char sr1[6];	// Short Ranging 1
-	char sr2[6];	// Short Ranging 2
-	char sr3[6];	// Short Ranging 3
-	char sr4[6];	// Short Ranging 4
-	/* Photoelectric Data */
-	char ph1[6];     // Photoelectric 1
-	/* Tachometer Data*/
-	char ta1[6]; 	// Motor 1 Tachometer
-	char ta2[6]; 	// Motor 2 Tachometer
-	char ta3[6]; 	// Motor 3 Tachometer
-	char ta4[6]; 	// Motor 4 Tachometer
-	/* Temperature Data */
-	char m1tmp1[6]; // Motor 1 Temperature1
-	char m1tmp2[6]; // Motor 1 Temperature2
-	char m1tmp3[6]; // Motor 1 Temperature3
-	char m1tmp4[6]; // Motor 1 Temperature4
-	char m2tmp1[6]; // Motor 2 Temperature1
-	char m2tmp2[6]; // Motor 2 Temperature2
-	char m2tmp3[6]; // Motor 2 Temperature3
-	char m2tmp4[6]; // Motor 2 Temperature4
-	char m3tmp1[6]; // Motor 3 Temperature1
-	char m3tmp2[6]; // Motor 3 Temperature2
-	char m3tmp3[6]; // Motor 3 Temperature3
-	char m3tmp4[6]; // Motor 3 Temperature4
-	char m4tmp1[6]; // Motor 4 Temperature1
-	char m4tmp2[6]; // Motor 4 Temperature2
-	char m4tmp3[6]; // Motor 4 Temperature3
-	char m4tmp4[6]; // Motor 4 Temperature4
-
-};
-
-struct data_packet DataPacket;
-struct prototype_packet PrototypePacket;
+/* Web App control for intializing the positioning */
+#define CALIBRATE_SIG	"CALIBRATE_SIG\0"
 
 extern uint16_t gSn_RX_BASE[];
 extern uint16_t gSn_TX_BASE[];
@@ -288,8 +162,6 @@ uint8_t Net_Rx_Data[DATA_BUF_SIZE];
 void wizIntFunction();
 void rec_method(char *method, char *val, int *val_len);
 void send_method(char *method, char* val, int val_len);
-void sendDataPacket();
-void sendPrototypePacket();
 void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 void Wiz_Restart();
 void Wiz_Init();
@@ -312,7 +184,7 @@ void spi_Send_Blocking(uint16_t address, uint16_t length);
 void spi_Recv_Blocking(uint16_t address, uint16_t length);
 void TIMER2_IRQHandler(void);
 void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
-void send_data_packet_helper(char *method, int index, char *val, int *position);
+void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position);
 void send_data_ack_helper(char *method, int *position);
 uint8_t Wiz_Check_Socket(uint8_t n);
 uint8_t Wiz_Int_Clear(uint8_t n);
@@ -321,7 +193,7 @@ uint16_t Wiz_Recv_Blocking(uint8_t n, uint8_t* message);
 /* Used by logging.c */
 int tx_pos;
 void ethernet_prepare_packet();
-void ethernet_add_data_to_packet(char *method, int index, char* val);
+void ethernet_add_data_to_packet(char *method, int index, int sensorNum,char* val);
 void ethernet_send_packet();
 
 #endif

@@ -3,11 +3,15 @@
 
 #include "board.h"
 #include "ranging.h"
+#include "I2CPERIPHS.h"
 
 void 	collectCalibrationData(I2C_ID_T id);
 void    collectData();
 void    TIMER1_IRQHandler(void);
 void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
+
+HEMS *motors[NUM_HEMS];
+Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
 
 typedef struct{
 
@@ -59,11 +63,18 @@ typedef struct{
 
   rangingData shortRangingData;
   rangingData longRangingData;
+  int contact_sensor_pushed;
+
 
 } sensor;
 
 uint8_t collectDataFlag;
 uint8_t getPressureFlag;
 sensor sensorData;
+
+int CALIBRATE_FLAG;
+float pitch_i;
+float roll_i;
+float z_ci;
 
 #endif

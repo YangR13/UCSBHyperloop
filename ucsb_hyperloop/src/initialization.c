@@ -5,9 +5,9 @@
 #include "ethernet.h"
 #include "pwm.h"
 #include "sensor_data.h"
-#include "HEMS.h"
 #include "sdcard.h"
 #include "gpio.h"
+#include "I2CPERIPHS.h"
 
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
 void initializeSensorsAndControls(){
@@ -38,6 +38,7 @@ void initializeSensorsAndControls(){
 
     if(RANGING_SENSORS_ACTIVE){
         rangingSensorsInit();
+        CALIBRATE_FLAG = 0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */
@@ -51,21 +52,23 @@ void initializeSensorsAndControls(){
     	i2cInit(I2C2, SPEED_100KHZ);
 
     	// Create objects to hold parameters of the HEMS boards
-        motors[0] = initialize_HEMS(I2C1,0b11111000);   // Front Left
-        motors[1] = initialize_HEMS(I2C2,0);            // Back Left
-        motors[2] = initialize_HEMS(I2C2,0b11111000);   // Back Right
-        motors[3] = initialize_HEMS(I2C1,0);            // Front Right
-
-    	// Enable GPIO interrupt.
-#if PHOTO_ELECTRIC_ACTIVE
-        Chip_GPIOINT_SetIntRising(LPC_GPIOINT, 2, ((1 << 11) || (1 << 1))); // Photoelectric AND HEMS I2C
-#else
-    	Chip_GPIOINT_SetIntRising(LPC_GPIOINT, 2, 1 << 11);
-#endif
-    	NVIC_ClearPendingIRQ(GPIO_IRQn);
-    	NVIC_EnableIRQ(GPIO_IRQn);
+        motors[0] = initialize_HEMS(0);   			// Front Left
+        motors[1] = initialize_HEMS(1);            	// Back Left
+        motors[2] = initialize_HEMS(2);   			// Back Right
+        motors[3] = initialize_HEMS(3);          	// Front Right
 
     	prototypeRunFlag = 0;
+    }
+
+    if (MAGLEV_BMS_ACTIVE){
+    	uint8_t i;
+    	for (i = 0; i < NUM_MAGLEV_BMS; i++){
+    		maglev_bmses[i] = initialize_Maglev_BMS(i);
+    	}
+    }
+
+    if (CONTACT_SENSOR_ACTIVE){
+    	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
 }
 
