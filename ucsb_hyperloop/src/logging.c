@@ -31,7 +31,7 @@ FRESULT f_write_log(FIL *fp, LOG_TYPE log_type, int index, char* data)
 	UINT bw;
 	char data_[17];
 	snprintf(data_, 17, "%s,", data);
-	rc = f_write(fp, data_, strlen(data), &bw);
+	rc = f_write(fp, data_, strlen(data_), &bw);
 	LOG_POSITIONS[log_type][index] += bw;
 	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_write_log rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
 	return rc;
