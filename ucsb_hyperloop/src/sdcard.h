@@ -7,7 +7,7 @@
 
 // If this import fails:
 // Go into project settings => C/C++ Settings => Settings => MCU C Compiler => Includes
-// Then add the path to the 'fatfs' folder, which is located one directory higher than this one!
+// Then add the path to the 'fatfs/inc' folder, which is located inside the 'src' folder.
 #include "ff.h"
 
 #define debugstr(str)  DEBUGOUT(str)

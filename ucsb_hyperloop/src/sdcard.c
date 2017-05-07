@@ -173,7 +173,7 @@ void sdcardInit() {
 
 	f_mount(0, &fatFS);		/* Register volume work area (never fails) */
 
-	initSessionFiles();
+	//initSessionFiles();
 }
 
 void writeData(char* filename, const void *buff, int size){

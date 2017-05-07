@@ -40,7 +40,7 @@
 								<option id="gnu.c.compiler.option.include.paths.61494991" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_board_ea_devkit_4088/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_40xx/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ucsb_hyperloop/fatfs/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/fatfs/inc}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.gcc.fpu.1337005112" name="Floating point" superClass="com.crt.advproject.gcc.fpu" value="com.crt.advproject.gcc.fpu.fpv4" valueType="enumerated"/>
 								<inputType id="com.crt.advproject.compiler.input.158526187" superClass="com.crt.advproject.compiler.input"/>
@@ -129,8 +129,8 @@
 								<option id="com.crt.advproject.gcc.hdrlib.1540305478" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" value="Redlib" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1061098898" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_board_ea_devkit_4088/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ucsb_hyperloop/fatfs/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_40xx/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/fatfs/inc}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.gcc.fpu.1010993648" name="Floating point" superClass="com.crt.advproject.gcc.fpu" value="com.crt.advproject.gcc.fpu.fpv4" valueType="enumerated"/>
 								<inputType id="com.crt.advproject.compiler.input.501916486" superClass="com.crt.advproject.compiler.input"/>

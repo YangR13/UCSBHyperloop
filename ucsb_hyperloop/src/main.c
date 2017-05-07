@@ -73,7 +73,7 @@ int main(void)
 	
         // ** DATA LOGGING **
         if (COMMUNICATION_ACTIVE){
-            logData(); // See communications.c
+        	logAllData(); // See logging.c
         }
 	
         // ** DETERMINE STATE MACHINE TRANSITIONS**

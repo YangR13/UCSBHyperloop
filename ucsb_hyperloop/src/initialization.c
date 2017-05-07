@@ -72,6 +72,7 @@ void initializeSensorsAndControls(){
 void initializeCommunications(){
     if(SDCARD_ACTIVE) {
         sdcardInit();
+        init_csv_files();
     }
     if(ETHERNET_ACTIVE){
         ethernetInit(PROTO_TCP, 0);

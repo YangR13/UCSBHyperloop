@@ -3,104 +3,193 @@
 #include "ethernet.h"
 #include "HEMS.h"
 #include "sensor_data.h"
-#include "sdcard.h"
+#include "rtc.h"
 
-void get_filepath(char* filepath, char* dir, char* name, int index) {
+void get_filepath(char* filepath, char* dir, LOG_TYPE log_type, int index, char* filetype) {
 	// Concat the dir and name variables and save to the filepath variable.
+	if(strcmp("", dir) == 0) {
+		sprintf(filepath, "%s_%d.%s", LOG_TYPE_STRINGS[log_type], index, filetype);
+	}
+	else {
+		sprintf(filepath, "%s/%s_%d.%s", dir, LOG_TYPE_STRINGS[log_type], index, filetype);
+	}
 }
 
-void initSDCard() {
-	// Create a new directory for this session.
-	char path[32];
+FRESULT f_open_log (FIL *fp, LOG_TYPE log_type, int index, BYTE mode)
+{
+	FRESULT rc;
+	char filepath[32] = "";
+	get_filepath(filepath, g_log_directory, log_type, index, TYPE_CSV);
+	rc = f_open(fp, filepath, mode);
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_open_log rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
 
+FRESULT f_write_log(FIL *fp, LOG_TYPE log_type, int index, char* data)
+{
+	FRESULT rc;
+	UINT bw;
+	char data_[17];
+	snprintf(data_, 17, "%s,", data);
+	rc = f_write(fp, data_, strlen(data), &bw);
+	LOG_POSITIONS[log_type][index] += bw;
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_write_log rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
+
+FRESULT f_write_newline(FIL *fp, LOG_TYPE log_type, int index)
+{
+	FRESULT rc;
+	UINT bw;
+	rc = f_write(fp, "\r\n", 2, &bw);
+	LOG_POSITIONS[log_type][index] += bw;
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_write_newline rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
+
+void init_csv_files() {
+	int i, j;
+
+	/* Get local time */
+	RTC rtc;
+	rtc_gettime(&rtc);
+
+	// Create a new log directory for this session. Directory names limited to 8 characters.
+	snprintf(g_log_directory, 8, "%02d-%02d-%02d", rtc.hour, rtc.min, rtc.sec);
+	f_mkdir(g_log_directory);
+
+	// Initialize array for keeping track of file positions.
+	for(i=0; i<NUM_LOGS; i++) {
+		for(j=0; j<6; j++) {
+			LOG_POSITIONS[i][j] = 0;
+		}
+	}
 
 	// Create new files and add headers.
-	create_position_csv();
-	int i;
+	create_csv(g_log_directory, LOG_POSITION, 0);
+
 	for(i=0; i<4; i++) {
-		create_hems_csv(i);
+		create_csv(g_log_directory, LOG_HEMS, i);
+	}
+	for(i=0; i<6; i++) {
+		create_csv(g_log_directory, LOG_MAGLEV_BMS, i);
 	}
 
+	logData(LOG_HEMS, 0);
 }
 
-void create_csv(char* dir, char* filetype, int index)
+void create_csv(char* dir, LOG_TYPE log_type, int index)
 {
 	FIL fileObj;	/* File object */
-	char filepath[32];
-	get_filepath(filepath, dir, filetype, index);
-	f_open(&fileObj, filepath, FA_WRITE | FA_CREATE_ALWAYS);
-
+	FRESULT rc;
+	UINT bw;
+	f_open_log (&fileObj, log_type, index, FA_WRITE | FA_CREATE_ALWAYS);
 	// Add headers.
-	if(strcmp(filetype, FILE_POSITION) == 0) {
-
+	char header[128] = "";
+	switch(log_type) {
+	case LOG_POSITION:
+		snprintf(header, 128, "Time,X-Pos,X-Vel,X-Accel,Y-Pos,Y-Vel,Y-Accel,Z-Pos,Z-Vel,Z-Accel,Roll,Pitch,Yaw,Contact\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	case LOG_HEMS:
+		snprintf(header, 128, "Time,DAC,Current,RPM,Temp 0,Temp 1,Temp 2,Temp 3,Short Ranging\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	case LOG_MAGLEV_BMS:
+		snprintf(header, 128, "Time,B0 Low,B0 High,B0 Temp 0,B0 Temp 1,B1 Low,B1 High,B1 Temp 0,B1 Temp 1,Batt 2 Low,Batt 2 High,B2 Temp 0,B2 Temp 1\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	default:
+		break;
 	}
-	if(strcmp(filetype, FILE_HEMS) == 0) {
+	// Update file position.
+	LOG_POSITIONS[log_type][index] += bw;
 
-	}
-	if(strcmp(filetype, FILE_BMS) == 0) {
-
-	}
-
+	if(rc != 0) DEBUGOUT("ERROR: %s f_write rc=%d\n", LOG_TYPE_STRINGS[log_type], rc);
 	f_close(&fileObj);
 }
 
-void logData(){
+void logAllData(){
 	ethernet_prepare_packet();
 	
-	logPosition();
-
+	logData(LOG_POSITION, 0);
 	int i;
 	for(i=0; i<4; i++) {
-		logHEMS(i);
+		logData(LOG_HEMS, i);
 	}
-
-	// logBMS()
+	for(i=0; i<6; i++) {
+		logData(LOG_MAGLEV_BMS, i);
+	}
 
 	if((sendDataFlag && connectionOpen))
 		ethernet_send_packet();
-
 }
 
-void logPosition(){
+void logData(LOG_TYPE log_type, int index)
+{
+	FIL fileObj;	/* File object */
+	FRESULT rc;
+	UINT bw;
+
+	f_open_log (&fileObj, log_type, index, FA_WRITE);
+
+	// Seek current position in log file.
+	f_lseek(&fileObj, LOG_POSITIONS[log_type][index]);
 
 	char data[16];
-	snprintf(data, 16, "%06.2f", sensorData.photoelectric);
-	ethernet_add_data_to_packet(PH, -1, data);
-}
+	switch(log_type) {
+	case LOG_POSITION:
+		snprintf(data, 16, "%06.2f", sensorData.photoelectric);
+		ethernet_add_data_to_packet(PH, -1, data);
+		break;
+	case LOG_HEMS:
+		// Time
+		snprintf(data, 16, "%06.2f", motors[index]->timestamp);
+		// ethernet_add_data_to_packet
+		rc = f_write_log(&fileObj, log_type, index, data);
 
-void logHEMS(int index){
-	char data[16];
-	// DAC
-	if(index == 0) {
-		snprintf(data, 16, "%06.2f", motors[index]->throttle_voltage);
-		ethernet_add_data_to_packet(DAC, -1, data);
+		// DAC
+		if(index == 0) {
+			snprintf(data, 16, "%06.2f", motors[index]->throttle_voltage);
+			ethernet_add_data_to_packet(DAC, -1, data);
+		}
+		rc = f_write_log(&fileObj, log_type, index, data);
+
+		// Current
+		snprintf(data, 16, "%06.2f", (float)motors[index]->amps);
+		ethernet_add_data_to_packet(CU, index, data);
+		rc = f_write_log(&fileObj, log_type, index, data);
+
+		// RPM
+		snprintf(data, 16, "%06.2f", (float)motors[index]->rpm[1]);
+		ethernet_add_data_to_packet(TA, index, data);
+		rc = f_write_log(&fileObj, log_type, index, data);
+
+		// Temperature (0 to 3)
+		int i;
+		for(i=0; i<4; i++){
+			snprintf(data, 16, "%06.f", (float)motors[index]->temperatures[i]);
+			ethernet_add_data_to_packet(TM, index*4 + i, data);
+			rc = f_write_log(&fileObj, log_type, index, data);
+		}
+
+		// Short Ranging
+		snprintf(data, 16, "%06.2f", motors[index]->short_data[0]);
+		ethernet_add_data_to_packet(SR, index, data);
+		rc = f_write_log(&fileObj, log_type, index, data);
+
+		// Newline
+		rc = f_write_newline(&fileObj, log_type, index);
+		break;
+	case LOG_MAGLEV_BMS:
+		break;
+	default:
+		break;
 	}
 
-	// Current
-	snprintf(data, 16, "%06.2f", (float)motors[index]->amps);
-	ethernet_add_data_to_packet(CU, index, data);
-
-	// RPM
-	snprintf(data, 16, "%06.2f", (float)motors[index]->rpm[1]);
-	ethernet_add_data_to_packet(TA, index, data);
-
-	// Temperature (0 to 3)
-	int i;
-	for(i=0; i<4; i++){
-		snprintf(data, 16, "%06.f", (float)motors[index]->temperatures[i]);
-		ethernet_add_data_to_packet(TM, index*4 + i, data);
-	}
-
-	// Short Ranging
-	snprintf(data, 16, "%06.2f", motors[index]->short_data[0]);
-	ethernet_add_data_to_packet(SR, index, data);
+	f_close(&fileObj);
 
 }
-
-void logBMS(int index){
-
-}
-
 
 void initEventLogFile()
 {

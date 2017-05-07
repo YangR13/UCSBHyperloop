@@ -5,10 +5,25 @@
 
 #include "ethernet.h"
 #include "subsystems.h"
+#include "sdcard.h"
 
-#define FILE_POSITION "position"
-#define FILE_HEMS "maglev"
-#define FILE_BMS "bms"
+#define TYPE_TXT "txt"
+#define TYPE_CSV "csv"
+
+typedef enum {
+	LOG_POSITION,
+	LOG_HEMS,
+	LOG_MAGLEV_BMS,
+	NUM_LOGS
+} LOG_TYPE;
+
+static const char LOG_TYPE_STRINGS[NUM_LOGS][8] = {
+	"pos",
+	"hems",
+	"ml-bat",
+};
+
+static long LOG_POSITIONS[NUM_LOGS][6];
 
 typedef enum {
 	MAX_EVT
@@ -20,10 +35,18 @@ typedef enum {
 
 #define ERR
 
-void logData();
-void logPosition();
-void logHEMS(int index);
-void logBMS(int index);
+char g_log_directory[9];
+
+FRESULT f_open_log(FIL *fp, LOG_TYPE log_type, int index, BYTE mode);
+FRESULT f_write_log(FIL *fp, LOG_TYPE log_type, int index, char* data);
+FRESULT f_write_newline(FIL *fp, LOG_TYPE log_type, int index);
+
+void get_filepath(char* filepath, char* dir, LOG_TYPE log_type, int index, char* filetype);
+void init_csv_files();
+void create_csv(char* dir, LOG_TYPE log_type, int index);
+
+void logAllData();
+void logData(LOG_TYPE log_type, int index);
 
 void initEventLogFile();
 void initErrorLogFile();
