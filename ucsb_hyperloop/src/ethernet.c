@@ -235,6 +235,11 @@ void recvDataPacket() {
 		}
 	}
 
+	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
+		printf("CALIBRATE_SIG RECEIVED\n");
+		CALIBRATE_FLAG = 1;
+	}
+
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
 		DEBUGOUT("DAC SET RECEIVED\n");
 		DEBUGOUT("DAC recieved: %s\n", Net_Rx_Data);

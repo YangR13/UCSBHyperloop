@@ -7,7 +7,7 @@
 // Sensors and system actuation toggles
 #define PWM_ACTIVE					0
 #define PHOTO_ELECTRIC_ACTIVE		0
-#define RANGING_SENSORS_ACTIVE		0
+#define RANGING_SENSORS_ACTIVE		1
 #define SMOOSHED_ONE_ACTIVE			0
 #define SMOOSHED_TWO_ACTIVE			0
 #define MOTOR_BOARD_I2C_ACTIVE		1
