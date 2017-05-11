@@ -47,8 +47,10 @@ void actuate_maglev(){
 		if(Maglev_HSM.enable_motors) {
 			DEBUGOUT("Engines engaged.\n");
 			prototypeRunStartTime = getRuntime()/1000;
+#if MAGLEV_BMS_ACTIVE
 			maglev_bmses[0]->relay_active_low = 0;
 			maglev_bmses[1]->relay_active_low = 0;
+#endif
 			//update and maintain engine throttle
 		}
 		else {
@@ -58,8 +60,10 @@ void actuate_maglev(){
 			for(i = 0; i < NUM_HEMS; i++) {
 				set_motor_throttle(i, 0);
 			}
+#if MAGLEV_BMS_ACTIVE
             maglev_bmses[0]->relay_active_low = 1;
             maglev_bmses[1]->relay_active_low = 1;
+#endif
 		}
 		Maglev_HSM.update = 0;
 		DEBUGOUT("\n\n");
@@ -116,8 +120,10 @@ void actuate_maglev(){
 		for(i = 0; i < 4; i++) {
 			set_motor_throttle(i, 0);
 		}
+#if MAGLEV_BMS_ACTIVE
         maglev_bmses[0]->relay_active_low = 1;
         maglev_bmses[1]->relay_active_low = 1;
+#endif
 	}
 	// TODO: Update HEMS here.
 }
