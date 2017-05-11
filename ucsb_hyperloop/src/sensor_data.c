@@ -87,15 +87,6 @@ void collectData(){
 
 	if(RANGING_SENSORS_ACTIVE) {
 
-//		sensorData.longRangingData = getLongDistance();
-//		sensorData.shortRangingData = getShortDistance();
-//		positionAttitude = computePositionAttitudeRanging(sensorData.longRangingData, sensorData.shortRangingData);
-//
-//		sensorData.positionY = positionAttitude.y;
-//		sensorData.positionZ = positionAttitude.z;
-//		sensorData.roll = positionAttitude.roll;
-//		sensorData.pitch = positionAttitude.pitch;
-//		sensorData.yaw = positionAttitude.yaw;
 
 		float d_F = 17.0;
 		float d_R = 11.0;
@@ -135,7 +126,7 @@ void collectData(){
 			pitch_i = (z_1i + z_2i - z_0i - z_3i) / 2*(d_F + d_B);
 			roll_i = (z_0i + z_1i - z_2i - z_3i) / 2*(d_L + d_R);
 			z_ci = z_0i - (d_L * roll_i) + (d_F * pitch_i);
-			CALIBRATE_FLAG = 0;
+		 	CALIBRATE_FLAG = 0;
 		}
 
 		// pitch
@@ -155,7 +146,6 @@ void collectData(){
 		// lateral position
 		float y_ci = y_0i - (d0 * yaw_i);
 		float y_c = (y_0 - (d0 * yaw)) - y_ci;
-
 		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
@@ -194,17 +184,23 @@ void collectData(){
 
     	if(y%10 == 0) {
     		// Print sensor data at 1Hz.
-    		//int i;
-    		int i = 1;
-    		//for(i=0; i<NUM_MAGLEV_BMS; i++) {
+    		int i;
+    		for(i=0; i<NUM_MAGLEV_BMS; i++) {
     			DEBUGOUT("BMS %d sensors: \n", i);
     			int j = 0;
     			for (j = 0; j < 3; j++){
     				DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
     			}
-    		//}
+    		}
     		DEBUGOUT("\n");
     	}
+    }
+
+    if(CONTACT_SENSOR_ACTIVE){
+    	int contact_sensor_pushed;
+    	contact_sensor_pushed = GPIO_Contact_Sensor_Pushed();
+    	sensorData.contact_sensor_pushed = contact_sensor_pushed;
+    	DEBUGOUT("contact_sensor_pushed: %d\n", contact_sensor_pushed);
     }
 
 	getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.

@@ -5,10 +5,9 @@
 #include "ethernet.h"
 #include "pwm.h"
 #include "sensor_data.h"
-#include "communication.h"
 #include "sdcard.h"
 #include "gpio.h"
-#include "HEMS.h"
+#include "I2CPERIPHS.h"
 
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
 void initializeSensorsAndControls(){
@@ -69,6 +68,10 @@ void initializeSensorsAndControls(){
     	for (i = 0; i < NUM_MAGLEV_BMS; i++){
     		maglev_bmses[i] = initialize_Maglev_BMS(i);
     	}
+    }
+
+    if (CONTACT_SENSOR_ACTIVE){
+    	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
 }
 

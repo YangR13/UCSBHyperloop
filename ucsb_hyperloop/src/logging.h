@@ -6,6 +6,10 @@
 #include "ethernet.h"
 #include "subsystems.h"
 
+#define FILE_POSITION "position"
+#define FILE_HEMS "maglev"
+#define FILE_BMS "bms"
+
 typedef enum {
 	MAX_EVT
 } Event;
@@ -15,6 +19,11 @@ typedef enum {
 } Error;
 
 #define ERR
+
+void logData();
+void logPosition(int index);
+void logHEMS(int index);
+void logBMS(int index);
 
 void initEventLogFile();
 void initErrorLogFile();
