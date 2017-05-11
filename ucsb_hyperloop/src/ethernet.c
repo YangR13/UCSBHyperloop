@@ -344,7 +344,7 @@ void recvDataPacket() {
 				timeIterator++;
 			}
 		}
-//		rtc_initialize();
+		rtc_initialize();
 		RTC theTime;
 		theTime.year = (WORD)yearVal;
 		theTime.month = (BYTE)monthVal;
@@ -353,7 +353,7 @@ void recvDataPacket() {
 		theTime.hour = (BYTE)hourVal;
 		theTime.min = (BYTE)minVal;
 		theTime.sec = (BYTE)secVal;
-//		rtc_settime(&theTime);
+		rtc_settime(&theTime);
 		send_data_ack_helper(TAK, &pos);
 	}
 

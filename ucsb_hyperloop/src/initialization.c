@@ -73,10 +73,6 @@ void initializeSensorsAndControls(){
 }
 
 void initializeCommunications(){
-    if(SDCARD_ACTIVE) {
-        sdcardInit();
-        init_csv_files();
-    }
     if(ETHERNET_ACTIVE){
         ethernetInit(PROTO_TCP, 0);
         sendSensorDataTimerInit(LPC_TIMER2, TIMER2_IRQn, 4);
@@ -85,5 +81,9 @@ void initializeCommunications(){
         if(wizIntFlag) {
             wizIntFunction();
         }
+    }
+    if(SDCARD_ACTIVE) {
+        sdcardInit();
+        init_csv_files();
     }
 };

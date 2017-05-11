@@ -30,7 +30,7 @@ static const char LOG_TYPE_STRINGS[NUM_LOGS][8] = {
 	"ml-bat",
 };
 
-static long LOG_POSITIONS[NUM_LOGS][6];
+long LOG_POSITIONS[NUM_LOGS][6];
 
 char g_log_directory[9];
 
