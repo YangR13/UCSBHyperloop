@@ -5,7 +5,6 @@
 #include "ethernet.h"
 #include "pwm.h"
 #include "sensor_data.h"
-#include "communication.h"
 #include "sdcard.h"
 #include "gpio.h"
 #include "I2CPERIPHS.h"
@@ -39,6 +38,7 @@ void initializeSensorsAndControls(){
 
     if(RANGING_SENSORS_ACTIVE){
         rangingSensorsInit();
+        CALIBRATE_FLAG = 0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */

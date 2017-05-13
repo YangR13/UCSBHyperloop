@@ -11,17 +11,17 @@
 const uint8_t HUB_I2C_BUS[NUM_HUBS] = {0, 1, 2};
 const uint8_t HUB_AUX_GPIO_REGISTER[NUM_HUBS] = {4, 2, 2};
 const uint8_t HUB_AUX_PINS[NUM_HUBS][NUM_HUB_PORTS] = {
-  {31, 30, 29, 28, 27, 26, 25, 24},
-  {23, 22, 21, 20, 19, 18, 17, 16},
-  {23, 22, 21, 20, 19, 18, 17, 16}
+	{23, 22, 21, 20, 19, 18, 17, 16},
+	{23, 22, 21, 20, 19, 18, 17, 16},
+	{31, 30, 29, 28, 27, 26, 25, 24}
 };
 
 //HEMS Data:
 const uint8_t HEMS_HUB_PORT[NUM_HEMS][2] = {    //Max 2 per I2C bus or Hub
   {1, 2},   //{Hub, Port};
-  {1, 3},
+  {2, 3},
   {2, 2},
-  {2, 3}
+  {1, 3}
 };
 const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {0,  255,  0,  255};
 const float HEMS_CAL_5V0REF[NUM_HEMS] = {5.08,  5.08, 5.08, 5.08};
@@ -29,8 +29,8 @@ const float HEMS_CAL_3V3REF[NUM_HEMS] = {3.28,  3.28, 3.28, 3.30};
 
 //Maglev_BMS Data:
 const uint8_t MAGLEV_BMS_HUB_PORT[NUM_MAGLEV_BMS][2] = {   //Max 1 per I2C bus or Hub
-  {1, 1},   //{Hub, Port};
-  {2, 1}
+  {1, 0},   //{Hub, Port};
+  {2, 0}
 };
 const float MAGLEV_BMS_CAL_CONVERSIONS[NUM_MAGLEV_BMS][3][6] = {
   { //BMS0

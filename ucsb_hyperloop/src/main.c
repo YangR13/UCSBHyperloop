@@ -19,7 +19,7 @@
 // Hyperloop specific libraries
 #include "initialization.h"
 #include "sensor_data.h"
-#include "communication.h"
+#include "logging.h"
 #include "gpio.h"
 #include "qpn_port.h"
 #include "subsystems.h"
@@ -63,7 +63,7 @@ int main(void)
 	
         // ** DATA LOGGING **
         if (COMMUNICATION_ACTIVE){
-            logData(); 			// See communications.c
+            logData(); 			// See logging.c
         }
 	
         // Service high-level command routines ('go', 'all stop', 'emergency stop')

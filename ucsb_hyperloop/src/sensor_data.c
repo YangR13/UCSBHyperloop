@@ -66,14 +66,73 @@ void collectData(){
 	if(RANGING_SENSORS_ACTIVE) {
 
 		sensorData.longRangingData = getLongDistance();
-		sensorData.shortRangingData = getShortDistance();
-		positionAttitude = computePositionAttitudeRanging(sensorData.longRangingData, sensorData.shortRangingData);
+		 //		sensorData.shortRangingData = getShortDistance();
+		 //		positionAttitude = computePositionAttitudeRanging(sensorData.longRangingData, sensorData.shortRangingData);
+		 //
+		 //		sensorData.positionY = positionAttitude.y;
+		 //		sensorData.positionZ = positionAttitude.z;
+		 //		sensorData.roll = positionAttitude.roll;
+		 //		sensorData.pitch = positionAttitude.pitch;
+		 //		sensorData.yaw = positionAttitude.yaw;
 
-		sensorData.positionY = positionAttitude.y;
-		sensorData.positionZ = positionAttitude.z;
-		sensorData.roll = positionAttitude.roll;
-		sensorData.pitch = positionAttitude.pitch;
-		sensorData.yaw = positionAttitude.yaw;
+		float d_F = 17.0;
+		float d_R = 11.0;
+		float d_B = 17.0;
+		float d_L = 11.0;
+
+		// update z values to height of shortIR sensors
+		float z_0 = motors[0]->short_data[0];
+		float z_1 = motors[1]->short_data[0];
+		float z_2 = motors[2]->short_data[0];
+		float z_3 = motors[3]->short_data[0];
+
+		// initial z values
+		float z_0i = motors[0]->short_data[0];
+		float z_1i = motors[1]->short_data[0];
+		float z_2i = motors[2]->short_data[0];
+		float z_3i = motors[3]->short_data[0];
+
+		// d0 and d1 still need to measure these values when we do yaw sensors
+		float d0 = 1.0;
+		float d1 = 1.0;
+
+		// y0i and y1i
+		float y_0i = motors[0]->short_data[1];
+		float y_1i = motors[1]->short_data[1];
+
+		// y0 and y1
+		float y_0 = motors[0]->short_data[1];
+		float y_1 = motors[1]->short_data[1];
+
+
+		//initialization calculations
+		if(CALIBRATE_FLAG){
+			DEBUGOUT("Position Calibrated\n");
+			pitch_i = (z_1i + z_2i - z_0i - z_3i) / 2*(d_F + d_B);
+			roll_i = (z_0i + z_1i - z_2i - z_3i) / 2*(d_L + d_R);
+			z_ci = z_0i - (d_L * roll_i) + (d_F * pitch_i);
+		 	CALIBRATE_FLAG = 0;
+		}
+
+		// pitch
+
+		float pitch = ((z_1 + z_2 - z_0 - z_3) / 2*(d_F + d_B)) - pitch_i;
+
+		// roll
+		float roll = ((z_0 + z_1 - z_2 - z_3) / 2*(d_L + d_R)) - roll_i;
+
+		// COM vertical displacement
+		float z_c = (z_0 - (d_L * roll) + (d_F * pitch)) - z_ci;
+
+		// yaw
+		float yaw_i = (y_0i - y_1i) / (d0 + d1);
+		float yaw = ((y_0 - y_1) / (d0 + d1)) - yaw_i;
+
+		// lateral position
+		float y_ci = y_0i - (d0 * yaw_i);
+		float y_c = (y_0 - (d0 * yaw)) - y_ci;
+
+		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 
 	}
 
@@ -112,15 +171,14 @@ void collectData(){
 
     	if(y%10 == 0) {
     		// Print sensor data at 1Hz.
-    		//int i;
-    		int i = 1;
-    		//for(i=0; i<NUM_MAGLEV_BMS; i++) {
+    		int i;
+    		for(i=0; i<NUM_MAGLEV_BMS; i++) {
     			DEBUGOUT("BMS %d sensors: \n", i);
     			int j = 0;
     			for (j = 0; j < 3; j++){
     				DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
     			}
-    		//}
+    		}
     		DEBUGOUT("\n");
     	}
     }

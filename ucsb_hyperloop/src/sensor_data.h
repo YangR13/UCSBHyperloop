@@ -72,4 +72,9 @@ uint8_t collectDataFlag;
 uint8_t getPressureFlag;
 sensor sensorData;
 
+int CALIBRATE_FLAG;
+float pitch_i;
+float roll_i;
+float z_ci;
+
 #endif
