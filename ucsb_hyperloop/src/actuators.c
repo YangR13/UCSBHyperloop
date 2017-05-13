@@ -1,7 +1,7 @@
 #include "actuators.h"
 
 const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {0, 0, 0, 0};
-const uint8_t ACTUATOR_I2C_DIP[NUM_ACTUATOR_BOARDS] = {0,  255,  0,  255}; // TODO: Change to realistic values!
+const uint8_t BOARD_I2C_DIP[NUM_ACTUATOR_BOARDS] = {0,  255,  0,  255}; // TODO: Change to realistic values!
 #ifdef ARDUINO
 // Outputs
 #define DIR1 52
@@ -21,8 +21,8 @@ const uint8_t ACTUATOR_I2C_DIP[NUM_ACTUATOR_BOARDS] = {0,  255,  0,  255}; // TO
 #define FAULT1 0
 #define FAULT2 0
 const uint8_t BOARD_PIN_PORTS[4] = {0, 0, 0, 0, 0, 0};
-const uint8_t BOARD_PINS[12] = {DIR1, PWM1, DIR2, PWM2, FAULT1, FAULT2};
-const uint8_t ARDUINO_ADC_PINS = {POS1, CUR1, POS2, CUR2, T1, T2, T3, T4};
+const uint8_t BOARD_PINS[12] = {DIR1, DIR2, FAULT1, FAULT2, PWM1, PWM2};
+const uint8_t ARDUINO_ADC_PINS = {POS1, POS2, CUR1, CUR2, T1, T2, T3, T4};
 #endif
 #ifdef LPC
 // TODO: Change these to realistic pin values!
@@ -37,7 +37,7 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
   board->bus = BOARD_I2C_BUS[board->identity];
-  board->ADC_device_address = ADC_Address_Select[(HEMS_I2C_DIP[board->identity] >> 6) & 0b11];
+  board->ADC_device_address = ADC_Address_Select[(BOARD_I2C_DIP[board->identity] >> 6) & 0b11];
 
   // Initialize thermistor moving averages (with first read)
   int temp_counter;
@@ -45,14 +45,25 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
     board->temperatures[temp_counter] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address[0], temp_counter + 1));
   }
 
-  board->amps = 0;
-  board->alarm = 0;
+  // Initialize current readings
+  int amps_counter;
+  for (amps_counter = 0; amps_counter < 2; amps_counter++){
+      board->amps[amps_counter] = 0;
+  }
 
-  GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir); // Direction
-  GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir); // H-bridge 1 fault
-  GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir); // H-bridge 2 fault
-  PWM_Setup(uint8_t port, uint8_t pin, uint8_t dir); // PWM output
+  // Initialize H-bridge fault indicators
+  int fault_counter;
+  for (fault_counter = 0; fault_counter < 2; fault_counter++){
+      board->bridge_faults[fault_counter] = 0;
+  }
 
+  // Initialize GPIO/PWM pins
+  GPIO_Setup(BOARD_PIN_PORTS[0], BOARD_PINS[0], OUT); // Direction 1
+  GPIO_Setup(BOARD_PIN_PORTS[1], BOARD_PINS[1], OUT); // Direction 2
+  GPIO_Setup(BOARD_PIN_PORTS[2], BOARD_PINS[2], IN); // H-bridge 1 fault
+  GPIO_Setup(BOARD_PIN_PORTS[3], BOARD_PINS[3], IN); // H-bridge 2 fault
+  PWM_Setup(BOARD_PIN_PORTS[4], BOARD_PINS[4], OUT); // PWM output 1
+  PWM_Setup(BOARD_PIN_PORTS[5], BOARD_PINS[5], OUT); // PWM output 2
 
   return board;
 }
@@ -61,24 +72,42 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
 uint8_t update_actuator_board(ACTUATORS* board) {
   //Record Temperatures
   int temp_counter;
-  for (temp_counter = 0; temp_counter < 4; temp_counter++) {
+  for (temp_counter = 0; temp_counter < NUM_THERMISTORS; temp_counter++) {
     int new_temperature = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, temp_counter + 1));
     new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * board->temperatures[temp_counter]);
     board->temperatures[temp_counter] = new_temperature;
-    if (new_temperature > HEMS_MAX_TEMP || new_temperature < HEMS_MIN_TEMP)
+    /*
+    if (new_temperature > HEMS_MAX_TEMP || new_temperature < HEMS_MIN_TEMP){
       board->alarm |= 0b00000001;
+    }
+    */
   }
 
-  // Record Motor Controller Current
+  // Record Motor Controller Currents
   // With no current, the ACS759x150B should output 3.3V/2
-  uint16_t ammeter_ratio = ADC_read(board->bus, board->ADC_device_address, 7);
-  uint8_t new_amps = abs(1000 * ammeter_ratio * HEMS_CAL_5V0REF[board->identity] / MAX12BITVAL - 1000 * HEMS_CAL_3V3REF[board->identity] / 2) / AMMETER_150A_SENSITIVITY; //Done in mV
-  board->amps = new_amps;
+  int amps_counter;
+  for (amps_counter = 0; amps_counter < 2; amps_counter++){
+      uint16_t ammeter_ratio = ADC_read(board->bus, board->ADC_device_address, 2 + amps_counter);
+      uint8_t new_amps = abs(1000 * ammeter_ratio * HEMS_CAL_5V0REF[board->identity] / MAX12BITVAL - 1000 * HEMS_CAL_3V3REF[board->identity] / 2) / AMMETER_150A_SENSITIVITY; //Done in mV
+      board->amps[amps_counter] = new_amps;
+      /*
+      if (new_amps > HEMS_MAX_CURRENT){
+          board->alarm |= 0b00000010;
+      }
+      */
+  }
 
-  if (new_amps > HEMS_MAX_CURRENT)
-    board->alarm |= 0b00000010;
+  // Update direction and PWM
+  int control_counter;
+  for (control_counter = 0; control_counter < 2; control_counter++){
 
-  return board->alarm;
+      GPIO_Write(BOARD_PIN_PORTS[0], BOARD_PINS[0], board->direction[control_counter]);
+      GPIO_Write(BOARD_PIN_PORTS[1], BOARD_PINS[1], board->direction[control_counter]);
+      GPIO_Write(BOARD_PIN_PORTS[0], BOARD_PINS[0], board->direction[control_counter]);
+      GPIO_Write(BOARD_PIN_PORTS[1], BOARD_PINS[1], board->direction[control_counter]);
+  }
+  //return board->alarm;
+  return 0;
 }
 
 void GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir) {
