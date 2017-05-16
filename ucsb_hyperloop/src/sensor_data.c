@@ -170,6 +170,7 @@ void collectData(){
     		// Print sensor data at 1Hz.
     		int i;
     		for(i=0; i<NUM_HEMS; i++) {
+    			DEBUGOUT("Distance: %f", motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323); // Also multiply by radius later
     			DEBUGOUT("Motor %d sensors: RPM0=%d, RPM1=%d CURRENT=%d, TEMP=%d,%d,%d,%d, SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
     		}
     		DEBUGOUT("\n");
