@@ -134,6 +134,7 @@
 #define BMSV			"BMSV"		// BMS Voltage
 #define BMST			"BMST"		// BMS Temperature
 
+
 /* Web App control for intializing the positioning */
 #define CALIBRATE_SIG	"CALIBRATE_SIG\0"
 

@@ -223,7 +223,13 @@ void recvDataPacket() {
 //	for (i = 0; i < DATA_BUF_SIZE; i++) {
 //		DEBUGOUT("%i:%c\n", i, Net_Rx_Data[i]);
 //	}
+
 //	DEBUGOUT("Receiving Data Packet!\n");
+
+	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
+		DEBUGOUT("CALIBRATE_SIG RECEIVED\n");
+		CALIBRATE_FLAG = 1;
+	}
 
 	// Check if the message received matches any state machine control signals, issue it if so.
 	int i;

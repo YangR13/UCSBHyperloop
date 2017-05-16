@@ -12,7 +12,11 @@
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
 void initializeSensorsAndControls(){
 
-    if(PWM_ACTIVE){
+    if(I2C_ACTIVE){
+    	i2cInit(I2C1, SPEED_100KHZ);
+    	i2cInit(I2C2, SPEED_100KHZ);
+    }
+	if(PWM_ACTIVE){
         Init_PWM(LPC_PWM1);
         Init_Channel(LPC_PWM1, 1);
         Set_Channel_PWM(LPC_PWM1, 1, 0.5);
@@ -31,6 +35,10 @@ void initializeSensorsAndControls(){
         i2cInit(I2C2, SPEED_100KHZ);
         smooshedTwo = temperaturePressureInit(I2C2);
     }
+    if(ACCEL_ACTIVE){
+    	collectCalibrationData(I2C1);
+    	collectCalibrationData(I2C2);
+    }
     if(PHOTO_ELECTRIC_ACTIVE){
         photoelectricInit();
         sensorData.photoelectric = 0.0;
@@ -46,11 +54,6 @@ void initializeSensorsAndControls(){
     }
 
     if(MOTOR_BOARD_I2C_ACTIVE) {
-        // Initialize the I^2C buses for communication with the HEMS boards
-    	//i2cInit(I2C0, SPEED_100KHZ);
-    	i2cInit(I2C1, SPEED_100KHZ);
-    	i2cInit(I2C2, SPEED_100KHZ);
-
     	// Create objects to hold parameters of the HEMS boards
         motors[0] = initialize_HEMS(0);   			// Front Left
         motors[1] = initialize_HEMS(1);            	// Back Left
