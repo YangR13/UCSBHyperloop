@@ -30,11 +30,18 @@ XYZ getAccelerometerData( I2C_ID_T id ){
 	rawAcceleration.y = ((float)concAcceleration[1]) * LSM303ACCEL_MG_LSB * SENSORS_GRAVITY_STANDARD;
 	rawAcceleration.z = ((float)concAcceleration[2]) * LSM303ACCEL_MG_LSB * SENSORS_GRAVITY_STANDARD;
 
-	if (id == 1){
-	acceleration.x = rawAcceleration.x*alpha + sensorData.accelX*beta - sensorData.initialAccelX;
-	acceleration.y = rawAcceleration.y*alpha + sensorData.accelY*beta - sensorData.initialAccelY;
-	acceleration.z = rawAcceleration.z*alpha + sensorData.accelZ*beta - sensorData.initialAccelZ;
+	if (id == I2C0){
+	acceleration.x = rawAcceleration.x*alpha + sensorData.accelX*beta - ACCEL_0_INITIAL_X; //sensorData.initialAccelX;
+	acceleration.y = rawAcceleration.y*alpha + sensorData.accelY*beta - ACCEL_0_INITIAL_Y; //sensorData.initialAccelY;
+	acceleration.z = rawAcceleration.z*alpha + sensorData.accelZ*beta - ACCEL_0_INITIAL_Z; //sensorData.initialAccelZ;
 	}
+
+	if (id == I2C1){
+	acceleration.x = rawAcceleration.x*alpha + sensorData.accelX*beta - ACCEL_1_INITIAL_X; //sensorData.initialAccelX;
+	acceleration.y = rawAcceleration.y*alpha + sensorData.accelY*beta - ACCEL_1_INITIAL_Y; //sensorData.initialAccelY;
+	acceleration.z = rawAcceleration.z*alpha + sensorData.accelZ*beta - ACCEL_1_INITIAL_Z; //sensorData.initialAccelZ;
+	}
+
 	return acceleration;
 }
 
