@@ -24,17 +24,6 @@ void initializeSensorsAndControls(){
     if(GATHER_DATA_ACTIVE){
         gatherSensorDataTimerInit(LPC_TIMER1, TIMER1_IRQn, 10);
     }
-    if(SMOOSHED_ONE_ACTIVE){
-        i2cInit(I2C1, SPEED_100KHZ);
-        smooshedOne = temperaturePressureInit(I2C1);
-        collectCalibrationData(I2C1);
-        getPressure(smooshedOne, I2C1);
-        getPressureFlag = 0;
-    }
-    if(SMOOSHED_TWO_ACTIVE){
-        i2cInit(I2C2, SPEED_100KHZ);
-        smooshedTwo = temperaturePressureInit(I2C2);
-    }
     if(ACCEL_ACTIVE){
     	collectCalibrationData(I2C1);
     	collectCalibrationData(I2C2);
@@ -43,7 +32,6 @@ void initializeSensorsAndControls(){
         photoelectricInit();
         sensorData.photoelectric = 0.0;
     }
-
     if(RANGING_SENSORS_ACTIVE){
         rangingSensorsInit();
         CALIBRATE_FLAG = 0;

@@ -3,6 +3,14 @@
 
 #include "sensor_data.h"
 
+#define ACCEL_0_INITIAL_X	0
+#define ACCEL_0_INITIAL_Y	0
+#define ACCEL_0_INITIAL_Z	0
+#define ACCEL_1_INITIAL_X	0
+#define ACCEL_1_INITIAL_Y	0
+#define ACCEL_1_INITIAL_Z	0
+
+
 #define ACC_ADDRESS      0x19
 #define MAG_ADDRESS      0x1E
 #define SENSORS_GRAVITY_STANDARD        (9.80665F)  /**< Earth's gravity in m/s^2 */

@@ -16,7 +16,6 @@ void collectCalibrationData( I2C_ID_T id ){
 	sensorData.initialAccelX = initialAccel.x;
 	sensorData.initialAccelY = initialAccel.y;
 	sensorData.initialAccelZ = initialAccel.z;
-
 }
 
 void collectData(){
@@ -25,56 +24,18 @@ void collectData(){
 	sensorData.dataPrintFlag += 1;
 
 	XYZ acceleration1, acceleration2, velocity, position;
-	//XYZ acceleration, velocity, position;
-	//rangingData shortRangingData, longRangingData;
 	positionAttitudeData positionAttitude;
-	/*
-	if (SMOOSHED_ONE_ACTIVE) {
 
-		if(getPressureFlag){
-			sensorData.pressure1 = getPressure(smooshedOne, I2C1);
-		}
-		else{
-			sensorData.temp1 = getTemperature(smooshedOne, I2C1);
-		}
-
-		acceleration = getAccelerometerData(I2C1);
-		sensorData.accelX = acceleration.x;
-		sensorData.accelY = acceleration.y;
-		sensorData.accelZ = acceleration.z;
-
-		velocity = getInertialVelocity();
-		sensorData.velocityX = velocity.x;
-		sensorData.velocityY = velocity.y;
-		sensorData.velocityZ = velocity.z;
-
-		position = getInertialPosition();
-		sensorData.positionX = position.x;
-		sensorData.positionY = position.y;
-		sensorData.positionZ = position.z;
-	}
-
-	if (SMOOSHED_TWO_ACTIVE) {
-
-		if(getPressureFlag){
-			sensorData.pressure2 = getPressure(smooshedOne, I2C2);
-		}
-		else{
-			sensorData.temp2 = getTemperature(smooshedOne, I2C2);
-		}
-
-	}
-	*/
     if (ACCEL_ACTIVE) {
 
-        acceleration1 = getAccelerometerData(I2C2); // NOTE change back to I2C1
+        acceleration1 = getAccelerometerData(I2C1); // NOTE change back to I2C1
         acceleration2 = getAccelerometerData(I2C2);
         sensorData.accelX = (acceleration1.x + acceleration2.x) / 2.0;
         sensorData.accelY = (acceleration1.y + acceleration2.y) / 2.0;
         sensorData.accelZ = (acceleration1.z + acceleration2.z) / 2.0;
         DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
         DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
-        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+        //DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
         velocity = getInertialVelocity();
         sensorData.velocityX = velocity.x;
         sensorData.velocityY = velocity.y;
@@ -131,7 +92,6 @@ void collectData(){
 		}
 
 		// pitch
-
 		float pitch = ((z_1 + z_2 - z_0 - z_3) / 2*(d_F + d_B)) - pitch_i;
 
 		// roll
