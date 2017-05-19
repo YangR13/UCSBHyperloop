@@ -78,7 +78,7 @@ typedef struct {
   uint8_t identity;
   
   //I2C Parameters
-  uint8_t bus;                    //Which I2C bus
+  uint8_t bus;                     //Which I2C bus
   uint8_t ADC_device_address[1];   //ADC LTC2309 - Thermistors, Ammeter
   uint8_t DAC_device_address[1];   //DAC MCP4725 - Throttle
   uint8_t IOX_device_address[2];   //IOX MCP23017 - Tachometer    {MAGLEV, NAVIGATION}

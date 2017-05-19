@@ -18,8 +18,8 @@ const uint8_t HUB_AUX_PINS[NUM_HUBS][NUM_HUB_PORTS] = {
 
 //HEMS Data:
 const uint8_t HEMS_HUB_PORT[NUM_HEMS][2] = {    //Max 2 per I2C bus or Hub
-  {1, 2},   //{Hub, Port};
-  {2, 3},
+  {1, 6},//{1, 2},   //{Hub, Port};
+  {2, 6},//{2, 3},
   {2, 2},
   {1, 3}
 };
