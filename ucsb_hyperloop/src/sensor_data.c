@@ -208,11 +208,11 @@ void collectData(){
         //for (i = 0; i < 2; i++){
             update_actuator_board(braking_boards[i]);
             DEBUGOUT("Braking board 0 sensor data:\n");
-            DEBUGOUT("Thermistors: %f | %f | %f | %f\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
-            DEBUGOUT("Position: %f | %f \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
-            DEBUGOUT("Current: %f | %f \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+            DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+            DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+            //DEBUGOUT("Current: %f | %f \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
             DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-
+            DEBUGOUT("\n\n");
         //}
     }
 

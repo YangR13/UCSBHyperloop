@@ -31,10 +31,10 @@ const uint8_t ARDUINO_ADC_PINS = {POS1, POS2, CUR1, CUR2, T1, T2, T3, T4};
 // TODO: Change these to realistic pin values!
 // Board pins, in order, are
 // Board 1 - DIR1, DIR2, FAULT1, FAULT2 | Board 2, etc
-const uint8_t BOARD_PIN_PORTS[16] = {0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t BOARD_PINS[16] =      {0, 12, 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t BOARD_PIN_PORTS[16] = {3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t BOARD_PINS[16] =      {12, 12, 13, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 const LPC_PWM_T * BOARD_PWM_PORTS[8] = {LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1};
-const uint8_t BOARD_PWM_CHANNELS[8] = {0, 1, 0, 0, 0, 0, 0, 0};
+const uint8_t BOARD_PWM_CHANNELS[8] = {5, 6, 4, 3, 2, 1, 1, 1};
 /* Alternate arrangement (in order of ADC channel)
 const uint8_t ADC_PORTS[8] = {LTC2309_CHN_0, LTC2309_CHN_1, LTC2309_CHN_2, LTC2309_CHN_3, LTC2309_CHN_4, LTC2309_CHN_5, LTC2309_CHN_6, LTC2309_CHN_7};
 // ADC ports correspond to: Temp4, Pos2, Temp3, Curr2, Temp2, Pos1, Temp1, Curr1
@@ -149,8 +149,8 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
 
   // Read position feedback
-  board->position[0] = ADC_read(board->bus, board->ADC_device_address, 5);
-  board->position[1] = ADC_read(board->bus, board->ADC_device_address, 1);
+  board->position[0] = (0.5 * ADC_read(board->bus, board->ADC_device_address, 5)) + (0.5 * board->position[0]);
+  board->position[1] = (0.5 * ADC_read(board->bus, board->ADC_device_address, 1)) + (0.5 * board->position[1]);
 
   // Read fault flags
   board->bridge_fault[0] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
@@ -158,6 +158,10 @@ uint8_t update_actuator_board(ACTUATORS* board) {
 
   //return board->alarm;
   return 0;
+}
+
+void step_in(){
+    // Yeah!
 }
 
 /*

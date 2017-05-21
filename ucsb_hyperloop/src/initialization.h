@@ -23,7 +23,7 @@
 #define SERVICE_PROPULSION_ACTIVE	0
 
 // Communications
-#define ETHERNET_ACTIVE         	0
+#define ETHERNET_ACTIVE         	1
 #define SDCARD_ACTIVE           	0
 #define COMMUNICATION_ACTIVE    	(ETHERNET_ACTIVE || SDCARD_ACTIVE)
 
