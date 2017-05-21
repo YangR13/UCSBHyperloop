@@ -137,6 +137,12 @@
 
 /* Web App control for intializing the positioning */
 #define CALIBRATE_SIG	"CALIBRATE_SIG\0"
+/* Web App controls for braking */
+#define STOP_BRAKES_SIG "STOP_BRAKES_SIG\0"
+#define CONTINUOUSLY_TIGHTEN_BRAKES_SIG "CONTINUOUSLY_TIGHTEN_BRAKES_SIG\0"
+#define CONTINUOUSLY_LOOSEN_BRAKES_SIG "CONTINUOUSLY_LOOSEN_BRAKES_SIG\0"
+#define TIGHTEN_BRAKES_SIG "TIGHTEN_BRAKES_SIG\0"
+#define LOOSEN_BRAKES_SIG "LOOSEN_BRAKES_SIG\0"
 
 extern uint16_t gSn_RX_BASE[];
 extern uint16_t gSn_TX_BASE[];
