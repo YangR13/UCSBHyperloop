@@ -23,10 +23,11 @@ void collectData(){
 	collectDataFlag = 0;
 	sensorData.dataPrintFlag += 1;
 
-	XYZ acceleration, velocity, position;
+	XYZ acceleration1, acceleration2, velocity, position;
+	//XYZ acceleration, velocity, position;
 	//rangingData shortRangingData, longRangingData;
 	positionAttitudeData positionAttitude;
-
+	/*
 	if (SMOOSHED_ONE_ACTIVE) {
 
 		if(getPressureFlag){
@@ -62,18 +63,30 @@ void collectData(){
 		}
 
 	}
+	*/
+    if (ACCEL_ACTIVE) {
+
+        acceleration1 = getAccelerometerData(I2C2); // NOTE change back to I2C1
+        acceleration2 = getAccelerometerData(I2C2);
+        sensorData.accelX = (acceleration1.x + acceleration2.x) / 2.0;
+        sensorData.accelY = (acceleration1.y + acceleration2.y) / 2.0;
+        sensorData.accelZ = (acceleration1.z + acceleration2.z) / 2.0;
+        DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
+        DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
+        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+        velocity = getInertialVelocity();
+        sensorData.velocityX = velocity.x;
+        sensorData.velocityY = velocity.y;
+        sensorData.velocityZ = velocity.z;
+        position = getInertialPosition();
+        sensorData.positionX = position.x;
+        sensorData.positionY = position.y;
+        sensorData.positionZ = position.z;
+    }
+
 
 	if(RANGING_SENSORS_ACTIVE) {
 
-		sensorData.longRangingData = getLongDistance();
-		 //		sensorData.shortRangingData = getShortDistance();
-		 //		positionAttitude = computePositionAttitudeRanging(sensorData.longRangingData, sensorData.shortRangingData);
-		 //
-		 //		sensorData.positionY = positionAttitude.y;
-		 //		sensorData.positionZ = positionAttitude.z;
-		 //		sensorData.roll = positionAttitude.roll;
-		 //		sensorData.pitch = positionAttitude.pitch;
-		 //		sensorData.yaw = positionAttitude.yaw;
 
 		float d_F = 17.0;
 		float d_R = 11.0;
@@ -104,7 +117,9 @@ void collectData(){
 		float y_0 = motors[0]->short_data[1];
 		float y_1 = motors[1]->short_data[1];
 
-
+		float pitch_i = 0.0;
+		float roll_i = 0.0;
+		float z_ci = 0.0;
 		//initialization calculations
 		if(CALIBRATE_FLAG){
 			DEBUGOUT("Position Calibrated\n");
@@ -131,9 +146,7 @@ void collectData(){
 		// lateral position
 		float y_ci = y_0i - (d0 * yaw_i);
 		float y_c = (y_0 - (d0 * yaw)) - y_ci;
-
 		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
-
 	}
 
     if (PHOTO_ELECTRIC_ACTIVE){

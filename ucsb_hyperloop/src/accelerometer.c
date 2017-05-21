@@ -46,6 +46,11 @@ XYZ getInitialAccelMatrix( I2C_ID_T id ){
 	float alpha = 0.2;
 	float beta = 1 - alpha;
 
+	// loop used to avoid potential noise when initializing accelerometers
+	for (i = 0; i < 10; i++){
+			getAccelerometerData(id);
+		}
+
 	for (i = 0; i < 20; i++){
 		intermediateAccel = getAccelerometerData(id);
 		initialAccel.x = intermediateAccel.x*alpha + initialAccel.x*beta;
