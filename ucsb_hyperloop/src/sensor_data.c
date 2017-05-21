@@ -6,6 +6,7 @@
 #include "temp_press.h"
 #include "kinematics.h"
 #include "photo_electric.h"
+#include "timer.h"
 
 int y = 0;
 void collectCalibrationData( I2C_ID_T id ){
@@ -17,6 +18,43 @@ void collectCalibrationData( I2C_ID_T id ){
 	sensorData.initialAccelZ = initialAccel.z;
 
 }
+
+int start_pos = 0;
+int stepping = 0;
+
+void TIMER3_IRQHandler(void){
+    Chip_TIMER_ClearMatch( LPC_TIMER3, 1 );
+    NVIC_ClearPendingIRQ(TIMER3_IRQn);
+
+    if (stepping){
+        stepping = 0;
+        braking_boards[0]->enable[0] = 0;
+        braking_boards[0]->enable[1] = 0;
+        update_actuator_board(braking_boards[0]);
+//        DEBUGOUT("DONE\n");
+        DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, braking_boards[0]->position[1]);
+    }
+
+}
+
+void step_in(){
+    // Yeah!
+    stepping = 1;
+    start_pos = braking_boards[0]->position[1];
+
+    braking_boards[0]->direction[0] = 0;
+    braking_boards[0]->direction[1] = 0;
+    braking_boards[0]->enable[0] = 0.45;
+    braking_boards[0]->enable[1] = 0.45;
+    update_actuator_board(braking_boards[0]);
+//    Chip_TIMER_Reset(LPC_TIMER3);
+//    Chip_TIMER_Enable(LPC_TIMER3);
+    Reset_Timer_Counter(LPC_TIMER3);
+//    NVIC_ClearPendingIRQ(TIMER3_IRQn);
+//    NVIC_EnableIRQ(TIMER3_IRQn);
+}
+
+
 
 void collectData(){
 
@@ -207,12 +245,18 @@ void collectData(){
         int i = 0;
         //for (i = 0; i < 2; i++){
             update_actuator_board(braking_boards[i]);
-            DEBUGOUT("Braking board 0 sensor data:\n");
-            DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
-            DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
-            //DEBUGOUT("Current: %f | %f \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
-            DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-            DEBUGOUT("\n\n");
+
+
+/*
+            if(y%20 == 0) {
+                DEBUGOUT("Braking board 0 sensor data:\n");
+                DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+                DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+                //DEBUGOUT("Current: %f | %f \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+                DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
+                DEBUGOUT("\n\n");
+            }
+            */
         //}
     }
 

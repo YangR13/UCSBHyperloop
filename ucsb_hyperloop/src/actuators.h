@@ -56,7 +56,6 @@ void GPIO_Write(uint8_t port, uint8_t pin, uint8_t setting);
 uint8_t GPIO_Read(uint8_t port, uint8_t pin);
 
 
-void step_in();
 // These are const to make the compiler happy.
 void PWM_Setup(const void * pwm, uint8_t pin);
 void PWM_Write(const void * pwm, uint8_t pin, float duty);

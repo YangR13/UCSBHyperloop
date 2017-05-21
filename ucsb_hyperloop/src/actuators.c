@@ -94,7 +94,7 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->direction[0] = 1;  // Forward
   board->direction[1] = 1;  // Forward
   board->enable[0] = 0;     // Stopped
-  board->enable[0] = 0;     // Stopped
+  board->enable[1] = 0;     // Stopped
 
   // Write default values to GPIO/PWM pins
   GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], board->direction[0]); // Direction 1
@@ -105,8 +105,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   return board;
 }
 
-
 uint8_t update_actuator_board(ACTUATORS* board) {
+
     // Record Temperatures
     board->temperatures[0] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 6));
     board->temperatures[1] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 4));
@@ -149,8 +149,8 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
 
   // Read position feedback
-  board->position[0] = (0.5 * ADC_read(board->bus, board->ADC_device_address, 5)) + (0.5 * board->position[0]);
-  board->position[1] = (0.5 * ADC_read(board->bus, board->ADC_device_address, 1)) + (0.5 * board->position[1]);
+  board->position[0] = (0.2 * ADC_read(board->bus, board->ADC_device_address, 5)) + (0.8 * board->position[0]);
+  board->position[1] = (0.2 * ADC_read(board->bus, board->ADC_device_address, 1)) + (0.8 * board->position[1]);
 
   // Read fault flags
   board->bridge_fault[0] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
@@ -158,10 +158,6 @@ uint8_t update_actuator_board(ACTUATORS* board) {
 
   //return board->alarm;
   return 0;
-}
-
-void step_in(){
-    // Yeah!
 }
 
 /*
