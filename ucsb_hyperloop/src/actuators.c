@@ -44,20 +44,25 @@ const uint8_t ADC_PORTS[8] = {LTC2309_CHN_6, LTC2309_CHN_4, LTC2309_CHN_2, LTC23
 // ADC_PORTS correspond to: Temp1, Temp2, Temp3, Temp4, Pos1, Pos2, Curr1, Curr2
 #endif
 
-const uint8_t ADC_Address_Select[4] = {0x8, 0xA, 0x1A, 0x28};
+const uint8_t ADC_Address_Select_actuators[4] = {0x8, 0xA, 0x1A, 0x28};
 
 
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
   board->bus = BOARD_I2C_BUS[board->identity];
-  board->ADC_device_address[0] = ADC_Address_Select[(BOARD_I2C_DIP[board->identity] >> 6) & 0b11];
+  board->ADC_device_address = ADC_Address_Select_actuators[(BOARD_I2C_DIP[board->identity] >> 6) & 0b11];
 
   // Initialize thermistor moving averages (with first read)
-  int temp_counter;
+/*  int temp_counter;
   for (temp_counter = 0; temp_counter < 4; temp_counter++) {
-    board->temperatures[temp_counter] = calculate_temperature(ADC_read_actuators(board->bus, board->ADC_device_address[0], ADC_PORTS[temp_counter]));
+    board->temperatures[temp_counter] = calculate_temperature(ADC_read_actuators(board->bus, board->ADC_device_address, ADC_PORTS[temp_counter]));
   }
+*/
+  board->temperatures[0] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 6));
+  board->temperatures[1] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 4));
+  board->temperatures[2] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 2));
+  board->temperatures[3] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 0));
 
   // Initialize current readings
   int amps_counter;
@@ -71,6 +76,12 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
       board->bridge_fault[fault_counter] = 0;
   }
 
+  // Initialize position variables
+  int pos_counter;
+  for (pos_counter = 0; pos_counter < 2; pos_counter++){
+      board->position[pos_counter] = 0;
+  }
+
   // Initialize GPIO/PWM pins
   GPIO_Setup(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], OUT); // Direction 1
   GPIO_Setup(BOARD_PIN_PORTS[(board->identity * 4) + 1], BOARD_PINS[(board->identity * 4) + 1], OUT); // Direction 2
@@ -79,12 +90,30 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   PWM_Setup(BOARD_PWM_PORTS[(board->identity * 2) + 0], BOARD_PWM_CHANNELS[(board->identity * 2) + 0]); // PWM output 1
   PWM_Setup(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1]); // PWM output 2
 
+  // Initialize control values
+  board->direction[0] = 1;  // Forward
+  board->direction[1] = 1;  // Forward
+  board->enable[0] = 0;     // Stopped
+  board->enable[0] = 0;     // Stopped
+
+  // Write default values to GPIO/PWM pins
+  GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], board->direction[0]); // Direction 1
+  GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 1], BOARD_PINS[(board->identity * 4) + 1], board->direction[1]); // Direction 2
+  PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 0], BOARD_PWM_CHANNELS[(board->identity * 2) + 0], board->enable[0]); // PWM output 1
+  PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
+
   return board;
 }
 
 
 uint8_t update_actuator_board(ACTUATORS* board) {
-  //Record Temperatures
+    // Record Temperatures
+    board->temperatures[0] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 6));
+    board->temperatures[1] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 4));
+    board->temperatures[2] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 2));
+    board->temperatures[3] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 0));
+
+#if 0
   int temp_counter;
   for (temp_counter = 0; temp_counter < NUM_THERMISTORS; temp_counter++) {
     int new_temperature = calculate_temperature(ADC_read_actuators(board->bus, board->ADC_device_address, ADC_PORTS[temp_counter]));
@@ -96,6 +125,7 @@ uint8_t update_actuator_board(ACTUATORS* board) {
     }
     */
   }
+#endif
 
   /*
   // Record Motor Controller Currents
@@ -117,6 +147,10 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 1], BOARD_PINS[(board->identity * 4) + 1], board->direction[1]); // Direction 2
   PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 0], BOARD_PWM_CHANNELS[(board->identity * 2) + 0], board->enable[0]); // PWM output 1
   PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
+
+  // Read position feedback
+  board->position[0] = ADC_read(board->bus, board->ADC_device_address, 5);
+  board->position[1] = ADC_read(board->bus, board->ADC_device_address, 1);
 
   // Read fault flags
   board->bridge_fault[0] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
@@ -177,6 +211,7 @@ void PWM_Write(const void * pwm, uint8_t pin, float duty) {
 #endif // LPC
 }
 
+/*
 uint16_t ADC_read_actuators(uint8_t bus, uint8_t ADC_address, uint8_t ADC_channel) {
   uint8_t input_buffer[2];
 
@@ -189,14 +224,15 @@ uint16_t ADC_read_actuators(uint8_t bus, uint8_t ADC_address, uint8_t ADC_channe
   input_buffer[1] = Wire.read();  //D3 D2 D1 D0 X X X X
 #endif //ARDUINO
 #ifdef LPC
-  Chip_I2C_MasterSend(bus, ADC_address, ADC_channel | ADC_CONFIG, 1);
+  uint8_t channel = (ADC_channel | ADC_CONFIG);
+  Chip_I2C_MasterSend(bus, ADC_address, &channel, 1);
   Chip_I2C_MasterRead(bus, ADC_address, input_buffer, 2);
 #endif //LPC
 
   uint16_t ADC_value = (input_buffer[0] << 4) | (input_buffer[1] >> 4);
   return ADC_value;
 }
-
+*/
 #if 0
 
 #define PWM_CYCLE 253

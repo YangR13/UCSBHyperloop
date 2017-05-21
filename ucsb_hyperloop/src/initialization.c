@@ -75,6 +75,7 @@ void initializeSensorsAndControls(){
     }
 
     if (BRAKING_ACTIVE){
+        i2cInit(I2C1, SPEED_100KHZ);
         Init_PWM(LPC_PWM1);
         //int i;
         //for (i = 0; i < 2; i++){

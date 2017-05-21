@@ -64,7 +64,7 @@ typedef struct {
 
   //I2C Parameters
   uint8_t bus;                     //Which I2C bus
-  uint8_t ADC_device_address[1];   //ADC LTC2309 - Thermistors, Ammeter
+  uint8_t ADC_device_address;   //ADC LTC2309 - Thermistors, Ammeter
 
   //Data Storage
   int temperatures[4];
@@ -119,6 +119,8 @@ int calculate_temperature(uint16_t therm_adc_val);
 #define LTC2309_CHN_7   0xF0
 
 //ADC Associated Functions:
-uint16_t ADC_read_actuators(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
+//uint16_t ADC_read_actuators(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
+uint16_t ADC_read(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
+
 
 #endif //ACTUATORS_H
