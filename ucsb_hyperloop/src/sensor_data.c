@@ -27,15 +27,20 @@ void collectData(){
 	positionAttitudeData positionAttitude;
 
     if (ACCEL_ACTIVE) {
-
-        acceleration1 = getAccelerometerData(I2C1); // NOTE change back to I2C1
+        acceleration1 = getAccelerometerData(I2C1);
         acceleration2 = getAccelerometerData(I2C2);
+        sensorData.accelX1 = acceleration1.x;
+        sensorData.accelX2 = acceleration2.x;
+        sensorData.accelY1 = acceleration1.y;
+        sensorData.accelY2 = acceleration2.y;
+        sensorData.accelZ1 = acceleration1.z;
+        sensorData.accelZ2 = acceleration2.z;
         sensorData.accelX = (acceleration1.x + acceleration2.x) / 2.0;
         sensorData.accelY = (acceleration1.y + acceleration2.y) / 2.0;
         sensorData.accelZ = (acceleration1.z + acceleration2.z) / 2.0;
-        DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
-        DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
-        //DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+        //DEBUGOUT("accel1 %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
+        //DEBUGOUT("accel2 %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
+        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
         velocity = getInertialVelocity();
         sensorData.velocityX = velocity.x;
         sensorData.velocityY = velocity.y;

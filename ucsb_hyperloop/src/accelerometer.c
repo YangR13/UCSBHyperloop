@@ -5,21 +5,26 @@
 
 XYZ getAccelerometerData( I2C_ID_T id ){
 	uint8_t  		wBuffer[ 2 ];
+	uint8_t			wBuffer2[ 2 ];
 	uint8_t 		rBuffer[ 6 ];
 	int16_t 		concAcceleration[3];
 	static XYZ 			rawAcceleration;
 	XYZ 		acceleration;
 
-	float alpha = 0.2;
+	float alpha = 0.3;
 	float beta = 1 - alpha;
 
-	float LSM303ACCEL_MG_LSB = (0.001F);
+	float LSM303ACCEL_MG_LSB = (0.002F);
 	//float LSM303ACCEL_MG_LSB = (0.00093F); 	// 1, 2, 4 or 12 mg per lsb
 
 	wBuffer[ 0 ] = ( LSM303_REGISTER_ACCEL_CTRL_REG1_A ); // Control register initializes all
 	wBuffer[ 1 ] = 0x57;
 
+	wBuffer2[ 0 ] = ( LSM303_REGISTER_ACCEL_CTRL_REG4_A );
+	wBuffer2[ 1 ] = 0x10;
+
 	Chip_I2C_MasterSend( id, ACC_ADDRESS, wBuffer, 2 );
+	Chip_I2C_MasterSend( id, ACC_ADDRESS, wBuffer2, 2);
 	Chip_I2C_MasterCmdRead( id, ACC_ADDRESS, LSM303_REGISTER_ACCEL_OUT_X_L_A | 0x80, rBuffer, 6 );
 
 	concAcceleration[0] = (int16_t)(rBuffer[0] | (((uint16_t)rBuffer[1]) << 8)) >> 4;
@@ -30,10 +35,16 @@ XYZ getAccelerometerData( I2C_ID_T id ){
 	rawAcceleration.y = ((float)concAcceleration[1]) * LSM303ACCEL_MG_LSB * SENSORS_GRAVITY_STANDARD;
 	rawAcceleration.z = ((float)concAcceleration[2]) * LSM303ACCEL_MG_LSB * SENSORS_GRAVITY_STANDARD;
 
-	if (id == 1){
-	acceleration.x = rawAcceleration.x*alpha + sensorData.accelX*beta - sensorData.initialAccelX;
-	acceleration.y = rawAcceleration.y*alpha + sensorData.accelY*beta - sensorData.initialAccelY;
-	acceleration.z = rawAcceleration.z*alpha + sensorData.accelZ*beta - sensorData.initialAccelZ;
+	if (id == I2C1){
+		acceleration.x = (rawAcceleration.x - ACCEL_1_INITIAL_X) * alpha + sensorData.accelX1 * beta; // - sensorData.initialAccelX;
+		acceleration.y = (rawAcceleration.y - ACCEL_1_INITIAL_Y) * alpha + sensorData.accelY1 * beta; // - sensorData.initialAccelY;
+		acceleration.z = (rawAcceleration.z - ACCEL_1_INITIAL_Z) * alpha + sensorData.accelZ1 * beta; // - sensorData.initialAccelZ;
+	}
+
+	if (id == I2C2){
+		acceleration.x = (rawAcceleration.x - ACCEL_2_INITIAL_X) * alpha + sensorData.accelX2 * beta; // - sensorData.initialAccelX;
+		acceleration.y = (rawAcceleration.y - ACCEL_2_INITIAL_Y) * alpha + sensorData.accelY2 * beta; // - sensorData.initialAccelY;
+		acceleration.z = (rawAcceleration.z - ACCEL_2_INITIAL_Z) * alpha + sensorData.accelZ2 * beta; // - sensorData.initialAccelZ;
 	}
 	return acceleration;
 }

@@ -3,12 +3,12 @@
 
 #include "sensor_data.h"
 
-#define ACCEL_0_INITIAL_X	0
-#define ACCEL_0_INITIAL_Y	0
-#define ACCEL_0_INITIAL_Z	0
 #define ACCEL_1_INITIAL_X	0
-#define ACCEL_1_INITIAL_Y	0
-#define ACCEL_1_INITIAL_Z	0
+#define ACCEL_1_INITIAL_Y	-0.2
+#define ACCEL_1_INITIAL_Z	10.07
+#define ACCEL_2_INITIAL_X	0
+#define ACCEL_2_INITIAL_Y	-0.07
+#define ACCEL_2_INITIAL_Z	10.6
 
 
 #define ACC_ADDRESS      0x19

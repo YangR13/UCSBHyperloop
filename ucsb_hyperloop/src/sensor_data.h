@@ -29,6 +29,14 @@ typedef struct{
   float initialAccelY;
   float initialAccelZ;
 
+  float accelX1;
+  float accelY1;
+  float accelZ1;
+
+  float accelX2;
+  float accelY2;
+  float accelZ2;
+
   float accelX;
   float accelY;
   float accelZ;
