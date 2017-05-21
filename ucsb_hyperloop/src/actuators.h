@@ -55,6 +55,9 @@ void GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir);
 void GPIO_Write(uint8_t port, uint8_t pin, uint8_t setting);
 uint8_t GPIO_Read(uint8_t port, uint8_t pin);
 
+// These are const to make the compiler happy.
+void PWM_Setup(const void * pwm, uint8_t pin);
+void PWM_Write(const void * pwm, uint8_t pin, float duty);
 
 typedef struct {
   uint8_t identity;
@@ -72,8 +75,9 @@ typedef struct {
   uint8_t bridge_fault[2];
 
   // Output control signals
-  uint8_t direction;
-  uint8_t enable;
+  uint8_t direction[2]; // 0 = backwards, 1 forwards
+  float enable[2]; // PWM - 0 is none, 1.0 is full cycle
+
 } ACTUATORS;
 
 ACTUATORS* initialize_actuator_board(uint8_t identity);
@@ -115,6 +119,6 @@ int calculate_temperature(uint16_t therm_adc_val);
 #define LTC2309_CHN_7   0xF0
 
 //ADC Associated Functions:
-uint16_t ADC_read(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
+uint16_t ADC_read_actuators(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
 
 #endif //ACTUATORS_H
