@@ -14,19 +14,3 @@ Command-line arguments:  -os macosx -ws cocoa -arch x86 -keyring /Users/Dylan/.e
 
 !ENTRY org.eclipse.ui 4 4 2017-05-18 12:34:57.627
 !MESSAGE Plugin org.eclipse.cdt.ui, extension org.eclipse.ui.decorators, id org.eclipse.cdt.internal.ui.CustomBuildSettingsDecorator: Unknown extension tag found: decorator
-!SESSION 2017-05-18 21:30:58.282 -----------------------------------------------
-eclipse.buildId=unknown
-java.version=1.6.0_65
-java.vendor=Apple Inc.
-BootLoader constants: OS=macosx, ARCH=x86, WS=cocoa, NL=en_US
-Framework arguments:  -keyring /Users/Dylan/.eclipse_keyring -showlocation
-Command-line arguments:  -os macosx -ws cocoa -arch x86 -keyring /Users/Dylan/.eclipse_keyring -showlocation
-
-!ENTRY org.eclipse.core.net 1 0 2017-05-18 21:31:20.180
-!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
-
-!ENTRY org.eclipse.ui 4 4 2017-05-18 21:31:22.376
-!MESSAGE Plugin org.eclipse.cdt.ui, extension org.eclipse.ui.decorators, id org.eclipse.cdt.internal.ui.CustomBuildSettingsDecorator: Duplicate id found: org.eclipse.cdt.internal.ui.CustomBuildSettingsDecorator
-
-!ENTRY org.eclipse.ui 4 4 2017-05-18 21:31:22.381
-!MESSAGE Plugin org.eclipse.cdt.ui, extension org.eclipse.ui.decorators, id org.eclipse.cdt.internal.ui.CustomBuildSettingsDecorator: Unknown extension tag found: decorator
