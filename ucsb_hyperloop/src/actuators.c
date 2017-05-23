@@ -77,10 +77,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   }
 
   // Initialize position variables
-  int pos_counter;
-  for (pos_counter = 0; pos_counter < 2; pos_counter++){
-      board->position[pos_counter] = 0;
-  }
+  board->position[0] = ADC_read(board->bus, board->ADC_device_address, 1);
+  board->position[1] = ADC_read(board->bus, board->ADC_device_address, 5);
 
   // Initialize GPIO/PWM pins
   GPIO_Setup(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], OUT); // Direction 1
@@ -106,6 +104,7 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
 }
 
 uint8_t update_actuator_board(ACTUATORS* board) {
+    update_actuator_control(board);
 
     // Record Temperatures
     board->temperatures[0] = calculate_temperature(ADC_read(board->bus, board->ADC_device_address, 6));
@@ -127,30 +126,20 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   }
 #endif
 
-  /*
+
   // Record Motor Controller Currents
-  // With no current, the ACS759x150B should output 3.3V/2
-  int amps_counter;
-  for (amps_counter = 0; amps_counter < 2; amps_counter++){
-      uint16_t ammeter_ratio = ADC_read(board->bus, board->ADC_device_address, 2 + amps_counter);
-      uint8_t new_amps = abs(1000 * ammeter_ratio * HEMS_CAL_5V0REF[board->identity] / MAX12BITVAL - 1000 * HEMS_CAL_3V3REF[board->identity] / 2) / AMMETER_150A_SENSITIVITY; //Done in mV
-      board->amps[amps_counter] = new_amps;
+  // H-bridge current sensors output: (50mV offset) + (20 mV / amp)
+  uint16_t raw_reading = ADC_read(board->bus, board->ADC_device_address, 7);
+  uint16_t reading = ((((float)raw_reading * 5.0 / MAX12BITVAL) - 0.050) / 0.020); // Ratio -> volts -> amps
+  board->amps[0] = reading;
+
+  uint16_t raw_reading_2 = ADC_read(board->bus, board->ADC_device_address, 3);
+  uint16_t reading_2 = ((((float)raw_reading_2 * 5.0 / MAX12BITVAL) - 0.050) / 0.020); // Ratio -> volts -> amps
+  board->amps[0] = reading_2;
 
 //      if (new_amps > HEMS_MAX_CURRENT){
 //          board->alarm |= 0b00000010;
 //      }
-  }
-  */
-
-  // Update direction and PWM
-  GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], board->direction[0]); // Direction 1
-  GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 1], BOARD_PINS[(board->identity * 4) + 1], board->direction[1]); // Direction 2
-  PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 0], BOARD_PWM_CHANNELS[(board->identity * 2) + 0], board->enable[0]); // PWM output 1
-  PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
-
-  // Read position feedback
-  board->position[0] = (0.2 * ADC_read(board->bus, board->ADC_device_address, 5)) + (0.8 * board->position[0]);
-  board->position[1] = (0.2 * ADC_read(board->bus, board->ADC_device_address, 1)) + (0.8 * board->position[1]);
 
   // Read fault flags
   board->bridge_fault[0] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
@@ -158,6 +147,28 @@ uint8_t update_actuator_board(ACTUATORS* board) {
 
   //return board->alarm;
   return 0;
+}
+
+void update_actuator_control(ACTUATORS *board){
+    // Read position feedback
+    uint16_t pos_0 = ADC_read(board->bus, board->ADC_device_address, 1);
+    uint16_t pos_1 = ADC_read(board->bus, board->ADC_device_address, 5);
+
+#define MAX_POSITION_DIFF_PCT 0.30
+
+    if (abs(pos_0 - board->position[0]) < (MAX_POSITION_DIFF_PCT * board->position[0])){
+        board->position[0] = (0.02 * pos_0) + (0.98 * board->position[0]);
+    }
+    if (abs(pos_1 - board->position[1]) < (MAX_POSITION_DIFF_PCT * board->position[1])){
+        board->position[1] = (0.02 * pos_1) + (0.98 * board->position[1]);
+    }
+
+    // Update direction and PWM
+    GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], board->direction[0]); // Direction 1
+    GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + 1], BOARD_PINS[(board->identity * 4) + 1], board->direction[1]); // Direction 2
+    PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 0], BOARD_PWM_CHANNELS[(board->identity * 2) + 0], board->enable[0]); // PWM output 1
+    PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + 1], BOARD_PWM_CHANNELS[(board->identity * 2) + 1], board->enable[1]); // PWM output 2
+
 }
 
 /*

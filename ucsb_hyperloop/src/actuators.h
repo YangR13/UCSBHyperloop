@@ -69,8 +69,8 @@ typedef struct {
 
   //Data Storage
   int temperatures[4];
-  uint8_t amps[2];
-  int position[2];
+  uint16_t amps[2];
+  uint16_t position[2];
 
   //Safety
   uint8_t bridge_fault[2];
@@ -83,6 +83,7 @@ typedef struct {
 
 ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);
+void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
 
 /*HEMS I2C Parameters

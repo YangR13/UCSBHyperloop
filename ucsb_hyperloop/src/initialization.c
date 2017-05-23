@@ -22,7 +22,7 @@ void initializeSensorsAndControls(){
         Set_Channel_PWM(LPC_PWM1, 1, 0.5);
     }
     if(GATHER_DATA_ACTIVE){
-        gatherSensorDataTimerInit(LPC_TIMER1, TIMER1_IRQn, 100);
+        gatherSensorDataTimerInit(LPC_TIMER1, TIMER1_IRQn, 400);
     }
     if(SMOOSHED_ONE_ACTIVE){
         i2cInit(I2C1, SPEED_100KHZ);
@@ -76,7 +76,7 @@ void initializeSensorsAndControls(){
 
     if (BRAKING_ACTIVE){
         i2cInit(I2C1, SPEED_100KHZ);
-        timerInit(LPC_TIMER3, TIMER3_IRQn, 10);
+        //timerInit(LPC_TIMER3, TIMER3_IRQn, 10);
 //        Chip_TIMER_ResetOnMatchEnable(LPC_TIMER3, 0);
         Init_PWM(LPC_PWM1);
         //int i;

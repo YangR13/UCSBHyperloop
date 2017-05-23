@@ -8,7 +8,7 @@
 #include "photo_electric.h"
 #include "timer.h"
 
-int y = 0;
+uint16_t y = 0;
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel;
 
@@ -21,6 +21,8 @@ void collectCalibrationData( I2C_ID_T id ){
 
 int start_pos = 0;
 int stepping = 0;
+int stepping_direction = 0;
+int step_loop_count = 0;
 
 void TIMER3_IRQHandler(void){
     Chip_TIMER_ClearMatch( LPC_TIMER3, 1 );
@@ -37,19 +39,22 @@ void TIMER3_IRQHandler(void){
 
 }
 
-void step_in(){
-    // Yeah!
+void step(int direction){
+    // 1 = forwards, 0 - backwards
+
+    step_loop_count = 0;
     stepping = 1;
     start_pos = braking_boards[0]->position[1];
+    stepping_direction = direction;
 
-    braking_boards[0]->direction[0] = 0;
-    braking_boards[0]->direction[1] = 0;
-    braking_boards[0]->enable[0] = 0.45;
-    braking_boards[0]->enable[1] = 0.45;
+    braking_boards[0]->direction[0] = direction;
+    braking_boards[0]->direction[1] = direction;
+    braking_boards[0]->enable[0] = 0.10; // 10%
+    braking_boards[0]->enable[1] = 0.10; // 10%
     update_actuator_board(braking_boards[0]);
 //    Chip_TIMER_Reset(LPC_TIMER3);
 //    Chip_TIMER_Enable(LPC_TIMER3);
-    Reset_Timer_Counter(LPC_TIMER3);
+//    Reset_Timer_Counter(LPC_TIMER3);
 //    NVIC_ClearPendingIRQ(TIMER3_IRQn);
 //    NVIC_EnableIRQ(TIMER3_IRQn);
 }
@@ -244,19 +249,47 @@ void collectData(){
     if (BRAKING_ACTIVE){
         int i = 0;
         //for (i = 0; i < 2; i++){
-            update_actuator_board(braking_boards[i]);
+        update_actuator_control(braking_boards[0]);
 
-
-/*
-            if(y%20 == 0) {
-                DEBUGOUT("Braking board 0 sensor data:\n");
-                DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
-                DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
-                //DEBUGOUT("Current: %f | %f \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
-                DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-                DEBUGOUT("\n\n");
+            if (stepping){
+                step_loop_count++;
+//                if (stepping_direction == 1){
+//                    if (braking_boards[0]->position[1] < (start_pos - 10)){
+                if (step_loop_count == 400){
+                    stepping = 0;
+                    braking_boards[0]->enable[0] = 0;
+                    braking_boards[0]->enable[1] = 0;
+//                    DEBUGOUT("TIGHTEN DONE\n");
+                    DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, braking_boards[0]->position[1]);
+                    update_actuator_control(braking_boards[0]);
+                    step_loop_count = 0;
+                }
+//                }
+//                else if (stepping_direction == 0){
+//                    if (braking_boards[0]->position[1] > (start_pos + 10)){
+//                        stepping = 0;
+//                        braking_boards[0]->enable[0] = 0;
+//                        braking_boards[0]->enable[1] = 0;
+//                        DEBUGOUT("LOOSEN DONE\n");
+//                        DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, braking_boards[0]->position[1]);
+//                        update_actuator_control(braking_boards[0]);
+//                    }
+//                }
             }
-            */
+
+            if(y%400 == 0) {
+//                DEBUGOUT("Braking board 0 sensor data:\n");
+//                DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+//                DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+                DEBUGOUT("%d\n", braking_boards[0]->position[1]);
+//                DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+//                DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
+//                DEBUGOUT("\n\n");
+            }
+            if(y%400 == 0){
+                update_actuator_board(braking_boards[i]);
+            }
+
         //}
     }
 
@@ -264,29 +297,13 @@ void collectData(){
 
 	getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.
 
-	// Currently disabled debug-out printing of data.
-#if 0
-    if (sensorData.dataPrintFlag == 2) { // Print every 2/1 = 2 seconds.
-        DEBUGOUT( "temperature1 = %f\n", sensorData.temp1 );
-        DEBUGOUT( "temperature2 = %f\n", sensorData.temp2 );
-        DEBUGOUT( "pressure1 = %f\n", sensorData.pressure1 );
-        DEBUGOUT( "pressure2 = %f\n", sensorData.pressure2 );
-        DEBUGOUT( "accelX = %f\t", sensorData.accelX );
-        DEBUGOUT( "accelY = %f\t", sensorData.accelY );
-        DEBUGOUT( "accelZ = %f\n", sensorData.accelZ );
-        DEBUGOUT( "velocityX = %f\t", sensorData.velocityX );
-        DEBUGOUT( "velocityY = %f\t", sensorData.velocityY );
-        DEBUGOUT( "velocityZ = %f\n", sensorData.velocityZ );
-        DEBUGOUT( "positionX = %f\t", sensorData.positionX );
-        DEBUGOUT( "positionY = %f\t", sensorData.positionY );
-        DEBUGOUT( "positionZ = %f\n", sensorData.positionZ );
-        DEBUGOUT( "Roll = %f\t", sensorData.roll );
-        DEBUGOUT( "Pitch = %f\t", sensorData.pitch );
-        DEBUGOUT( "Yaw = %f\n", sensorData.yaw );
-        DEBUGOUT( "\n" );
-        sensorData.dataPrintFlag = 0;
-    }
-#endif
+	// If you get rid of this the timing will not work well. Be careful.
+	y++;
+	if (y == 64800){
+	    // This roll-over value needs to be 65536 - (65536 % [largest interval used above]) for even increments.
+	    y = 0;
+	}
+
 
 }
 

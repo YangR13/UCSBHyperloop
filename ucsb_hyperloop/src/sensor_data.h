@@ -15,7 +15,7 @@ HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
 ACTUATORS *braking_boards[2]; // 2 Braking boards.
 
-void step_in();
+void step(int dir);
 
 typedef struct{
 
