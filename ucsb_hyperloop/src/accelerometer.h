@@ -2,14 +2,12 @@
 #define ACCELEROMETER_H_
 
 #include "sensor_data.h"
+													// Range = +/-	2G		4G		8G		16G
+#define ACCEL_CTRL_REG4_RANGE_SETTING		0x10	// Hex			0x00	0x10	0x0F	0x1F
+#define LSM303ACCEL_MG_LSB					2		// mG per LSB	1		2		4		8
 
-#define ACCEL_1_INITIAL_X	0
-#define ACCEL_1_INITIAL_Y	-0.2
-#define ACCEL_1_INITIAL_Z	10.07
-#define ACCEL_2_INITIAL_X	0
-#define ACCEL_2_INITIAL_Y	-0.07
-#define ACCEL_2_INITIAL_Z	10.6
-
+#define ACCEL1_MG_LSB_CALIBRATION			0.9694F
+#define ACCEL2_MG_LSB_CALIBRATION			0.9185F
 
 #define ACC_ADDRESS      0x19
 #define MAG_ADDRESS      0x1E
@@ -29,7 +27,9 @@
 #define LSM303_REGISTER_ACCEL_OUT_Z_L_A            0x2C
 #define LSM303_REGISTER_ACCEL_OUT_Z_H_A            0x2D
 
-XYZ getAccelerometerData( I2C_ID_T id );
+void Init_Accel( I2C_ID_T id );
 XYZ getInitialAccelMatrix( I2C_ID_T id );
+XYZ getRawAccelerometerData( I2C_ID_T id );
+XYZ getSmoothenedAccelerometerData( I2C_ID_T id );
 
 #endif /* ACCELEROMETER_H_ */

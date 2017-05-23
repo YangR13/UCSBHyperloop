@@ -25,6 +25,8 @@ void initializeSensorsAndControls(){
         gatherSensorDataTimerInit(LPC_TIMER1, TIMER1_IRQn, 10);
     }
     if(ACCEL_ACTIVE){
+    	Init_Accel(I2C1);
+    	Init_Accel(I2C2);
     	collectCalibrationData(I2C1);
     	collectCalibrationData(I2C2);
     }

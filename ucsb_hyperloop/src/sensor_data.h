@@ -25,17 +25,11 @@ typedef struct{
 
   uint32_t dataPrintFlag;
 
-  float initialAccelX;
-  float initialAccelY;
-  float initialAccelZ;
+  XYZ initialAccel1;
+  XYZ initialAccel2;
 
-  float accelX1;
-  float accelY1;
-  float accelZ1;
-
-  float accelX2;
-  float accelY2;
-  float accelZ2;
+  XYZ accel1;
+  XYZ accel2;
 
   float accelX;
   float accelY;
@@ -75,10 +69,10 @@ typedef struct{
 
 
 } sensor;
+sensor sensorData;
 
 uint8_t collectDataFlag;
 uint8_t getPressureFlag;
-sensor sensorData;
 
 int CALIBRATE_FLAG;
 float pitch_i;
