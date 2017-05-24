@@ -7,7 +7,7 @@
 
 void 	collectCalibrationData(I2C_ID_T id);
 void    collectData();
-void    TIMER1_IRQHandler(void);
+void    printSensorData();
 void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 
 HEMS *motors[NUM_HEMS];
@@ -68,7 +68,6 @@ typedef struct{
 
 } sensor;
 
-uint8_t collectDataFlag;
 uint8_t getPressureFlag;
 sensor sensorData;
 
