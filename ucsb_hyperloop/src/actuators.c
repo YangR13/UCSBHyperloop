@@ -3,7 +3,6 @@
 #include "I2CPERIPHS.h"
 
 const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {1, 0, 0, 0};        // TODO: Set me
-const uint8_t BOARD_I2C_DIP[NUM_ACTUATOR_BOARDS] = {0,  255,  0,  255}; // TODO: Change to realistic values!
 #ifdef ARDUINO
 // Pin values to use for GPIO and PWM signals
 const uint8_t BOARD_PINS[16] =      {52, 53, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -23,12 +22,12 @@ const uint8_t BOARD_PIN_PORTS[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 // GPIO pins on the PCB (data values) correspond to, in order:
 //  Board 1 - DIR1, DIR2, FAULT1, FAULT2 | Board 2 (same) | etc.
 const uint8_t BOARD_PIN_PORTS[16] = {3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t BOARD_PINS[16] =      {12, 12, 13, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t BOARD_PINS[16] =      {12, 14, 15, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // PWM pins on the PCB (data values) correspond to, in order:
 //  Board 1 - PWM1, PWM2 | Board 2 (same), etc.
 const LPC_PWM_T * BOARD_PWM_PORTS[8] = {LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1};
-const uint8_t BOARD_PWM_CHANNELS[8] = {5, 6, 4, 3, 2, 1, 1, 1};
+const uint8_t BOARD_PWM_CHANNELS[8] = {6, 5, 4, 3, 2, 1, 1, 1};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
@@ -124,13 +123,39 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   // Read fault signals from H-bridges (GPIO pins)
   int fault_counter = 0;
   for (fault_counter = 0; fault_counter < 2; fault_counter++){
-      board->bridge_fault[0] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
-      board->bridge_fault[1] = GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 3], BOARD_PINS[(board->identity * 4) + 3]);
+      board->bridge_fault[0] = !GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 2], BOARD_PINS[(board->identity * 4) + 2]);
+      board->bridge_fault[1] = !GPIO_Read(BOARD_PIN_PORTS[(board->identity * 4) + 3], BOARD_PINS[(board->identity * 4) + 3]);
   }
 
   //return board->alarm;
   return 0;
 }
+
+int start_pos = 0;
+int stepping = 0;
+int stepping_direction = 0;
+int step_loop_count = 0;
+
+void step(ACTUATORS * board, int direction){
+    // 1 = forwards, 0 - backwards
+
+    step_loop_count = 0;
+    stepping = 1;
+    start_pos = board->position[1];
+    stepping_direction = direction;
+
+    board->direction[0] = direction;
+    board->direction[1] = direction;
+    board->enable[0] = 0.05; // 10%
+    board->enable[1] = 0.05; // 10%
+    update_actuator_board(board);
+//    Chip_TIMER_Reset(LPC_TIMER3);
+//    Chip_TIMER_Enable(LPC_TIMER3);
+//    Reset_Timer_Counter(LPC_TIMER3);
+//    NVIC_ClearPendingIRQ(TIMER3_IRQn);
+//    NVIC_EnableIRQ(TIMER3_IRQn);
+}
+
 
 void update_actuator_control(ACTUATORS *board){
     // Update data relevant to braking actuator movement
@@ -138,19 +163,42 @@ void update_actuator_control(ACTUATORS *board){
     // Read position feedback signal from linear potentiometer -> ADC
     // Write direction signal to GPIO pins, set output PWM frequency
 
+
+
+
 // Position values that are greater than this percentage away from the previous moving average
 //  are considered erroneous and are discarded
 #define MAX_POSITION_DIFF_PCT 0.30
 // Alpha value for moving average window
-#define AVG_ALPHA 0.02
+#define AVG_ALPHA 0.50
 
     // Read and process position feedback
     //  Calculate a moving average using only those values not considered erroneous
     int pos_counter = 0;
     for (pos_counter = 0; pos_counter < 2; pos_counter++){
         uint16_t pos = ADC_read(board->bus, board->ADC_device_address, (4 * pos_counter) + 1);
-        if (abs(pos - board->position[pos_counter]) < (MAX_POSITION_DIFF_PCT * board->position[pos_counter])){
+//        if (abs(pos - board->position[pos_counter]) < (MAX_POSITION_DIFF_PCT * board->position[pos_counter])){
             board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
+//        }
+//        board->position[pos_counter] = pos;
+    }
+
+    if (stepping_direction == 0){
+        if (stepping && (board->position[1] > (start_pos + 100))){
+            DEBUGOUT("STEP DONE\n");
+            DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, board->position[1]);
+            stepping = 0;
+            board->enable[0] = 0;
+            board->enable[1] = 0;
+        }
+    }
+    else{
+        if (stepping && (board->position[1] < (start_pos - 100))){
+            DEBUGOUT("STEP DONE\n");
+            DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, board->position[1]);
+            stepping = 0;
+            board->enable[0] = 0;
+            board->enable[1] = 0;
         }
     }
 
@@ -162,6 +210,9 @@ void update_actuator_control(ACTUATORS *board){
         // PMW enable/speed signal
         PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->enable[output_counter]);
     }
+
+
+
 }
 
 void PWM_Setup(const void * pwm, uint8_t pin){

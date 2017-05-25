@@ -62,6 +62,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);
 void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
+void step(ACTUATORS * board, int dir);
+
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.
 void PWM_Setup(const void * pwm, uint8_t pin);

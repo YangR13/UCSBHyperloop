@@ -40,6 +40,8 @@ int main(void)
     DEBUGOUT("UCSB Hyperloop Controller Initialized\n");
     DEBUGOUT("_______________________________________\n");
 
+    int dir = 0;
+
     // Main control loop
     while( 1 ) {
     	// 1. Process any received ethernet packets as they arrive
@@ -58,6 +60,21 @@ int main(void)
             // ** DO ACTUATIONS FROM WEB APP COMMANDS **
             performActuation(); // See actuation.c
 		}
+
+		if (swapDirFlag){
+		    DEBUGOUT("START STEP\n");
+		    swapDirFlag = 0;
+//		    dir = !dir;
+//	        braking_boards[0]->enable[0] = 0.03;
+//	        braking_boards[0]->enable[1] = 0.03;
+//	        braking_boards[0]->direction[0] = dir;
+//	        braking_boards[0]->direction[1] = dir;
+//	        update_actuator_control(braking_boards[0]);
+	        step(braking_boards[0], 1);
+		}
+
+        update_actuator_control(braking_boards[0]);
+//        DEBUGOUT("%d\n", braking_boards[0]->position[1]);
 
 		// ** PERIODIC TASKS **
         if(GATHER_DATA_ACTIVE && collectDataFlag){

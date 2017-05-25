@@ -17,6 +17,8 @@ uint8_t collectDataFlag;
 uint8_t logDataFlag;
 #define PRINT_SENSOR_DATA_PERIOD 3 // sec
 uint8_t printSensorDataFlag;
+#define SWAP_DIR_PERIOD 30 // sec
+uint8_t swapDirFlag;
 
 void runtimeTimerInit();
 void tickTimerInit();

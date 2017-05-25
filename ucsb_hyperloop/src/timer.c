@@ -20,6 +20,7 @@ void tickTimerInit(){
     collectDataFlag = 0;
     logDataFlag = 0;
     printSensorDataFlag = 0;
+    swapDirFlag = 1;
 }
 
 uint32_t getRuntime() {
@@ -71,11 +72,17 @@ void TIMER1_IRQHandler(void){
     if (tick % (TICK_TIMER_FREQ * PRINT_SENSOR_DATA_PERIOD) == 0){
         printSensorDataFlag = 1;
     }
+    if (tick % (TICK_TIMER_FREQ * SWAP_DIR_PERIOD) == 0){
+        swapDirFlag = 1;
+    }
 
     if (tick >= (TICK_TIMER_FREQ * MAX_PERIOD_MULTIPLIER)){
         // Reset ticks to 0 to avoid any overflows (shouldn't be an issue with 32 bit variable anyways)
         tick = 0;
     }
+
+
+
 
     // Clear the interrupt
     Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
