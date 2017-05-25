@@ -18,7 +18,7 @@ void GPIO_IRQHandler(void)
 		Chip_TIMER_Disable(LPC_TIMER3);
 
 		Chip_GPIOINT_ClearIntStatus(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT, 1 << PHOTOELECTRIC_INT_PIN);
-		stripDetectedFlag = 1;
+		sensorData.photoelectric1InterruptFlag = 1;
 		sensorData.photoelectric+=100.0;
 
 		/* Old and unused

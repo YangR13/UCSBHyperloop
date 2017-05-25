@@ -57,6 +57,18 @@ typedef struct{
   float tacho3;
   float tacho4;
 
+  float wheelTach1PositionX;
+  float wheelTach2PositionX;
+  float wheelTach3PositionX;
+  float wheelTach4PositionX;
+
+  float actualDistanceX;					// Increments of 100 ft
+  float offsetPositionX;				// Delta away from each increment
+  int   photoelectric1InterruptFlag;		// Hit Tape
+  float photoelectric1InterruptPosition;	// Value used for miss on distance marker
+  float modAvg;								// average mod 100, determines whether wheel tachs in range of [0,15] and [85,100]
+  float average;							// this is the position that the tachs read when it hits the tape
+
   float pressure1;
   float pressure2;
   float power;
@@ -66,7 +78,6 @@ typedef struct{
   rangingData shortRangingData;
   rangingData longRangingData;
   int contact_sensor_pushed;
-
 
 } sensor;
 sensor sensorData;

@@ -113,9 +113,18 @@ void collectData(){
 
     if (PHOTO_ELECTRIC_ACTIVE){
         /* Handle Photoelectric Strip Detected */
-        if(stripDetectedFlag) {
+        if(sensorData.photoelectric1InterruptFlag) {
 //            stripDetected();
-        	stripDetectedFlag = 0;
+        	sensorData.modAvg = (int)(sensorData.average) % 100;
+        	if (sensorData.modAvg >= 85.0) {
+        		sensorData.offsetPositionX = 100.0 - sensorData.modAvg;
+        	    sensorData.actualDistanceX = sensorData.average + sensorData.offsetPositionX;
+        	}
+        	else if (sensorData.modAvg <= 15.0) {
+        	    sensorData.offsetPositionX = sensorData.modAvg;
+        	    sensorData.actualDistanceX = sensorData.average - sensorData.offsetPositionX;
+        	}
+        	sensorData.photoelectric1InterruptFlag = 0;
             //DEBUGOUT("Strip %u, of %u in region %u!\n", stripCount, regionalStripCount, stripRegion);
             DEBUGOUT("Distance: %f feet\n", sensorData.photoelectric);
             //sensorData.photoelectric+=100.0; // This is moved INTO the handler so we don't lose strips between printouts.
@@ -173,6 +182,46 @@ void collectData(){
     	contact_sensor_pushed = GPIO_Contact_Sensor_Pushed();
     	sensorData.contact_sensor_pushed = contact_sensor_pushed;
     	DEBUGOUT("contact_sensor_pushed: %d\n", contact_sensor_pushed);
+    }
+
+    if (POSITIONING_ACTIVE) {
+    	int i;
+    	float minDistAbs, minDistNonAbs; // used to sum up four tachometer distances
+    	float r = 1.0; // radius of wheel
+
+    	for(i=0; i < NUM_HEMS; i++) {
+    		update_HEMS(motors[i]);
+    	}
+
+    	sensorData.wheelTach1PositionX = motors[0]->tachometer_counter[1];
+    	sensorData.wheelTach2PositionX = motors[1]->tachometer_counter[1];
+    	sensorData.wheelTach3PositionX = motors[2]->tachometer_counter[1];
+    	sensorData.wheelTach4PositionX = motors[3]->tachometer_counter[1];
+
+    	minDistAbs = fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach2PositionX);
+    	sensorData.average = (sensorData.wheelTach1PositionX + sensorData.wheelTach2PositionX) / 2.0;
+    	if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX)) {
+    		minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX);
+    		sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach3PositionX) / 2.0;
+    	}
+    	if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX)) {
+    		minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX);
+    		sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	}
+    	if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX)) {
+    		minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX);
+    		sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach3PositionX) / 2.0;
+    	}
+    	if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX)) {
+    		minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX);
+    		sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	}
+    	if (minDistAbs 			> fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX)) {
+    		minDistAbs			= fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX);
+    		sensorData.average	= 	  (sensorData.wheelTach3PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	}
+
+    	sensorData.photoelectric1InterruptPosition = sensorData.average;
     }
 
 	getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.
