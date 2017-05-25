@@ -22,17 +22,6 @@ uint16_t gSn_TX_BASE[] = {
 	0xA000, 0xA800,	0xB000,	0xB800	// Socket 4, 5, 6, 7
 };
 
-/* Data Send Timer Interrupt */
-void TIMER2_IRQHandler(void){
-	sendDataFlag = 1;
-	Chip_TIMER_ClearMatch( LPC_TIMER2, 1 );
-}
-
-/* Initialize Data Send Timer */
-void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
-	 timerInit(timer, timerInterrupt, tickRate);
-}
-
 /* SSP Initialization */
 void Wiz_SSP_Init() {
 	Board_SSP_Init(LPC_SSP1);

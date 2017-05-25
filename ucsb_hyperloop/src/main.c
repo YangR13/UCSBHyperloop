@@ -18,13 +18,12 @@
 
 // Hyperloop specific libraries
 #include "initialization.h"
-#include "sensor_data.h"
+#include "timer.h"
 #include "logging.h"
-#include "gpio.h"
-#include "qpn_port.h"
+#include "ethernet.h"
+#include "sensor_data.h"
 #include "subsystems.h"
 #include "actuation.h"
-#include "ethernet.h"
 
 int main(void)
 {
@@ -32,9 +31,7 @@ int main(void)
     SystemCoreClockUpdate();
     Board_Init();
 
-    // Initialize LPC_TIMER0 as a runtime timer.
-    runtimeTimerInit();
-
+    initializeTimers();
     initializeCommunications();
     initializeSensorsAndControls();
     initializeSubsystemStateMachines();
@@ -45,36 +42,41 @@ int main(void)
 
     // Main control loop
     while( 1 ) {
-    	// 1. Service any flags set by Web App interrupts
-        // 2. Gather data from sensors
-        // 3. Log data to web app, SD card, etc.
-        // 4. Send signals to state machine to induce transitions as necessary
-        // 5. Based on flags from state machine, do actuation of subsystems
+    	// 1. Process any received ethernet packets as they arrive
+        //  1a. Perform actuation of subsystems (web-app may have issued relevant commands)
+        // 2. Perform tasks at frequency (10 Hz) as determined by timer interrupts
+        //  2a. Gather data from sensors
+        //  2b. Log data to web app, SD card, etc.
+        //  2c. Service any high-level user command routines ("go", "stop", etc.)
+        //  2d. Send signals to state machine to induce transitions as necessary
+        //  2e. Based on flags from state machine, perform actuation of subsystems
 	
-    	/* Handle all Wiznet Interrupts, including RECV */
-		if(wizIntFlag) {
+    	// ** HANDLE ETHERNET PACKETS **
+		if(ETHERNET_ACTIVE && wizIntFlag) {
 			wizIntFunction();	// See ethernet.c
+
+            // ** DO ACTUATIONS FROM WEB APP COMMANDS **
+            performActuation(); // See actuation.c
 		}
 
-        // ** GATHER DATA FROM SENSORS **
-        if(collectDataFlag){
+		// ** PERIODIC TASKS **
+        if(GATHER_DATA_ACTIVE && collectDataFlag){
+            // ** GATHER DATA FROM SENSORS **
             collectData(); 		// See sensor_data.c
-        }
-	
-        // ** DATA LOGGING **
-        if (COMMUNICATION_ACTIVE){
-            logData(); 			// See logging.c
-        }
-	
-        // Service high-level command routines ('go', 'all stop', 'emergency stop')
 
-        // ** DETERMINE STATE MACHINE TRANSITIONS**
-        if (collectDataFlag){
-        	generate_signals_from_sensor_data(); // See subsystems.c
-        }
+            // ** DATA LOGGING **
+            if (COMMUNICATION_ACTIVE && logDataFlag){
+                logData();          // See logging.c
+            }
 
-        // ** DO ACTUATIONS FROM STATE MACHINE FLAGS **
-        performActuation(); // See actuation.c
+            // Service high-level command routines ('go', 'all stop', 'emergency stop')
+
+            // ** DETERMINE STATE MACHINE TRANSITIONS**
+            generate_signals_from_sensor_data(); // See subsystems.c
+
+            // ** DO ACTUATIONS FROM STATE MACHINE FLAGS **
+            performActuation(); // See actuation.c
+        }
 
     }  // End of main control loop
 

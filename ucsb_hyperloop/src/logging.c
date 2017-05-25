@@ -4,6 +4,7 @@
 #include "I2CPERIPHS.h"
 #include "sensor_data.h"
 #include "sdcard.h"
+#include "timer.h"
 
 void get_filepath(char* filepath, char* dir, char* name, int index) {
 	// Concat the dir and name variables and save to the filepath variable.
@@ -45,6 +46,7 @@ void create_csv(char* dir, char* filetype, int index)
 }
 
 void logData(){
+    logDataFlag = 0;
 
 	int i;
 
@@ -53,7 +55,7 @@ void logData(){
 		for(i=0; i<4; i++){
 			logPosition(i);
 		}
-		if((sendDataFlag && connectionOpen))
+		if(connectionOpen)
 			ethernet_send_packet();
 	}
 
@@ -62,7 +64,7 @@ void logData(){
 		for(i=0; i<4; i++) {
 			logHEMS(i);
 		}
-		if((sendDataFlag && connectionOpen))
+		if(connectionOpen)
 			ethernet_send_packet();
 	}
 
@@ -70,7 +72,7 @@ void logData(){
 		for(i=0; i<2; i++){
 			ethernet_prepare_packet();
 			logBMS(i);
-			if((sendDataFlag && connectionOpen))
+			if(connectionOpen)
 				ethernet_send_packet();
 		}
 	}
