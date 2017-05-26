@@ -28,15 +28,13 @@ void performActuation(){
 
 void actuate_brakes(){
 	// TODO: Implement this!
-	if(Braking_HSM.engage_1){
-		/* TODO
-		ENGAGE PAIR 1
-		 */
-	}
-	if(Braking_HSM.engage_2){
-		/* TODO
-		ENGAGE PAIR 2
-		 */
+	if(Braking_HSM.engage){
+	    if (Braking_HSM.feedback){
+	        // Engage with feedback
+	    }
+	    else{
+	        // Engage without feedback
+	    }
 	}
 }
 
