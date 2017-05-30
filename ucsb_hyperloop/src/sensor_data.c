@@ -200,6 +200,7 @@ void collectData(){
 
     	minDistAbs = fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach2PositionX);
     	sensorData.average = (sensorData.wheelTach1PositionX + sensorData.wheelTach2PositionX) / 2.0;
+
     	if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX)) {
     		minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX);
     		sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach3PositionX) / 2.0;
