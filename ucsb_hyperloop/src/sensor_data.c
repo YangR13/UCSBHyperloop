@@ -7,7 +7,6 @@
 #include "kinematics.h"
 #include "photo_electric.h"
 
-
 int y = 0;
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);

@@ -6,6 +6,7 @@
 
 void GPIO_IRQHandler(void)
 {
+
 //	uint32_t interrupt_bits_port0 = Chip_GPIOINT_GetStatusRising(LPC_GPIOINT, 0);
 	uint32_t interrupt_bits_port0 = Chip_GPIOINT_GetStatusFalling(LPC_GPIOINT, 0);
 	uint32_t interrupt_bits_port2 = Chip_GPIOINT_GetStatusRising(LPC_GPIOINT, 2);

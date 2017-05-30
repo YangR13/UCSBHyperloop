@@ -13,6 +13,7 @@ void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, u
 HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
 
+
 typedef struct{
 
   float x;
@@ -63,7 +64,7 @@ typedef struct{
   float wheelTach4PositionX;
 
   float actualDistanceX;					// Increments of 100 ft
-  float offsetPositionX;				// Delta away from each increment
+  float offsetPositionX;					// Delta away from each increment
   int   photoelectric1InterruptFlag;		// Hit Tape
   float photoelectric1InterruptPosition;	// Value used for miss on distance marker
   float modAvg;								// average mod 100, determines whether wheel tachs in range of [0,15] and [85,100]
