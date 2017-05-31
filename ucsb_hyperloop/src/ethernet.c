@@ -223,7 +223,13 @@ void recvDataPacket() {
 //	for (i = 0; i < DATA_BUF_SIZE; i++) {
 //		DEBUGOUT("%i:%c\n", i, Net_Rx_Data[i]);
 //	}
+
 //	DEBUGOUT("Receiving Data Packet!\n");
+
+	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
+		DEBUGOUT("CALIBRATE_SIG RECEIVED\n");
+		CALIBRATE_FLAG = 1;
+	}
 
 	// Check if the message received matches any state machine control signals, issue it if so.
 	int i;
@@ -238,6 +244,26 @@ void recvDataPacket() {
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
 		printf("CALIBRATE_SIG RECEIVED\n");
 		CALIBRATE_FLAG = 1;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, STOP_BRAKES_SIG) == 0){
+		printf("STOP_BRAKES_SIG RECEIVED\n");
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
+	}
+
+	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
+		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
+	}
+
+	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
+		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
