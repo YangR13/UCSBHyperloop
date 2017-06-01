@@ -1,4 +1,5 @@
 #include "ethernet.h"
+#include "initialization.h"
 #include "sensor_data.h"
 #include "I2CPERIPHS.h"
 #include <string.h>
@@ -214,6 +215,7 @@ void send_data_ack_helper(char *method, int *position) {
 
 
 void recvDataPacket() {
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	// TODO: Expand this back to support other subsystems
 	int pos = 0;
 	memset(Net_Tx_Data, 0, 64);
@@ -389,15 +391,18 @@ void recvDataPacket() {
 }
 
 void ethernet_prepare_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	memset(Net_Tx_Data, 0, 1024);
 	tx_pos = 0;
 }
 
 void ethernet_add_data_to_packet(char *method, int index, int sensorNum, char* val){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	send_data_packet_helper(method, index, sensorNum, val, &tx_pos);
 }
 
 void ethernet_send_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 }
 

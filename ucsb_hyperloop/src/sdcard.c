@@ -147,6 +147,7 @@ void SDIO_IRQHandler(void)
 }
 
 void sdcardInit() {
+	if(!SDCARD_ACTIVE) return;
 	initAppSDMMC();
 
 	/* Initialize Repetitive Timer */
@@ -159,6 +160,7 @@ void sdcardInit() {
 }
 
 void init_csv_files() {
+	if(!SDCARD_ACTIVE) return;
 	int i, j;
 
 	/* Get local time */
@@ -189,6 +191,7 @@ void init_csv_files() {
 
 void create_csv(char* dir, LOG_TYPE log_type, int index)
 {
+	if(!SDCARD_ACTIVE) return;
 	FRESULT rc = 0;
 	UINT bw;
 	f_open_log (log_type, index, FA_WRITE | FA_CREATE_ALWAYS);
@@ -219,6 +222,7 @@ void create_csv(char* dir, LOG_TYPE log_type, int index)
 
 FRESULT f_open_log (LOG_TYPE log_type, int index, BYTE mode)
 {
+	if(!SDCARD_ACTIVE) return FR_OK;
 	FRESULT rc;
 	char filepath[32] = "";
 	get_filepath(filepath, g_log_directory, log_type, index, TYPE_CSV);
@@ -229,16 +233,19 @@ FRESULT f_open_log (LOG_TYPE log_type, int index, BYTE mode)
 
 FRESULT f_close_()
 {
+	if(!SDCARD_ACTIVE) return FR_OK;
 	return f_close(&fileObj);
 }
 
 FRESULT f_lseek_(DWORD ofs)
 {
+	if(!SDCARD_ACTIVE) return FR_OK;
 	return f_lseek(&fileObj, ofs);
 }
 
 FRESULT f_write_log(LOG_TYPE log_type, int index, char* data)
 {
+	if(!SDCARD_ACTIVE) return FR_OK;
 	FRESULT rc;
 	UINT bw;
 	char data_[17];
@@ -251,6 +258,7 @@ FRESULT f_write_log(LOG_TYPE log_type, int index, char* data)
 
 FRESULT f_write_newline(LOG_TYPE log_type, int index)
 {
+	if(!SDCARD_ACTIVE) return FR_OK;
 	FRESULT rc;
 	UINT bw;
 	rc = f_write(&fileObj, "\r\n", 2, &bw);
@@ -260,6 +268,7 @@ FRESULT f_write_newline(LOG_TYPE log_type, int index)
 }
 
 void get_filepath(char* filepath, char* dir, LOG_TYPE log_type, int index, char* filetype) {
+	if(!SDCARD_ACTIVE) return;
 	// Concat the dir and name variables and save to the filepath variable.
 	if(strcmp("", dir) == 0) {
 		sprintf(filepath, "%s_%d.%s", LOG_TYPE_STRINGS[log_type], index, filetype);
@@ -268,115 +277,3 @@ void get_filepath(char* filepath, char* dir, LOG_TYPE log_type, int index, char*
 		sprintf(filepath, "%s/%s_%d.%s", dir, LOG_TYPE_STRINGS[log_type], index, filetype);
 	}
 }
-
-#if 0
-/**
- * @brief	Main routine for SDMMC example
- * @return	Nothing
- */
-int main(void)
-{
-	FRESULT rc;		/* Result code */
-	DIR dir;		/* Directory object */
-	FILINFO fno;	/* File information object */
-	UINT bw, br, i;
-	uint8_t *ptr;
-	char debugBuf[64];
-
-	SystemCoreClockUpdate();
-	Board_Init();
-
-	initAppSDMMC();
-
-	/* Initialize Repetitive Timer */
-	initAppTimer();
-
-	debugstr("\r\nHello NXP Semiconductors\r\nSD Card demo\r\n");
-
-	/* Enable SD interrupt */
-	NVIC_EnableIRQ(SDC_IRQn);
-
-	f_mount(0, &fatFS);		/* Register volume work area (never fails) */
-
-	debugstr("\r\nOpen an existing file (message.txt).\r\n");
-
-	rc = f_open(&fileObj, "MESSAGE.TXT", FA_READ);
-	if (rc) {
-		die(rc);
-	}
-	else {
-		for (;; ) {
-			/* Read a chunk of file */
-			rc = f_read(&fileObj, buffer, sizeof buffer, &br);
-			if (rc || !br) {
-				break;					/* Error or end of file */
-			}
-			ptr = (uint8_t *) buffer;
-			for (i = 0; i < br; i++) {	/* Type the data */
-				DEBUGOUT("%c", ptr[i]);
-			}
-		}
-		if (rc) {
-			die(rc);
-		}
-
-		debugstr("\r\nClose the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-
-	debugstr("\r\nCreate a new file (hello.txt).\r\n");
-	rc = f_open(&fileObj, "HELLO.TXT", FA_WRITE | FA_CREATE_ALWAYS);
-	if (rc) {
-		die(rc);
-	}
-	else {
-
-		debugstr("\r\nWrite a text data. (Hello world!)\r\n");
-
-		rc = f_write(&fileObj, "Hello world!\r\n", 14, &bw);
-		if (rc) {
-			die(rc);
-		}
-		else {
-			sprintf(debugBuf, "%u bytes written.\r\n", bw);
-			debugstr(debugBuf);
-		}
-		debugstr("\r\nClose the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("\r\nOpen root directory.\r\n");
-	rc = f_opendir(&dir, "");
-	if (rc) {
-		die(rc);
-	}
-	else {
-		debugstr("\r\nDirectory listing...\r\n");
-		for (;; ) {
-			/* Read a directory item */
-			rc = f_readdir(&dir, &fno);
-			if (rc || !fno.fname[0]) {
-				break;					/* Error or end of dir */
-			}
-			if (fno.fattrib & AM_DIR) {
-				sprintf(debugBuf, "   <dir>  %s\r\n", fno.fname);
-			}
-			else {
-				sprintf(debugBuf, "   %8lu  %s\r\n", fno.fsize, fno.fname);
-			}
-			debugstr(debugBuf);
-		}
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("\r\nTest completed.\r\n");
-	for (;; ) {}
-}
-
-#endif	// 0

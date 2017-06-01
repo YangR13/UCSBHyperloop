@@ -11,21 +11,21 @@ void logAllData(){
 	if(RANGING_SENSORS_ACTIVE) {
 		ethernet_prepare_packet();
 		logData(LOG_POSITION, 0);
-		if((sendDataFlag && connectionOpen)) ethernet_send_packet();
+		ethernet_send_packet();
 	}
 
 	if(MOTOR_BOARD_I2C_ACTIVE) {
 		for(i=0; i<4; i++) {
 			ethernet_prepare_packet();
 			logData(LOG_HEMS, i);
-			if((sendDataFlag && connectionOpen)) ethernet_send_packet();
+			ethernet_send_packet();
 		}
 	}
 	if(MAGLEV_BMS_ACTIVE) {
 		for(i=0; i<2; i++) {
 			ethernet_send_packet();
 			logData(LOG_MAGLEV_BMS, i);
-			if((sendDataFlag && connectionOpen)) ethernet_send_packet();
+			ethernet_send_packet();
 		}
 	}
 }
@@ -42,11 +42,15 @@ void logData(LOG_TYPE log_type, int index)
 	rc = f_lseek_(LOG_POSITIONS[log_type][index]);
 
 	char data[16] = "";
+
+	// Time
+	//snprintf(data, 16, "%s", sensorData.time);
+	//ethernet_add_data_to_packet(TIME, -1, -1, data);
+	//rc = f_write_log(log_type, index, data);
+	rc = f_write_log(log_type, index, "WIP");
+
 	switch(log_type) {
 	case LOG_POSITION:
-		// Time
-		// ???
-		rc = f_write_log(log_type, index, "WIP");
 
 		// X Position.
 		snprintf(data, 16, "%06.2f", sensorData.positionX);
@@ -114,11 +118,6 @@ void logData(LOG_TYPE log_type, int index)
 		rc = f_write_log(log_type, index, data);
 
 #if 1
-		// Photoelectric
-		snprintf(data, 16, "%06.2f", sensorData.photoelectric);
-		//ethernet_add_data_to_packet(PH, -1, -1, data);
-		//rc = f_write_log(log_type, index, data);
-
 		// Short Ranging
 		for(i=0; i<4; i++) {
 			snprintf(data, 16, "%06.2f", motors[i]->short_data[0]);
@@ -131,10 +130,6 @@ void logData(LOG_TYPE log_type, int index)
 
 		break;
 	case LOG_HEMS:
-		// Time
-		snprintf(data, 16, "%06.2f", motors[index]->timestamp);
-		// ethernet_add_data_to_packet
-		rc = f_write_log(log_type, index, data);
 
 		// DAC
 		if(index == 0) {
@@ -165,9 +160,6 @@ void logData(LOG_TYPE log_type, int index)
 		rc = f_write_newline(log_type, index);
 		break;
 	case LOG_MAGLEV_BMS:
-		// Time
-		// ???
-		rc = f_write_log(log_type, index, "WIP");
 
 		for(j=0; j<3; j++){
 			// BMS(index) Voltages
@@ -182,8 +174,10 @@ void logData(LOG_TYPE log_type, int index)
 			}
 			// BMS(index) Low/High Voltages
 			snprintf(data, 16, "%06.2f", v_low);
+			//ethernet_add_data_to_packet(BMSVL, index, -1, data);
 			rc = f_write_log(log_type, index, data);
 			snprintf(data, 16, "%06.2f", v_high);
+			//ethernet_add_data_to_packet(BMSVH, index, -1, data);
 			rc = f_write_log(log_type, index, data);
 
 			// BMS(index) Temperatures
