@@ -33,6 +33,7 @@ void logAllData(){
 void logData(LOG_TYPE log_type, int index)
 {
 	FRESULT rc;
+	(void) rc;	// Unused variable.
 	int i, j;
 
 	rc = f_open_log(log_type, index, FA_WRITE);
@@ -45,7 +46,74 @@ void logData(LOG_TYPE log_type, int index)
 	case LOG_POSITION:
 		// Time
 		// ???
+		rc = f_write_log(log_type, index, "WIP");
 
+		// X Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// X Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// X Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Roll.
+		snprintf(data, 16, "%06.2f", sensorData.roll);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Pitch.
+		snprintf(data, 16, "%06.2f", sensorData.pitch);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Yaw.
+		snprintf(data, 16, "%06.2f", sensorData.yaw);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Contact.
+		snprintf(data, 16, "%d", sensorData.contact_sensor_pushed);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+#if 1
 		// Photoelectric
 		snprintf(data, 16, "%06.2f", sensorData.photoelectric);
 		//ethernet_add_data_to_packet(PH, -1, -1, data);
@@ -57,9 +125,9 @@ void logData(LOG_TYPE log_type, int index)
 			ethernet_add_data_to_packet(SR, i, -1, data);
 			//rc = f_write_log(log_type, index, data);
 		}
-
+#endif // 0|1
 		// Newline
-		//rc = f_write_newline(log_type, index);
+		rc = f_write_newline(log_type, index);
 
 		break;
 	case LOG_HEMS:
@@ -97,20 +165,35 @@ void logData(LOG_TYPE log_type, int index)
 		rc = f_write_newline(log_type, index);
 		break;
 	case LOG_MAGLEV_BMS:
-		// BMS(index) Voltages
+		// Time
+		// ???
+		rc = f_write_log(log_type, index, "WIP");
+
 		for(j=0; j<3; j++){
+			// BMS(index) Voltages
+			float v_low = -1;
+			float v_high = -1;
 			for(i=0; i<6; i++){
-				snprintf(data, 16, "%06.2f", maglev_bmses[index]->cell_voltages[j][i]);
+				float v = maglev_bmses[index]->cell_voltages[j][i];
+				if(v_low == -1 || v < v_low) v_low = v;
+				if(v_high == -1 || v > v_high) v_high = v;
+				snprintf(data, 16, "%06.2f", v);
 				ethernet_add_data_to_packet(BMSV, index, (6*j)+i, data);
 			}
-		}
-		// BMS(index) Temperature
-		for(j=0; j<3; j++){
+			// BMS(index) Low/High Voltages
+			snprintf(data, 16, "%06.2f", v_low);
+			rc = f_write_log(log_type, index, data);
+			snprintf(data, 16, "%06.2f", v_high);
+			rc = f_write_log(log_type, index, data);
+
+			// BMS(index) Temperatures
 			for(i=0; i<2; i++){
 				snprintf(data, 16, "%06.2f", maglev_bmses[index]->temperatures[j][i]);
 				ethernet_add_data_to_packet(BMST, index, (2*j)+i, data);
+				rc = f_write_log(log_type, index, data);
 			}
 		}
+
 		break;
 	default:
 		break;

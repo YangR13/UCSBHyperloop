@@ -204,7 +204,7 @@ void create_csv(char* dir, LOG_TYPE log_type, int index)
 		rc = f_write(&fileObj, header, strlen(header), &bw);
 		break;
 	case LOG_MAGLEV_BMS:
-		snprintf(header, 128, "Time,B0 Low,B0 High,B0 Temp 0,B0 Temp 1,B1 Low,B1 High,B1 Temp 0,B1 Temp 1,Batt 2 Low,Batt 2 High,B2 Temp 0,B2 Temp 1\r\n");
+		snprintf(header, 128, "Time,B0 Low,B0 High,B0 Temp 0,B0 Temp 1,B1 Low,B1 High,B1 Temp 0,B1 Temp 1,B2 Low,B2 High,B2 Temp 0,B2 Temp 1\r\n");
 		rc = f_write(&fileObj, header, strlen(header), &bw);
 		break;
 	default:
