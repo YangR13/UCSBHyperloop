@@ -8,13 +8,14 @@
 #include "photo_electric.h"
 
 void collectCalibrationData( I2C_ID_T id ){
-	XYZ initialAccel;
+	XYZ initialAccel = getInitialAccelMatrix(id);
 
-	initialAccel = getInitialAccelMatrix(id);
-	sensorData.initialAccelX = initialAccel.x;
-	sensorData.initialAccelY = initialAccel.y;
-	sensorData.initialAccelZ = initialAccel.z;
-
+	if(id == I2C1) {
+		sensorData.initialAccel1 = initialAccel;
+	}
+	if(id == I2C2) {
+		sensorData.initialAccel2 = initialAccel;
+	}
 }
 
 void collectData(){
@@ -22,56 +23,17 @@ void collectData(){
 	sensorData.dataPrintFlag += 1;
 
 	XYZ acceleration1, acceleration2, velocity, position;
-	//XYZ acceleration, velocity, position;
-	//rangingData shortRangingData, longRangingData;
 	positionAttitudeData positionAttitude;
-	/*
-	if (SMOOSHED_ONE_ACTIVE || SMOOSHED_TWO_ACTIVE){
-	    getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.
-	}
-	if (SMOOSHED_ONE_ACTIVE) {
-
-		if(getPressureFlag){
-			sensorData.pressure1 = getPressure(smooshedOne, I2C1);
-		}
-		else{
-			sensorData.temp1 = getTemperature(smooshedOne, I2C1);
-		}
-
-		acceleration = getAccelerometerData(I2C1);
-		sensorData.accelX = acceleration.x;
-		sensorData.accelY = acceleration.y;
-		sensorData.accelZ = acceleration.z;
-
-		velocity = getInertialVelocity();
-		sensorData.velocityX = velocity.x;
-		sensorData.velocityY = velocity.y;
-		sensorData.velocityZ = velocity.z;
-
-		position = getInertialPosition();
-		sensorData.positionX = position.x;
-		sensorData.positionY = position.y;
-		sensorData.positionZ = position.z;
-	}
-
-	if (SMOOSHED_TWO_ACTIVE) {
-
-		if(getPressureFlag){
-			sensorData.pressure2 = getPressure(smooshedOne, I2C2);
-		}
-		else{
-			sensorData.temp2 = getTemperature(smooshedOne, I2C2);
-		}
-
-	}
-	*/
     if (ACCEL_ACTIVE) {
 
-        acceleration1 = getAccelerometerData(I2C2); // NOTE change back to I2C1
-        acceleration2 = getAccelerometerData(I2C2);
-        sensorData.accelX = (acceleration1.x + acceleration2.x) / 2.0;
-        sensorData.accelY = (acceleration1.y + acceleration2.y) / 2.0;
-        sensorData.accelZ = (acceleration1.z + acceleration2.z) / 2.0;
+        sensorData.accel1 = getSmoothenedAccelerometerData(I2C1);
+        sensorData.accel2 = getSmoothenedAccelerometerData(I2C2);
+        sensorData.accelX = (sensorData.accel1.x + sensorData.accel2.x) / 2.0;
+        sensorData.accelY = (sensorData.accel1.y + sensorData.accel2.y) / 2.0;
+        sensorData.accelZ = (sensorData.accel1.z + sensorData.accel2.z) / 2.0;
+        //DEBUGOUT("accel1 %f, %f, %f \n", sensorData.accel1.x, sensorData.accel1.y, sensorData.accel1.z);
+        //DEBUGOUT("accel2 %f, %f, %f\n", sensorData.accel2.x, sensorData.accel2.y, sensorData.accel2.z);
+        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
         velocity = getInertialVelocity();
         sensorData.velocityX = velocity.x;
         sensorData.velocityY = velocity.y;
@@ -128,7 +90,6 @@ void collectData(){
 		}
 
 		// pitch
-
 		float pitch = ((z_1 + z_2 - z_0 - z_3) / 2*(d_F + d_B)) - pitch_i;
 
 		// roll
@@ -144,7 +105,7 @@ void collectData(){
 		// lateral position
 		float y_ci = y_0i - (d0 * yaw_i);
 		float y_c = (y_0 - (d0 * yaw)) - y_ci;
-		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
+		//DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
 	// Photoelectric distance is updated directly in the interrupt handler
@@ -154,6 +115,7 @@ void collectData(){
     	for(i=0; i < NUM_HEMS; i++) {
     		update_HEMS(motors[i]);
     	}
+
     }
 
     if(MAGLEV_BMS_ACTIVE){
@@ -196,7 +158,20 @@ void printSensorData(){
     }
 
     if (MOTOR_BOARD_I2C_ACTIVE){
+
+        float sum = 0.0; // used to sum up four tachometer distances
+        float avg; // average of four tachometer differences
+        float dist; // distance traveled based on tachometer
+        float r = 1.0; // radius of wheel
+
+        // Print sensor data at 1Hz.
         int i;
+        for(i=0; i<NUM_HEMS; i++) {
+            DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
+            sum += motors[i]->tachometer_counter[1];
+        }
+        avg = sum/4.0; // average tachometer count based on four wheel tachometers
+        dist = avg * 2 * 3.14159265358979323846 * r; // average distance traveled based on four wheel tachometers
         for(i=0; i<NUM_HEMS; i++) {
             DEBUGOUT("Motor %d sensors: RPM0=%d, RPM1=%d CURRENT=%d, TEMP=%d,%d,%d,%d, SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
         }
