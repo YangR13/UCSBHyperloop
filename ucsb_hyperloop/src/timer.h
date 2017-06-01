@@ -13,7 +13,7 @@ uint32_t tick;
 // Flags for time-interval-based routines
 #define COLLECT_DATA_FREQ 10 // Hz
 uint8_t collectDataFlag;
-#define LOG_DATA_FREQ 10 // Hz
+#define LOG_DATA_FREQ 1 // Hz
 uint8_t logDataFlag;
 #define PRINT_SENSOR_DATA_PERIOD 3 // sec
 uint8_t printSensorDataFlag;

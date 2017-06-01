@@ -33,6 +33,7 @@ void Reset_Timer_Counter(LPC_TIMER_T *pTMR) {
 
 /* Pass in the timer (E.g. LPC_TIMER0), timer interrupt (E.g. TIMER0_IRQn), and a tickRate (E.g. 2000)*/
 /* tickRate is the frequency you desire. */
+// Current max rate is 1000Hz, if needed, adjust prescaleSet value to be lower?
 void timerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
 
 	uint32_t timerFreq;
@@ -40,12 +41,15 @@ void timerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
 
 	/* Timer rate is system clock rate */
 	timerFreq = Chip_Clock_GetSystemClockRate();
+    Chip_TIMER_PrescaleSet(timer, timerFreq/2067);
+
 
 	/* Timer setup for match and interrupt at TICKRATE_HZ */
 	Chip_TIMER_Reset( timer );
 	Chip_TIMER_MatchEnableInt( timer, 1 );
 
-	Chip_TIMER_SetMatch( timer, 1, ( timerFreq / (tickRate * 2) ) );
+	//Chip_TIMER_SetMatch( timer, 1, ( timerFreq / (tickRate * 2) ) );
+	Chip_TIMER_SetMatch( timer, 1, (1000 / tickRate) );
 	Chip_TIMER_ResetOnMatchEnable( timer, 1 );
 	Chip_TIMER_Enable( timer );
 

@@ -62,10 +62,12 @@ int main(void)
 		// ** PERIODIC TASKS **
         if(GATHER_DATA_ACTIVE && collectDataFlag){
             // ** GATHER DATA FROM SENSORS **
+            collectDataFlag = 0;
             collectData(); 		// See sensor_data.c
 
             // ** DATA LOGGING **
             if (COMMUNICATION_ACTIVE && logDataFlag){
+                logDataFlag = 0;
                 logAllData();          // See logging.c
             }
 

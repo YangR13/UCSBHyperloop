@@ -18,7 +18,6 @@ void collectCalibrationData( I2C_ID_T id ){
 }
 
 void collectData(){
-	collectDataFlag = 0;
 
 	sensorData.dataPrintFlag += 1;
 
