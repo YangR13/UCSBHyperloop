@@ -10,7 +10,7 @@
 void logAllData(){
 	int i;
 
-	if(RANGING_SENSORS_ACTIVE) {
+	if(GATHER_DATA_ACTIVE) {
 		ethernet_prepare_packet();
 		logData(LOG_POSITION, 0);
 		ethernet_send_packet();
@@ -27,6 +27,14 @@ void logAllData(){
 		for(i=0; i<2; i++) {
 			ethernet_send_packet();
 			logData(LOG_MAGLEV_BMS, i);
+			ethernet_send_packet();
+		}
+	}
+
+	if(BRAKING_ACTIVE) {
+		for(i=0; i<4; i++) {
+			ethernet_send_packet();
+			logData(LOG_BRAKING, i);
 			ethernet_send_packet();
 		}
 	}
@@ -188,6 +196,20 @@ void logData(LOG_TYPE log_type, int index)
 				ethernet_add_data_to_packet(BMST, index, (2*j)+i, data);
 				rc = f_write_log(log_type, index, data);
 			}
+		}
+
+		break;
+	case LOG_BRAKING:
+		for(i=0; i<2; i++) {
+			// PWM.
+
+			// Direction.
+
+			// Position.
+
+			// Current.
+
+			// Temperature. x2
 		}
 
 		break;

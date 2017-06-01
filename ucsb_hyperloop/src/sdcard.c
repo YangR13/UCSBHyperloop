@@ -210,6 +210,10 @@ void create_csv(char* dir, LOG_TYPE log_type, int index)
 		snprintf(header, 128, "Time,B0 Low,B0 High,B0 Temp 0,B0 Temp 1,B1 Low,B1 High,B1 Temp 0,B1 Temp 1,B2 Low,B2 High,B2 Temp 0,B2 Temp 1\r\n");
 		rc = f_write(&fileObj, header, strlen(header), &bw);
 		break;
+	case LOG_BRAKING:
+		snprintf(header, 128, "Time,A0 PWM,A0 Dir,A0 Pos,A0 Current,A0 Temp 0,A0, Temp 1,A1 PWM,A1 Dir,A1 Pos,A1 Current,A1 Temp 0,A1, Temp 1\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
 	default:
 		break;
 	}

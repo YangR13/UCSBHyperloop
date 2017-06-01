@@ -22,6 +22,7 @@ typedef enum {
 	LOG_POSITION,
 	LOG_HEMS,
 	LOG_MAGLEV_BMS,
+	LOG_BRAKING,
 	NUM_LOGS
 } LOG_TYPE;
 
@@ -29,9 +30,10 @@ static const char LOG_TYPE_STRINGS[NUM_LOGS][8] = {
 	"pos",
 	"hems",
 	"ml-bat",
+	"brake"
 };
 
-long LOG_POSITIONS[NUM_LOGS][6];
+long LOG_POSITIONS[NUM_LOGS][4];
 
 char g_log_directory[9];
 
