@@ -63,12 +63,20 @@ typedef struct{
   float wheelTach3PositionX;
   float wheelTach4PositionX;
 
+  int wheelTach1Alive;
+  int wheelTach2Alive;
+  int wheelTach3Alive;
+  int wheelTach4Alive;
+
+
   float actualDistanceX;					// Increments of 100 ft
   float offsetPositionX;					// Delta away from each increment
   int   photoelectric1InterruptFlag;		// Hit Tape
   float photoelectric1InterruptPosition;	// Value used for miss on distance marker
   float modAvg;								// average mod 100, determines whether wheel tachs in range of [0,15] and [85,100]
   float average;							// this is the position that the tachs read when it hits the tape
+
+
 
   float pressure1;
   float pressure2;

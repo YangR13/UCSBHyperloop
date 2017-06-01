@@ -63,6 +63,14 @@ void initializeSensorsAndControls(){
     if (CONTACT_SENSOR_ACTIVE){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
+
+    if (POSITIONING_ACTIVE) {
+    	sensorData.wheelTach1Alive = 1;
+    	sensorData.wheelTach2Alive = 1;
+    	sensorData.wheelTach3Alive = 1;
+    	sensorData.wheelTach4Alive = 1;
+    }
+    }
 }
 
 void initializeCommunications(){

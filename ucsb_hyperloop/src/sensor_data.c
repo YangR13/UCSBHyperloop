@@ -188,37 +188,60 @@ void collectData(){
     	float minDistAbs, minDistNonAbs; // used to sum up four tachometer distances
     	float r = 1.0; // radius of wheel
 
+    	// update tachs
     	for(i=0; i < NUM_HEMS; i++) {
     		update_HEMS(motors[i]);
     	}
 
+    	//check if any tachs are dead, if they are, set alive value to 0
+    	if(motors[0]->rpm[2] == 0) sensorData.wheelTach1Alive = 0;
+    	if(motors[1]->rpm[2] == 0) sensorData.wheelTach2Alive = 0;
+    	if(motors[2]->rpm[2] == 0) sensorData.wheelTach3Alive = 0;
+    	if(motors[3]->rpm[2] == 0) sensorData.wheelTach4Alive = 0;
+
+
+    	//gather wheel tach values
     	sensorData.wheelTach1PositionX = motors[0]->tachometer_counter[1];
     	sensorData.wheelTach2PositionX = motors[1]->tachometer_counter[1];
     	sensorData.wheelTach3PositionX = motors[2]->tachometer_counter[1];
     	sensorData.wheelTach4PositionX = motors[3]->tachometer_counter[1];
 
+    	//should we put a check here?
     	minDistAbs = fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach2PositionX);
     	sensorData.average = (sensorData.wheelTach1PositionX + sensorData.wheelTach2PositionX) / 2.0;
-    	if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX)) {
-    		minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX);
-    		sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach3PositionX) / 2.0;
+
+
+    	if(sensorData.wheelTach1Alive && sensorData.wheelTach3Alive){
+    		if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX)) {
+    			minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach3PositionX);
+    			sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach3PositionX) / 2.0;
+    		}
     	}
-    	if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX)) {
-    		minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX);
-    		sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	if(sensorData.wheelTach1Alive && sensorData.wheelTach4Alive){
+    		if (minDistAbs 			> fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX)) {
+    			minDistAbs			= fabs(sensorData.wheelTach1PositionX - sensorData.wheelTach4PositionX);
+    			sensorData.average	= 	  (sensorData.wheelTach1PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    		}
     	}
-    	if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX)) {
-    		minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX);
-    		sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach3PositionX) / 2.0;
+    	if(sensorData.wheelTach2Alive && sensorData.wheelTach3Alive){
+    		if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX)) {
+    			minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach3PositionX);
+    			sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach3PositionX) / 2.0;
+    		}
     	}
-    	if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX)) {
-    		minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX);
-    		sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	if(sensorData.wheelTach2Alive && sensorData.wheelTach4Alive){
+    		if (minDistAbs 			> fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX)) {
+    			minDistAbs			= fabs(sensorData.wheelTach2PositionX - sensorData.wheelTach4PositionX);
+    			sensorData.average	= 	  (sensorData.wheelTach2PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    		}
     	}
-    	if (minDistAbs 			> fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX)) {
-    		minDistAbs			= fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX);
-    		sensorData.average	= 	  (sensorData.wheelTach3PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    	if(sensorData.wheelTach3Alive && sensorData.weelTach4Alive){
+    		if (minDistAbs 			> fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX)) {
+    			minDistAbs			= fabs(sensorData.wheelTach3PositionX - sensorData.wheelTach4PositionX);
+    			sensorData.average	= 	  (sensorData.wheelTach3PositionX + sensorData.wheelTach4PositionX) / 2.0;
+    		}
     	}
+
 
     	sensorData.photoelectric1InterruptPosition = sensorData.average;
     }
