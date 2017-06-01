@@ -24,6 +24,7 @@
 #include "sensor_data.h"
 #include "subsystems.h"
 #include "actuation.h"
+#include "braking_state_machine.h"
 
 int main(void)
 {
@@ -39,8 +40,6 @@ int main(void)
     DEBUGOUT("_______________________________________\n");
     DEBUGOUT("UCSB Hyperloop Controller Initialized\n");
     DEBUGOUT("_______________________________________\n");
-
-    int dir = 0;
 
     // Main control loop
     while( 1 ) {
@@ -61,20 +60,13 @@ int main(void)
             performActuation(); // See actuation.c
 		}
 
-//		if (swapDirFlag){
-//		    DEBUGOUT("START STEP\n");
-//		    swapDirFlag = 0;
-////		    dir = !dir;
-////	        braking_boards[0]->enable[0] = 0.03;
-////	        braking_boards[0]->enable[1] = 0.03;
-////	        braking_boards[0]->direction[0] = dir;
-////	        braking_boards[0]->direction[1] = dir;
-////	        update_actuator_control(braking_boards[0]);
-//	        step(braking_boards[0], 0);
-//		}
-
-        update_actuator_control(braking_boards[0]);
-//        DEBUGOUT("%d\n", braking_boards[0]->position[1]);
+		/*
+		// If braking is active, poll feedback signal as fast as possible to determine when set point reached
+		if (Braking_HSM.engage){
+		    update_actuator_control(braking_boards[0]);
+		    update_actuator_control(braking_boards[1]);
+		}
+		*/
 
 		// ** PERIODIC TASKS **
         if(GATHER_DATA_ACTIVE && collectDataFlag){
