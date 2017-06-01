@@ -7,7 +7,6 @@
 #include "kinematics.h"
 #include "photo_electric.h"
 
-int y = 0;
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel;
 
@@ -19,8 +18,8 @@ void collectCalibrationData( I2C_ID_T id ){
 }
 
 void collectData(){
-
 	collectDataFlag = 0;
+
 	sensorData.dataPrintFlag += 1;
 
 	XYZ acceleration1, acceleration2, velocity, position;
@@ -28,6 +27,9 @@ void collectData(){
 	//rangingData shortRangingData, longRangingData;
 	positionAttitudeData positionAttitude;
 	/*
+	if (SMOOSHED_ONE_ACTIVE || SMOOSHED_TWO_ACTIVE){
+	    getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.
+	}
 	if (SMOOSHED_ONE_ACTIVE) {
 
 		if(getPressureFlag){
@@ -71,9 +73,6 @@ void collectData(){
         sensorData.accelX = (acceleration1.x + acceleration2.x) / 2.0;
         sensorData.accelY = (acceleration1.y + acceleration2.y) / 2.0;
         sensorData.accelZ = (acceleration1.z + acceleration2.z) / 2.0;
-        DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
-        DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
-        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
         velocity = getInertialVelocity();
         sensorData.velocityX = velocity.x;
         sensorData.velocityY = velocity.y;
@@ -149,30 +148,12 @@ void collectData(){
 		DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
-    if (PHOTO_ELECTRIC_ACTIVE){
-        /* Handle Photoelectric Strip Detected */
-        if(stripDetectedFlag) {
-//            stripDetected();
-        	stripDetectedFlag = 0;
-            //DEBUGOUT("Strip %u, of %u in region %u!\n", stripCount, regionalStripCount, stripRegion);
-            DEBUGOUT("Distance: %f feet\n", sensorData.photoelectric);
-            //sensorData.photoelectric+=100.0; // This is moved INTO the handler so we don't lose strips between printouts.
-        }
-    }
+	// Photoelectric distance is updated directly in the interrupt handler
 
     if(MOTOR_BOARD_I2C_ACTIVE) {
     	int i;
     	for(i=0; i < NUM_HEMS; i++) {
     		update_HEMS(motors[i]);
-    	}
-
-    	if(y%10 == 0) {
-    		// Print sensor data at 1Hz.
-    		int i;
-    		for(i=0; i<NUM_HEMS; i++) {
-    			DEBUGOUT("Motor %d sensors: RPM0=%d, RPM1=%d CURRENT=%d, TEMP=%d,%d,%d,%d, SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
-    		}
-    		DEBUGOUT("\n");
     	}
     }
 
@@ -182,60 +163,60 @@ void collectData(){
     		update_Maglev_BMS(maglev_bmses[i]);
     	}
 
-    	if(y%10 == 0) {
-    		// Print sensor data at 1Hz.
-    		int i;
-    		for(i=0; i<NUM_MAGLEV_BMS; i++) {
-    			DEBUGOUT("BMS %d sensors: \n", i);
-    			int j = 0;
-    			for (j = 0; j < 3; j++){
-    				DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
-    			}
-    		}
-    		DEBUGOUT("\n");
-    	}
     }
 
     if(CONTACT_SENSOR_ACTIVE){
     	int contact_sensor_pushed;
     	contact_sensor_pushed = GPIO_Contact_Sensor_Pushed();
     	sensorData.contact_sensor_pushed = contact_sensor_pushed;
-    	DEBUGOUT("contact_sensor_pushed: %d\n", contact_sensor_pushed);
     }
 
-	getPressureFlag = !getPressureFlag; // Toggling between pressure and temperature register loading.
+	if (PRINT_SENSOR_DATA_ACTIVE){
+	    if (printSensorDataFlag){
+	        printSensorData();
+	    }
+	}
+}
 
-	// Currently disabled debug-out printing of data.
-#if 0
-    if (sensorData.dataPrintFlag == 2) { // Print every 2/1 = 2 seconds.
-        DEBUGOUT( "temperature1 = %f\n", sensorData.temp1 );
-        DEBUGOUT( "temperature2 = %f\n", sensorData.temp2 );
-        DEBUGOUT( "pressure1 = %f\n", sensorData.pressure1 );
-        DEBUGOUT( "pressure2 = %f\n", sensorData.pressure2 );
-        DEBUGOUT( "accelX = %f\t", sensorData.accelX );
-        DEBUGOUT( "accelY = %f\t", sensorData.accelY );
-        DEBUGOUT( "accelZ = %f\n", sensorData.accelZ );
-        DEBUGOUT( "velocityX = %f\t", sensorData.velocityX );
-        DEBUGOUT( "velocityY = %f\t", sensorData.velocityY );
-        DEBUGOUT( "velocityZ = %f\n", sensorData.velocityZ );
-        DEBUGOUT( "positionX = %f\t", sensorData.positionX );
-        DEBUGOUT( "positionY = %f\t", sensorData.positionY );
-        DEBUGOUT( "positionZ = %f\n", sensorData.positionZ );
-        DEBUGOUT( "Roll = %f\t", sensorData.roll );
-        DEBUGOUT( "Pitch = %f\t", sensorData.pitch );
-        DEBUGOUT( "Yaw = %f\n", sensorData.yaw );
-        DEBUGOUT( "\n" );
-        sensorData.dataPrintFlag = 0;
+void printSensorData(){
+    // Print all data from active sensors to the debug terminal.
+    printSensorDataFlag = 0;
+
+    if (PHOTO_ELECTRIC_ACTIVE){
+        /* Handle Photoelectric Strip Detected */
+        if(stripDetectedFlag) {
+            stripDetectedFlag = 0;
+            DEBUGOUT("Distance: %f feet\n", sensorData.photoelectric);
+        }
     }
-#endif
 
-}
+    if (ACCEL_ACTIVE){
+//        DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
+//        DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
+        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+    }
 
-void TIMER1_IRQHandler(void){
-	collectDataFlag = 1;
-	Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
-}
+    if (MOTOR_BOARD_I2C_ACTIVE){
+        int i;
+        for(i=0; i<NUM_HEMS; i++) {
+            DEBUGOUT("Motor %d sensors: RPM0=%d, RPM1=%d CURRENT=%d, TEMP=%d,%d,%d,%d, SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
+        }
+        DEBUGOUT("\n");
+    }
 
-void gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
-  	timerInit(timer, timerInterrupt, tickRate);
+    if (MAGLEV_BMS_ACTIVE){
+        int i;
+        for(i=0; i<NUM_MAGLEV_BMS; i++) {
+            DEBUGOUT("BMS %d sensors: \n", i);
+            int j = 0;
+            for (j = 0; j < 3; j++){
+                DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
+            }
+        }
+        DEBUGOUT("\n");
+    }
+
+    if (CONTACT_SENSOR_ACTIVE){
+        DEBUGOUT("contact_sensor_pushed: %d\n", sensorData.contact_sensor_pushed);
+    }
 }

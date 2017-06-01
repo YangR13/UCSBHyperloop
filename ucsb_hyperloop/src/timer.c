@@ -13,6 +13,15 @@ void runtimeTimerInit() {
 	Chip_TIMER_Enable(LPC_TIMER0);
 }
 
+void tickTimerInit(){
+    // Initialize tick timer and all time-based routine flags
+    timerInit(LPC_TIMER1, TIMER1_IRQn, TICK_TIMER_FREQ);
+    tick = 0;
+    collectDataFlag = 0;
+    logDataFlag = 0;
+    printSensorDataFlag = 0;
+}
+
 uint32_t getRuntime() {
 	return Chip_TIMER_ReadCount(LPC_TIMER0);
 }
@@ -46,3 +55,29 @@ void timerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
 
 	return;
 }
+
+void TIMER1_IRQHandler(void){
+    // Increment the 'ticks' variable
+    // If 'ticks' reaches defined thresholds, set the flag to perform tasks whose periods have been reached.
+
+    tick++;
+
+    if (tick % (TICK_TIMER_FREQ / COLLECT_DATA_FREQ) == 0){
+        collectDataFlag = 1;
+    }
+    if (tick % (TICK_TIMER_FREQ / LOG_DATA_FREQ) == 0){
+        logDataFlag = 1;
+    }
+    if (tick % (TICK_TIMER_FREQ * PRINT_SENSOR_DATA_PERIOD) == 0){
+        printSensorDataFlag = 1;
+    }
+
+    if (tick >= (TICK_TIMER_FREQ * MAX_PERIOD_MULTIPLIER)){
+        // Reset ticks to 0 to avoid any overflows (shouldn't be an issue with 32 bit variable anyways)
+        tick = 0;
+    }
+
+    // Clear the interrupt
+    Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
+}
+

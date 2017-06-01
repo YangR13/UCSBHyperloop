@@ -4,6 +4,8 @@
 #include "sensor_data.h"
 #include "rtc.h"
 #include "I2CPERIPHS.h"
+#include "sdcard.h"
+#include "timer.h"
 
 void logAllData(){
 	int i;

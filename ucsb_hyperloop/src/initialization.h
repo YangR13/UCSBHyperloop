@@ -27,8 +27,10 @@
 #define SDCARD_ACTIVE           	1
 #define COMMUNICATION_ACTIVE    	(ETHERNET_ACTIVE || SDCARD_ACTIVE)
 #define GPIO_INT_ACTIVE         	(ETHERNET_ACTIVE || PHOTO_ELECTRIC_ACTIVE)
+#define PRINT_SENSOR_DATA_ACTIVE    0
 
 // Initialize all the things
+void initializeTimers();
 void initializeSensorsAndControls();
 void initializeCommunications();
 

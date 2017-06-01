@@ -5,6 +5,7 @@
 #include "board.h"
 #include "chip.h"
 #include "rtc.h"
+#include "initialization.h"
 
 // If this import fails:
 // Go into project settings => C/C++ Settings => Settings => MCU C Compiler => Includes

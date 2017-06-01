@@ -8,6 +8,14 @@
 #include "sdcard.h"
 #include "gpio.h"
 #include "I2CPERIPHS.h"
+#include "timer.h"
+
+void initializeTimers(){
+    runtimeTimerInit(); // Timer 0 - runtime timer
+    tickTimerInit();    // Timer 1 - 'tick' timer for periodic tasks
+    // Timer 2 - formerly used for 'sendDataFlag', now open
+    // Timer 3 - formerly used for photoelectric sensor timing, now open
+}
 
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
 void initializeSensorsAndControls(){
@@ -20,9 +28,6 @@ void initializeSensorsAndControls(){
         Init_PWM(LPC_PWM1);
         Init_Channel(LPC_PWM1, 1);
         Set_Channel_PWM(LPC_PWM1, 1, 0.5);
-    }
-    if(GATHER_DATA_ACTIVE){
-        gatherSensorDataTimerInit(LPC_TIMER1, TIMER1_IRQn, 10);
     }
     if(SMOOSHED_ONE_ACTIVE){
         i2cInit(I2C1, SPEED_100KHZ);
@@ -78,9 +83,9 @@ void initializeSensorsAndControls(){
 void initializeCommunications(){
     if(ETHERNET_ACTIVE){
         ethernetInit(PROTO_TCP, 0);
-        sendSensorDataTimerInit(LPC_TIMER2, TIMER2_IRQn, 4);
+        //sendSensorDataTimerInit(LPC_TIMER2, TIMER2_IRQn, 4);
 
-        /* Handle all Wiznet Interrupts, including RECV */
+        /* Handle any Wiznet Interrupts present at initialization */
         if(wizIntFlag) {
             wizIntFunction();
         }

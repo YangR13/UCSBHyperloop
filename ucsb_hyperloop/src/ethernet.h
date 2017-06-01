@@ -189,8 +189,6 @@ void ethernetInit(uint8_t protocol, uint8_t socket);
 void Wiz_Deinit(uint8_t protocol, uint8_t socket);
 void spi_Send_Blocking(uint16_t address, uint16_t length);
 void spi_Recv_Blocking(uint16_t address, uint16_t length);
-void TIMER2_IRQHandler(void);
-void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position);
 void send_data_ack_helper(char *method, int *position);
 uint8_t Wiz_Check_Socket(uint8_t n);
