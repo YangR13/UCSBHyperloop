@@ -83,7 +83,7 @@ void initializeSensorsAndControls(){
         i2cInit(I2C1, SPEED_100KHZ);
         //timerInit(LPC_TIMER3, TIMER3_IRQn, 10);
 //        Chip_TIMER_ResetOnMatchEnable(LPC_TIMER3, 0);
-        Init_PWM(LPC_PWM1);
+        //Init_PWM(LPC_PWM1);
         //int i;
         //for (i = 0; i < 2; i++){
             int i = 0;

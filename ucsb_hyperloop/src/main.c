@@ -61,17 +61,17 @@ int main(void)
             performActuation(); // See actuation.c
 		}
 
-		if (swapDirFlag){
-		    DEBUGOUT("START STEP\n");
-		    swapDirFlag = 0;
-//		    dir = !dir;
-//	        braking_boards[0]->enable[0] = 0.03;
-//	        braking_boards[0]->enable[1] = 0.03;
-//	        braking_boards[0]->direction[0] = dir;
-//	        braking_boards[0]->direction[1] = dir;
-//	        update_actuator_control(braking_boards[0]);
-	        step(braking_boards[0], 1);
-		}
+//		if (swapDirFlag){
+//		    DEBUGOUT("START STEP\n");
+//		    swapDirFlag = 0;
+////		    dir = !dir;
+////	        braking_boards[0]->enable[0] = 0.03;
+////	        braking_boards[0]->enable[1] = 0.03;
+////	        braking_boards[0]->direction[0] = dir;
+////	        braking_boards[0]->direction[1] = dir;
+////	        update_actuator_control(braking_boards[0]);
+//	        step(braking_boards[0], 0);
+//		}
 
         update_actuator_control(braking_boards[0]);
 //        DEBUGOUT("%d\n", braking_boards[0]->position[1]);
