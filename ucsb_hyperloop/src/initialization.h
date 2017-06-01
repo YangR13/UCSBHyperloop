@@ -16,7 +16,7 @@
 #define	CONTACT_SENSOR_ACTIVE		0
 
 // Other subsystems
-#define BRAKING_ACTIVE				1
+#define BRAKING_ACTIVE				0
 #define PAYLOAD_ACTUATORS_ACTIVE	0
 #define SERVICE_PROPULSION_ACTIVE	0
 
