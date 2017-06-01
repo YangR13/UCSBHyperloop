@@ -239,22 +239,35 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, STOP_BRAKES_SIG) == 0){
 		printf("STOP_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.0;
+		braking_boards[0]->enable[1] = 0.0;
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.5;
+		braking_boards[0]->enable[1] = 0.5;
+		braking_boards[0]->direction[0] = 1;
+		braking_boards[0]->direction[1] = 1;
+
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
+        braking_boards[0]->enable[0] = 0.5;
+        braking_boards[0]->enable[1] = 0.5;
+        braking_boards[0]->direction[0] = 0;
+        braking_boards[0]->direction[1] = 0;
 	}
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
 		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 1);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
 		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 0);
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC

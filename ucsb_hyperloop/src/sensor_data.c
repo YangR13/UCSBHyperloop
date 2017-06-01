@@ -6,6 +6,7 @@
 #include "temp_press.h"
 #include "kinematics.h"
 #include "photo_electric.h"
+#include "timer.h"
 
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
@@ -19,7 +20,6 @@ void collectCalibrationData( I2C_ID_T id ){
 }
 
 void collectData(){
-
 	sensorData.dataPrintFlag += 1;
 
 	XYZ acceleration1, acceleration2, velocity, position;
@@ -115,7 +115,6 @@ void collectData(){
     	for(i=0; i < NUM_HEMS; i++) {
     		update_HEMS(motors[i]);
     	}
-
     }
 
     if(MAGLEV_BMS_ACTIVE){
@@ -132,11 +131,19 @@ void collectData(){
     	sensorData.contact_sensor_pushed = contact_sensor_pushed;
     }
 
-	if (PRINT_SENSOR_DATA_ACTIVE){
-	    if (printSensorDataFlag){
-	        printSensorData();
-	    }
-	}
+    if (BRAKING_ACTIVE){
+        int i = 0;
+        for (i = 0; i < 2; i++){
+            update_actuator_control(braking_boards[i]);
+            update_actuator_board(braking_boards[i]);
+        }
+    }
+
+    if (PRINT_SENSOR_DATA_ACTIVE){
+        if (printSensorDataFlag){
+            printSensorData();
+        }
+    }
 }
 
 void printSensorData(){
@@ -192,5 +199,14 @@ void printSensorData(){
 
     if (CONTACT_SENSOR_ACTIVE){
         DEBUGOUT("contact_sensor_pushed: %d\n", sensorData.contact_sensor_pushed);
+    }
+
+    if (BRAKING_ACTIVE){
+        DEBUGOUT("Braking board 0 sensor data:\n");
+        DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+        DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+        DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+        DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
+        DEBUGOUT("\n\n");
     }
 }

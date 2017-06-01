@@ -68,6 +68,16 @@ void initializeSensorsAndControls(){
     if (CONTACT_SENSOR_ACTIVE){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
+
+    if (BRAKING_ACTIVE){
+        i2cInit(I2C1, SPEED_100KHZ);
+        Init_PWM(LPC_PWM1);
+        int i;
+        for (i = 0; i < 2; i++){
+            int i = 0;
+            braking_boards[i] = initialize_actuator_board(i);
+        }
+    }
 }
 
 void initializeCommunications(){

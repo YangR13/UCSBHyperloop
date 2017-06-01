@@ -81,6 +81,7 @@ void TIMER1_IRQHandler(void){
         tick = 0;
     }
 
+
     // Clear the interrupt
     Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
 }

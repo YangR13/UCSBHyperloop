@@ -24,6 +24,7 @@
 #include "sensor_data.h"
 #include "subsystems.h"
 #include "actuation.h"
+#include "braking_state_machine.h"
 
 int main(void)
 {
@@ -59,6 +60,14 @@ int main(void)
             performActuation(); // See actuation.c
 		}
 
+		/*
+		// If braking is active, poll feedback signal as fast as possible to determine when set point reached
+		if (Braking_HSM.engage){
+		    update_actuator_control(braking_boards[0]);
+		    update_actuator_control(braking_boards[1]);
+		}
+		*/
+
 		// ** PERIODIC TASKS **
         if(GATHER_DATA_ACTIVE && collectDataFlag){
             // ** GATHER DATA FROM SENSORS **
@@ -72,7 +81,6 @@ int main(void)
             }
 
             // Service high-level command routines ('go', 'all stop', 'emergency stop')
-
             // ** DETERMINE STATE MACHINE TRANSITIONS**
             generate_signals_from_sensor_data(); // See subsystems.c
 
