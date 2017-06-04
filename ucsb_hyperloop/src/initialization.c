@@ -21,6 +21,7 @@ void initializeTimers(){
 void initializeSensorsAndControls(){
 
     if(I2C_ACTIVE){
+        i2cInit(I2C0, SPEED_100KHZ);
     	i2cInit(I2C1, SPEED_100KHZ);
     	i2cInit(I2C2, SPEED_100KHZ);
     }
@@ -70,11 +71,9 @@ void initializeSensorsAndControls(){
     }
 
     if (BRAKING_ACTIVE){
-        i2cInit(I2C1, SPEED_100KHZ);
         Init_PWM(LPC_PWM1);
         int i;
         for (i = 0; i < 2; i++){
-            int i = 0;
             braking_boards[i] = initialize_actuator_board(i);
         }
     }
