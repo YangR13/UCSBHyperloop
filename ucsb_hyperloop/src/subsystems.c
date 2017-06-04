@@ -243,6 +243,7 @@ void generate_faults_from_sensor_data(){
 	// Examine sensor data to determine if a fault transition signal should be issued
 	// This function can't (easily) be condensed because of the different signals that need to be issued to each state machine!
 	int fault;
+	(void *) fault;
 
 #if BRAKING_ACTIVE
 	braking_fault_from_sensors();

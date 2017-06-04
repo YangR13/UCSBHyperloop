@@ -7,6 +7,7 @@
 #include "kinematics.h"
 #include "photo_electric.h"
 #include "timer.h"
+#include "rtc.h"
 
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
@@ -22,8 +23,14 @@ void collectCalibrationData( I2C_ID_T id ){
 void collectData(){
 	sensorData.dataPrintFlag += 1;
 
-	XYZ acceleration1, acceleration2, velocity, position;
+	RTC time;
+	rtc_gettime(&time);
+	snprintf(sensorData.collectionTime, 16, "%d:%d:%d", time.hour, time.min, time.sec);
+	DEBUGOUT("sensorData.collectionTime = \"%s\"", sensorData.collectionTime);
+
+	XYZ velocity, position;
 	positionAttitudeData positionAttitude;
+
     if (ACCEL_ACTIVE) {
 
         sensorData.accel1 = getSmoothenedAccelerometerData(I2C1);

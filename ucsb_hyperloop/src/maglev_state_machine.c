@@ -30,6 +30,7 @@ void initializeMaglevStateMachine(void) {
     Maglev_HSM.send_spunup = 0;
     Maglev_HSM.send_spundown = 0;
     Maglev_HSM.fault = 0;
+    Maglev_HSM.test = 0;
     QHsm_init((QHsm *)&Maglev_HSM);
 }
 
