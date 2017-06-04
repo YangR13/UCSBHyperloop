@@ -60,8 +60,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   }
 
   // Initialize position variables (with first read)
-  board->position[0] = ADC_read(board->bus, board->ADC_device_address, 1);
-  board->position[1] = ADC_read(board->bus, board->ADC_device_address, 5);
+  board->position[0] = ADC_read(board->bus, board->ADC_device_address, 5);
+  board->position[1] = ADC_read(board->bus, board->ADC_device_address, 1);
 
   // Initialize GPIO/PWM pins
   GPIO_Setup(BOARD_PIN_PORTS[(board->identity * 4) + 0], BOARD_PINS[(board->identity * 4) + 0], OUT); // Direction 1
@@ -76,6 +76,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->direction[1] = 1;  // Forward
   board->enable[0] = 0;     // Stopped
   board->enable[1] = 0;     // Stopped
+  board->target_pos[0] = 0;
+  board->target_pos[1] = 0;
 
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
@@ -131,39 +133,61 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   return 0;
 }
 
-int start_pos = 0;
-int stepping = 0;
-int stepping_direction = 0;
-int step_loop_count = 0;
+// TODO: Change the usable stroke length to a realistic value!
+#define USABLE_STROKE_LEN 2000.0
+#define MIN_DUTY_CYCLE 0.05
 
-void step(ACTUATORS * board, int direction){
-    // 1 = forwards, 0 - backwards
+void move(ACTUATORS *board, int num, int destination){
+    // Begin the routine for an actuator to move to a target position
 
-    step_loop_count = 0;
-    stepping = 1;
-    start_pos = board->position[1];
-    stepping_direction = direction;
+    // Do an off-cycle update to make sure that the position feedback data is not stale
+    update_actuator_control(board);
 
-    board->direction[0] = direction;
-    board->direction[1] = direction;
-    board->enable[0] = 0.05; // 10%
-    board->enable[1] = 0.05; // 10%
+    // Set the target destination value
+    board->target_pos[num] = destination;
+
+    // Calculate the target direction and duty cycle
+    // Must be called here because otherwise ->enable is currently 0 and will be blocked by the guard in update_actuator_board
+    calculate_actuator_control(board, num);
+
+    // Then update to write the calculated control signals to the board
     update_actuator_board(board);
-//    Chip_TIMER_Reset(LPC_TIMER3);
-//    Chip_TIMER_Enable(LPC_TIMER3);
-//    Reset_Timer_Counter(LPC_TIMER3);
-//    NVIC_ClearPendingIRQ(TIMER3_IRQn);
-//    NVIC_EnableIRQ(TIMER3_IRQn);
 }
 
+void calculate_actuator_control(ACTUATORS *board, int num){
+    // Check to see if the destination has been reached (and movement should be stopped)
+    if (abs(board->position[num] - board->target_pos[num]) <= 2){
+        // Stop movement (and write to the PWM output immediately to prevent overshoot)
+        board->enable[num] = 0.0;
+        PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + num], BOARD_PWM_CHANNELS[(board->identity * 2) + num], board->enable[num]);
+        DEBUGOUT("Target reached! Target: %d, Actual: %d\n", board->target_pos[num], board->position[num]);
+    }
+    else{
+        // Determine direction: forwards = 1, backwards = 0
+        board->direction[num] = board->position[num] > board->target_pos[num];
+
+        // Otherwise determine the updated duty cycle to drive the actuator at
+        // Percentage of usable stroke length to travel => percentage of duty cycle to use (with minimum at 5%)
+        float pct_away = (float)abs(board->position[num] - board->target_pos[num]) / USABLE_STROKE_LEN;
+        float cycle = 1;
+        if (pct_away < 1.0){
+            // 5th-power relation between distance to travel and output duty cycle
+            cycle -= pow((1 - pct_away), 3);
+        }
+
+        if (cycle < MIN_DUTY_CYCLE){
+            cycle = MIN_DUTY_CYCLE;
+        }
+        board->enable[num] = cycle;
+        DEBUGOUT("Output duty cycle is %f \n", cycle);
+    }
+}
 
 void update_actuator_control(ACTUATORS *board){
     // Update data relevant to braking actuator movement
     //  This function is separated to allow for fast sampling of position feedback
     // Read position feedback signal from linear potentiometer -> ADC
     // Write direction signal to GPIO pins, set output PWM frequency
-
-
 
 
 // Position values that are greater than this percentage away from the previous moving average
@@ -176,30 +200,14 @@ void update_actuator_control(ACTUATORS *board){
     //  Calculate a moving average using only those values not considered erroneous
     int pos_counter = 0;
     for (pos_counter = 0; pos_counter < 2; pos_counter++){
-        uint16_t pos = ADC_read(board->bus, board->ADC_device_address, (4 * pos_counter) + 1);
-//        if (abs(pos - board->position[pos_counter]) < (MAX_POSITION_DIFF_PCT * board->position[pos_counter])){
-            board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
-//        }
-//        board->position[pos_counter] = pos;
-    }
+        uint16_t pos = ADC_read(board->bus, board->ADC_device_address, 5 - (4 * pos_counter));
+        board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
 
-    if (stepping_direction == 0){
-        if (stepping && (board->position[1] > (start_pos + 100))){
-            DEBUGOUT("STEP DONE\n");
-            DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, board->position[1]);
-            stepping = 0;
-            board->enable[0] = 0;
-            board->enable[1] = 0;
+        // Service actuator movement routine if it is currently active
+        if (board->enable[pos_counter] >= MIN_DUTY_CYCLE){
+            calculate_actuator_control(board, pos_counter);
         }
-    }
-    else{
-        if (stepping && (board->position[1] < (start_pos - 100))){
-            DEBUGOUT("STEP DONE\n");
-            DEBUGOUT("Start position was %d, end position is %d\n\n", start_pos, board->position[1]);
-            stepping = 0;
-            board->enable[0] = 0;
-            board->enable[1] = 0;
-        }
+
     }
 
     // Update direction and PWM
@@ -210,10 +218,9 @@ void update_actuator_control(ACTUATORS *board){
         // PMW enable/speed signal
         PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->enable[output_counter]);
     }
-
-
-
 }
+
+
 
 void PWM_Setup(const void * pwm, uint8_t pin){
 #ifdef ARDUINO

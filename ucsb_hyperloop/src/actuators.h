@@ -56,13 +56,17 @@ typedef struct {
   uint8_t direction[2]; // 0 = backwards, 1 forwards
   float enable[2]; // PWM - 0 is none, 1.0 is full cycle
 
+  // Variable for control
+  uint16_t target_pos[2];
+
 } ACTUATORS;
 
 ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);
 void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
-void step(ACTUATORS * board, int dir);
+void move(ACTUATORS * board, int num, int destination);
+void calculate_actuator_control(ACTUATORS *board, int num);
 
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.
