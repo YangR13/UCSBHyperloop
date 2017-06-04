@@ -204,7 +204,8 @@ void send_data_ack_helper(char *method, int *position) {
 
 
 void recvDataPacket() {
-	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
+	// Don't guard for connectionOpen here, doing so breaks receiving packets D=
+
 	// TODO: Expand this back to support other subsystems
 	int pos = 0;
 	memset(Net_Tx_Data, 0, 64);
