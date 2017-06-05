@@ -8,8 +8,6 @@ void set_motor_throttle(int motor_num, float voltage);
 
 void actuate_brakes();
 void actuate_maglev();
-void init_maglev_test();
-void actuate_maglev_test();
 void actuate_payload();
 void actuate_service();
 

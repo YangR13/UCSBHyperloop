@@ -169,29 +169,30 @@ void send_method(char *method, char* val, int val_len) {
 }
 
 void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position) {
-	if (val == 0 || strlen(val) == 0) return;
-	memcpy(Net_Tx_Data + *position, method, strlen(method));
-	*position += strlen(method);
-	if(index != -1){
-		char index_string[4];
-		snprintf(index_string, 4, "%d", index);
-		memcpy(Net_Tx_Data + *position, index_string, strlen(index_string));
-		*position += strlen(index_string);
+	if (val != 0) {
+		memcpy(Net_Tx_Data + *position, method, strlen(method));
+		*position += strlen(method);
+		if(index != -1){
+			char index_string[4];
+			snprintf(index_string, 4, "%d", index);
+			memcpy(Net_Tx_Data + *position, index_string, strlen(index_string));
+			*position += strlen(index_string);
+		}
+		if(sensorNum != -1){
+			char sensor_string[4];
+			snprintf(sensor_string, 4, "%d", sensorNum);
+			memcpy(Net_Tx_Data + *position, "_", strlen("_"));
+			*position += strlen("_");
+			memcpy(Net_Tx_Data + *position, sensor_string, strlen(sensor_string));
+			*position += strlen(sensor_string);
+		}
+		memcpy(Net_Tx_Data + *position, ":", 1);
+		*position += 1;
+		memcpy(Net_Tx_Data + *position, val, strlen(val));
+		*position += strlen(val);
+		memcpy(Net_Tx_Data + *position, "\n", 1);
+		*position += 1;
 	}
-	if(sensorNum != -1){
-		char sensor_string[4];
-		snprintf(sensor_string, 4, "%d", sensorNum);
-		memcpy(Net_Tx_Data + *position, "_", strlen("_"));
-		*position += strlen("_");
-		memcpy(Net_Tx_Data + *position, sensor_string, strlen(sensor_string));
-		*position += strlen(sensor_string);
-	}
-	memcpy(Net_Tx_Data + *position, ":", 1);
-	*position += 1;
-	memcpy(Net_Tx_Data + *position, val, strlen(val));
-	*position += strlen(val);
-	memcpy(Net_Tx_Data + *position, "\n", 1);
-	*position += 1;
 }
 
 void send_data_ack_helper(char *method, int *position) {
@@ -225,7 +226,7 @@ void recvDataPacket() {
 	// Check if the message received matches any state machine control signals, issue it if so.
 	int i;
 	for (i = 0; i < CS_SIZE; i++){
-		if (strcmp((char *)Net_Rx_Data, control_signal_names[i]) == 0){
+		if (strcmp(Net_Rx_Data, control_signal_names[i]) == 0){
 			DEBUGOUT(control_signal_names[i]);
 			DEBUGOUT(" RECEIVED\n");
 			dispatch_signal_from_webapp(i); // Corresponding entry in enum control_signals

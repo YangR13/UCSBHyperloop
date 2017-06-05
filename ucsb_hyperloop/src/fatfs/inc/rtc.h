@@ -16,6 +16,5 @@ typedef struct {
 int rtc_initialize (void);		/* Initialize RTC */
 int rtc_gettime (RTC*);			/* Get time */
 int rtc_settime (const RTC*);	/* Set time */
-uint32_t rtc_getsec();		/* Return seconds (resets after a month) */
 
 #endif

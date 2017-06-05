@@ -1,19 +1,16 @@
 #include "initialization.h"
-
-#include "accelerometer.h"
-#include "ethernet.h"
-#include "gpio.h"
-#include "i2c.h"
-#include "I2CPERIPHS.h"
-#include "photo_electric.h"
-#include "pwm.h"
-#include "sdcard.h"
-#include "sensor_data.h"
 #include "temp_press.h"
+#include "i2c.h"
+#include "photo_electric.h"
+#include "ethernet.h"
+#include "pwm.h"
+#include "sensor_data.h"
+#include "sdcard.h"
+#include "gpio.h"
+#include "I2CPERIPHS.h"
 #include "timer.h"
 
 void initializeTimers(){
-	calibrateTimerFrequency();
     runtimeTimerInit(); // Timer 0 - runtime timer
     tickTimerInit();    // Timer 1 - 'tick' timer for periodic tasks
     // Timer 2 - formerly used for 'sendDataFlag', now open
@@ -22,7 +19,6 @@ void initializeTimers(){
 
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
 void initializeSensorsAndControls(){
-	snprintf(sensorData.collectionTime, 16, "");
 
     if(I2C_ACTIVE){
         i2cInit(I2C0, SPEED_100KHZ);
