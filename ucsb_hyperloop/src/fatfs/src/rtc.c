@@ -28,6 +28,7 @@ int rtc_initialize (void)
 	Chip_RTC_Init(LPC_RTC);
 
 	/* Set current time for RTC */
+#if 0
 	/* Current time is 8:00:00PM, 2013-01-31 */
 	rtcTime.time[RTC_TIMETYPE_SECOND]     = 0;
 	rtcTime.time[RTC_TIMETYPE_MINUTE]     = 0;
@@ -35,6 +36,19 @@ int rtc_initialize (void)
 	rtcTime.time[RTC_TIMETYPE_DAYOFMONTH] = 31;
 	rtcTime.time[RTC_TIMETYPE_MONTH]      = 1;
 	rtcTime.time[RTC_TIMETYPE_YEAR]       = 2013;
+
+#else
+	/* Current time is 0:00:00AM, 0000-00-00 */
+	rtcTime.time[RTC_TIMETYPE_SECOND]     = 0;
+	rtcTime.time[RTC_TIMETYPE_MINUTE]     = 0;
+	rtcTime.time[RTC_TIMETYPE_HOUR]       = 0;
+	rtcTime.time[RTC_TIMETYPE_DAYOFWEEK]  = 0;
+	rtcTime.time[RTC_TIMETYPE_DAYOFMONTH] = 0;
+	rtcTime.time[RTC_TIMETYPE_MONTH]      = 0;
+	rtcTime.time[RTC_TIMETYPE_YEAR]	      = 0;
+
+#endif // 0|1
+
 	Chip_RTC_SetFullAlarmTime(LPC_RTC, &rtcTime);
 
 	/* Enable rtc (starts increase the tick counter and second counter register) */
@@ -67,7 +81,7 @@ int rtc_settime (const RTC *rtc)
 	rtcTime.time[RTC_TIMETYPE_SECOND]     = rtc->sec;
 	rtcTime.time[RTC_TIMETYPE_MINUTE]     = rtc->min;
 	rtcTime.time[RTC_TIMETYPE_HOUR]       = rtc->hour;
-	rtcTime.time[RTC_TIMETYPE_DAYOFMONTH] = rtc->wday;
+	rtcTime.time[RTC_TIMETYPE_DAYOFWEEK] = rtc->wday;
 	rtcTime.time[RTC_TIMETYPE_DAYOFMONTH] = rtc->mday;
 	rtcTime.time[RTC_TIMETYPE_MONTH]      = rtc->month;
 	rtcTime.time[RTC_TIMETYPE_YEAR]	      = rtc->year;
@@ -75,6 +89,18 @@ int rtc_settime (const RTC *rtc)
 	Chip_RTC_GetFullTime(LPC_RTC, &rtcTime);
 
   return 1;
+}
+
+uint32_t rtc_getsec()
+{
+	RTC rtc;
+	rtc_gettime(&rtc);
+	uint32_t temp = rtc.month;
+	temp = 31*temp + rtc.mday;
+	temp = 24*temp + rtc.hour;
+	temp = 60*temp + rtc.min;
+	temp = 60*temp + rtc.sec;
+	return temp;
 }
 
 /**
