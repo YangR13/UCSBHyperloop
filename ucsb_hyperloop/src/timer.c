@@ -6,16 +6,17 @@
 void calibrateTimerFrequency() {
 	tick = 0;
 	calibrationMode = 1;
-	calibratedTimerFreq = -1;
+	calibratedTimerFreq = 0;
 	calibrationStartSeconds = rtc_getsec();
-	calibrationStartTick = -1;
+	calibrationStartTick = 0;
 	calibrationSecondsCount = 0;
+
 
 	// Use LPC_TIMER1 to count the number of ticks with a prescale of 1.
 	uint32_t timerFreq;
 	Chip_TIMER_Init( LPC_TIMER1 );
 
-    Chip_TIMER_PrescaleSet(LPC_TIMER1, 1);
+    Chip_TIMER_PrescaleSet(LPC_TIMER1, 1000);
 
 	// Timer setup for match and interrupt at TICKRATE_HZ
 	Chip_TIMER_Reset( LPC_TIMER1 );
@@ -31,7 +32,7 @@ void calibrateTimerFrequency() {
 	NVIC_EnableIRQ( TIMER1_IRQn );
 
 	// Busy wait for 5+ seconds.
-	while(calibrationSecondsCount < 6) {
+	while(calibrationSecondsCount < 2) {
 		__WFI();
 	}
 	// Stop timer.
@@ -39,7 +40,7 @@ void calibrateTimerFrequency() {
 
 	// Timer rate is system clock rate
 	timerFreq = Chip_Clock_GetSystemClockRate();
-	DEBUGOUT("LPC timer frequency: %d\n", timerFreq);
+	DEBUGOUT("LPC peripheral clock frequency: %d\n", timerFreq / 4);
 	DEBUGOUT("Calibrated timer frequency: %d\n", calibratedTimerFreq);
 	calibrationMode = 0;
 }
@@ -51,6 +52,9 @@ void runtimeTimerInit() {
 }
 
 void tickTimerInit(){
+    // Initialize the RTC because we use it for calibration of the tick timer
+    rtc_initialize();
+
     // Initialize tick timer and all time-based routine flags
     timerInit(LPC_TIMER1, TIMER1_IRQn, TICK_TIMER_FREQ);
     tick = 0;
@@ -76,6 +80,8 @@ void timerInit(LPC_TIMER_T * timer, LPC40XX_IRQn_Type timerInterrupt, uint32_t t
 
 	/* Timer rate is system clock rate */
     Chip_TIMER_PrescaleSet(timer, calibratedTimerFreq / tickRate);
+//    Chip_TIMER_PrescaleSet(LPC_TIMER1, 1);
+
 
 	/* Timer setup for match and interrupt at TICKRATE_HZ */
 	Chip_TIMER_Reset( timer );
@@ -83,6 +89,8 @@ void timerInit(LPC_TIMER_T * timer, LPC40XX_IRQn_Type timerInterrupt, uint32_t t
 
 	//Chip_TIMER_SetMatch( timer, 1, ( timerFreq / (tickRate * 2) ) );
 	Chip_TIMER_SetMatch( timer, 1, 1 );
+//    Chip_TIMER_SetMatch( timer, 1, (calibratedTimerFreq / tickRate));
+
 	Chip_TIMER_ResetOnMatchEnable( timer, 1 );
 	Chip_TIMER_Enable( timer );
 
@@ -104,15 +112,17 @@ void TIMER1_IRQHandler(void){
     	uint32_t secondsRtc = rtc_getsec();
     	if(secondsRtc - calibrationStartSeconds > calibrationSecondsCount) {
     		calibrationSecondsCount++;
-    		if(calibrationSecondsCount == 1 && calibrationStartTick == -1) {
+    		if(calibrationSecondsCount == 1 && calibrationStartTick == 0) {
     			// Record ticks.
     			calibrationStartTick = tick;
     		}
-    		if(calibrationSecondsCount >= 6 && calibratedTimerFreq == -1) {
+    		if(calibrationSecondsCount >= 2 && calibratedTimerFreq == 0) {
     			uint32_t tickDiff = tick - calibrationStartTick;
     			// Calculate prescale.
-    			calibratedTimerFreq = tickDiff / 5;
+    			calibratedTimerFreq = tickDiff * 1000;
     			DEBUGOUT("Timer calibration complete!\n");
+    		    Chip_TIMER_DeInit( LPC_TIMER1 );
+    		    NVIC_DisableIRQ(TIMER1_IRQn);
     		}
     	}
     }
