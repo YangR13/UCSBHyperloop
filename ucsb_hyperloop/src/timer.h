@@ -4,7 +4,7 @@
 #include "board.h"
 
 // "Tick timer" Settings - to be used for triggering time-interval-based routines
-#define TICK_TIMER_FREQ 100 // Hz
+#define TICK_TIMER_FREQ 10 // Hz
 uint32_t tick;
 uint8_t calibrationMode;
 uint32_t calibratedTimerFreq;
