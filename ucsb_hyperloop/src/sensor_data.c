@@ -26,7 +26,7 @@ void collectData(){
 	RTC time;
 	rtc_gettime(&time);
 	snprintf(sensorData.collectionTime, 16, "%d:%d:%d", time.hour, time.min, time.sec);
-	DEBUGOUT("sensorData.collectionTime = \"%s\"", sensorData.collectionTime);
+	//DEBUGOUT("sensorData.collectionTime = \"%s\"", sensorData.collectionTime);
 
 	XYZ velocity, position;
 	positionAttitudeData positionAttitude;
@@ -38,9 +38,7 @@ void collectData(){
         sensorData.accelX = (sensorData.accel1.x + sensorData.accel2.x) / 2.0;
         sensorData.accelY = (sensorData.accel1.y + sensorData.accel2.y) / 2.0;
         sensorData.accelZ = (sensorData.accel1.z + sensorData.accel2.z) / 2.0;
-        //DEBUGOUT("accel1 %f, %f, %f \n", sensorData.accel1.x, sensorData.accel1.y, sensorData.accel1.z);
-        //DEBUGOUT("accel2 %f, %f, %f\n", sensorData.accel2.x, sensorData.accel2.y, sensorData.accel2.z);
-        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+
         velocity = getInertialVelocity();
         sensorData.velocityX = velocity.x;
         sensorData.velocityY = velocity.y;
