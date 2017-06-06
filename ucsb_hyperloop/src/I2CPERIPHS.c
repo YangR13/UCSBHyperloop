@@ -8,7 +8,7 @@
 
 //POD PIN MAPPING, CALIBRATION
 //Hub Data:
-const uint8_t HUB_I2C_BUS[NUM_HUBS] = {0, 1, 2};
+const uint8_t HUB_I2C_BUS[NUM_HUBS] = {0, 2, 1};
 const uint8_t HUB_AUX_GPIO_REGISTER[NUM_HUBS] = {4, 2, 2};
 const uint8_t HUB_AUX_PINS[NUM_HUBS][NUM_HUB_PORTS] = {
 	{23, 22, 21, 20, 19, 18, 17, 16},
