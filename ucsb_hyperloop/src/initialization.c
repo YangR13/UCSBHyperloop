@@ -65,10 +65,13 @@ void initializeSensorsAndControls(){
     }
 
     if (POSITIONING_ACTIVE) {
-    	sensorData.wheelTach1Alive = 1;
-    	sensorData.wheelTach2Alive = 1;
-    	sensorData.wheelTach3Alive = 1;
-    	sensorData.wheelTach4Alive = 1;
+    	int i;
+    	sensorData.finalDistanceX = 0.0;
+    	sensorData.deadFlag = 0;
+    	//4 alive tachs initially
+    	sensorData.numAlive = 4;
+    	for(i=0;i<4;i++){
+    		sensorData.wheelTachAlive[i] = 1;
     }
     }
 }

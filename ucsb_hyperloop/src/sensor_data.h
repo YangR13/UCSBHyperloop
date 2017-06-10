@@ -58,19 +58,29 @@ typedef struct{
   float tacho3;
   float tacho4;
 
-  float wheelTach1PositionX;
-  float wheelTach2PositionX;
-  float wheelTach3PositionX;
-  float wheelTach4PositionX;
-
-  int wheelTach1Alive;
-  int wheelTach2Alive;
-  int wheelTach3Alive;
-  int wheelTach4Alive;
+  float wheelTachPositionX[4];
 
 
-  float actualDistanceX;					// Increments of 100 ft
-  float offsetPositionX;					// Delta away from each increment
+  int wheelTachAlive[4]; // is it alive
+
+  int numAlive; //number of tachs alive, remember to cast as float when dividing
+
+  float actualDistanceX[4];					// Increments of 100 ft
+  float oldActualDistanceX[4];				// Actual distance of each tach before the last 100ft, used to determine if 20% diff
+//  float offsetPositionX;					// Delta away from each increment
+
+  float wheelTachDistanceInLastHundred[4];
+  float wheelTachsDistanceInLastHundred; // sum of all wheelTachDistanceInLastHundred array values
+
+  float threeTachAvg; //average of other three tachs
+  //tach offsets
+  float offsetPositionX[4];
+
+  int deadFlag; // flag to determine whether tachs have passed a 100ft increment
+
+  float finalDistanceX;						// Final distance of pod
+
+
   int   photoelectric1InterruptFlag;		// Hit Tape
   float photoelectric1InterruptPosition;	// Value used for miss on distance marker
   float modAvg;								// average mod 100, determines whether wheel tachs in range of [0,15] and [85,100]
