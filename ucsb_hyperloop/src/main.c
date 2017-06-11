@@ -51,7 +51,12 @@ int main(void)
         //  2c. Service any high-level user command routines ("go", "stop", etc.)
         //  2d. Send signals to state machine to induce transitions as necessary
         //  2e. Based on flags from state machine, perform actuation of subsystems
-	
+
+    	// Repair TCP connection if broken.
+    	if(ETHERNET_ACTIVE) {
+    		ethernetRepairConnection(PROTO_TCP, 0);
+    	}
+
     	// ** HANDLE ETHERNET PACKETS **
 		if(ETHERNET_ACTIVE && wizIntFlag) {
 			wizIntFunction();	// See ethernet.c
