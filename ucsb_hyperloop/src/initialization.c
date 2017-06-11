@@ -81,7 +81,10 @@ void initializeSensorsAndControls(){
 
 void initializeCommunications(){
     if(ETHERNET_ACTIVE){
-        ethernetInit(PROTO_TCP, 0);
+    	int success = 0;
+        while(!success) {
+        	success = ethernetInit(PROTO_TCP, 0);
+        }
         //sendSensorDataTimerInit(LPC_TIMER2, TIMER2_IRQn, 4);
 
         /* Handle any Wiznet Interrupts present at initialization */

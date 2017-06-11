@@ -102,13 +102,23 @@ void Wiz_Network_Init() {
 }
 
 /* Wiznet Network Register Sanity Check */
-void Wiz_Check_Network_Registers() {
+int Wiz_Check_Network_Registers() {
+	int success = 1;
 	/* Read Source Hardware Address Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = 0xFF; // Dummy data
 	Tx_Buf[7] = Tx_Buf[8] = Tx_Buf[9] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SHAR, 0x0006);
 	DEBUGOUT("MAC Address: %x:%x:%x:%x:%x:%x\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6],
 			Rx_Buf[7], Rx_Buf[8], Rx_Buf[9]);
+	uint_64t temp = 0;
+	int i;
+	for(i=4; i<=9; i++) {
+		temp = (temp << 8) | Rx_Buf[i];
+	}
+	DEBUGOUT("temp: %x\n", temp);
+	if(temp == 0 || temp == 0xFFFFFFFFFFFF) {
+		success = 0;
+	}
 
 	/* Read Gateway Address Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
@@ -124,6 +134,9 @@ void Wiz_Check_Network_Registers() {
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SIPR, 0x0004);
 	DEBUGOUT("Source IP: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+
+	DEBUGOUT("NETWORK REGISTER %s!\n", (success) ? "SUCCESS" : "FAILURE");
+	return success;
 }
 
 /* Socket Interrupt Initialization */
@@ -531,8 +544,9 @@ void Wiz_Memory_Init() {
 	}
 }
 
-void Wiz_TCP_Init(uint8_t n) {
-/* TCP Initialization */
+int Wiz_TCP_Init(uint8_t n) {
+	int success = 0;
+	/* TCP Initialization */
 	uint8_t reserv_bit;
 	uint16_t offset = 0x0100*n;
 
@@ -558,15 +572,19 @@ void Wiz_TCP_Init(uint8_t n) {
 	/* Read Socket n Status Register (Sn_SR) */
 	Tx_Buf[4] = 0xFF;
 	spi_Recv_Blocking(Sn_SR_BASE + offset, 0x0001);
-	if(Rx_Buf[4] == 0x13) {
+
+	success = (Rx_Buf[4] == 0x13);
+	if(success) {
 		DEBUGOUT("Socket %u TCP Initialized Successfully\n", n);
 		activeSockets |= 1 << n;
 	} else
 		DEBUGOUT("Socket %u TCP Initialization Failed\n", n);
+	return success;
 }
 
 /* UDP Initialization */
-void Wiz_UDP_Init(uint8_t n) {
+int Wiz_UDP_Init(uint8_t n) {
+	int success = 0;
 	uint8_t reserv_bit;
 	uint16_t offset = 0x0100*n;
 
@@ -592,11 +610,14 @@ void Wiz_UDP_Init(uint8_t n) {
 	/* Read Socket n Status Register (Sn_SR) */
 	Tx_Buf[4] = 0xFF;
 	spi_Recv_Blocking(Sn_SR_BASE + offset, 0x0001);
-	if(Rx_Buf[4] == 0x22) {
+
+	success = Rx_Buf[4] == 0x22;
+	if(success) {
 		DEBUGOUT("Socket %u UDP Initialized Successfully\n", n);
 		activeSockets |= 1 << n;
 	} else
 		DEBUGOUT("Socket %u UDP Initialization Failed\n", n);
+	return success;
 }
 
 void Wiz_Destination_Init(uint8_t n) {
@@ -639,7 +660,8 @@ void Wiz_Address_Check(uint8_t n) {
 }
 
 /* Create TCP Connection */
-void Wiz_TCP_Connect(uint8_t n) {
+int Wiz_TCP_Connect(uint8_t n) {
+	int success = 1;
 	uint16_t offset = 0x0100*n;
 
 	/* Socket n Destination IP Register (Sn_DIPR) */
@@ -658,14 +680,17 @@ void Wiz_TCP_Connect(uint8_t n) {
 	Tx_Buf[4] = CONNECT;
 	spi_Send_Blocking(Sn_CR_BASE + offset, 0x0001);
 
-	/* TODO: If this fails, try to establish connection once more */
 	DEBUGOUT("Establishing TCP connection...\n");
+	int i=0;
 	do {
 		/* Wait for connection */
 		Rx_Buf[4] = 0xFF;
 		spi_Recv_Blocking(Sn_IR_BASE + offset, 0x0001);
-	} while((Rx_Buf[4] & 0x01) != 0x01);
-	DEBUGOUT("Connected\n");
+		i++;
+	} while((Rx_Buf[4] & 0x01) != 0x01 && i < 1000);
+
+	if(success) DEBUGOUT("Connected\n");
+	return success;
 }
 
 /* Close TCP Socket */
@@ -842,30 +867,49 @@ void Wiz_Restart() {
 }
 
 /* Initialize Wiznet Device */
-void ethernetInit(uint8_t protocol, uint8_t socket) {
+int ethernetInit(uint8_t protocol, uint8_t socket) {
+	int success = 1;
+
 	Wiz_SSP_Init();
 	Wiz_Restart();
+	// TODO: replace with wait function.
 	uint16_t i, j;
 	for (i = 0; i < 60000; i++) {
 		for (j = 0; j < 60; j++) { }
 	}
-
 	Wiz_Init();
 	Wiz_Network_Init();
-	Wiz_Check_Network_Registers();
-	Wiz_Memory_Init();
-	if(protocol) {
-		Wiz_Int_Init(socket);
-		Wiz_TCP_Init(socket);
-	} else {
-		Wiz_UDP_Init(socket);
-	}
-	Wiz_Clear_Buffer(socket);
+	success = Wiz_Check_Network_Registers();
 
-	if(protocol) {
-		Wiz_TCP_Connect(socket);
+	if(success) {
+		Wiz_Memory_Init();
+		if(protocol) {
+			Wiz_Int_Init(socket);
+			success = Wiz_TCP_Init(socket);
+		} else {
+			success = Wiz_UDP_Init(socket);
+		}
+		Wiz_Clear_Buffer(socket);
+	}
+
+	if(success && protocol) {
+		do {
+			success = Wiz_TCP_Connect(socket);
+			if(!success) Wiz_TCP_Close(socket);
+		} while(!success);
+
 		DEBUGOUT("Established TCP connection\n");
 	}
+	return success;
+}
+
+int ethernetRepairConnection(uint8_t protocol, uint8_t socket) {
+	if(connectionOpen || !socket) return 1;
+	int success = 1;
+	success = Wiz_TCP_Connect(socket);
+	if(!success) Wiz_TCP_Close(socket);
+	DEBUGOUT("Repairing connection... %s\n", (success) ? "Successful!" : "Unsuccessful.");
+	return success;
 }
 
 void Wiz_Deinit(uint8_t protocol, uint8_t socket) {
