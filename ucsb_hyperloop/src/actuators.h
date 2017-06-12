@@ -27,12 +27,15 @@
 #define NUM_THERMISTORS 4 // Per board
 #define NUM_ACTUATOR_BOARDS 4
 
-//Safety:
+// Safety:
 #define ACTUATOR_MAX_TEMP 60      // Too hot
 #define ACTUATOR_MIN_TEMP 5       // More to detect disconnects than for "too cold"
 #define ACTUATOR_MAX_CURRENT 50
 
 #define MAX12BITVAL 4095.0
+
+// Control
+#define TIME_CONTROL_PWM_DUTY 0.50
 
 float current_reading;
 
@@ -58,8 +61,9 @@ typedef struct {
   uint8_t direction[2]; // 0 = backwards, 1 forwards
   float enable[2]; // PWM - 0 is none, 1.0 is full cycle
 
-  // Variable for control
+  // Variables for control
   int16_t target_pos[2];
+  uint32_t times[2][2]; // For each actuator, start time of movement and how long to move
 
 } ACTUATORS;
 
@@ -67,7 +71,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);
 void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
-void move(ACTUATORS * board, int num, int destination);
+void move_time(ACTUATORS *board, int num, int dir, int interval);
+void move_to_pos(ACTUATORS * board, int num, int destination);
 void calculate_actuator_control(ACTUATORS *board, int num);
 
 

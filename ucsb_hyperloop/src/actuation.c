@@ -127,21 +127,28 @@ void actuate_maglev(){
 }
 
 void actuate_payload(){
-	// TODO: Implement this stub.
-	int i;
-	for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-		// TODO: Check this direction for correctness in relation to hardware signal!!!!
-		// ACTUATOR DIRECTIONS = Payload_Actuator_HSM.actuator_direction[i];
-		// ACTUATOR ENABLES = Payload_Actuator_HSM.actuator_enable[i];
-	}
+    /* Add in once merged with declaration of payload
+    if (!(payload->times[0][1] > 0 || payload->times[1][1] > 0)){
+        if (Payload_Actuators_HSM.enable){
+            move_time(payload, 0, Payload_Actuators_HSM.direction, PAYLOAD_MOVE_TIME);
+        }
+    }
+    */
 }
 
 void actuate_service(){
-	// TODO: Implement this stub.
-    // ACTUATOR DIRECTION = Payload_Actuator_HSM.actuator_direction;
-    // ACTUATOR ENABLE = Payload_Actuator_HSM.actuator_enable;
-	// MOTOR DIRECTION = Payload_Actuator_HSM.motor_direction;
-	// MOTOR ENABLE = Payload_Actuator_HSM.motor_enable;
+    /* Add in once merged with declaration of service
+    if (!(service->times[0][1] > 0)){
+        if (Service_Propulsion_HSM.actuator_enable){
+            move_time(payload, 0, Service_Propulsion_HSM.actuator_direction, SERV_MOTOR_ACT_RUN_TIME);
+        }
+    }
+
+    if (Service_Propulsion_HSM.motor_enable && service->enable[1] == 0){
+        service->direction[1] = Service_Propulsion_HSM.direction;
+        service->enable[1] = SERV_MOTOR_DUTY;
+    }
+     */
 }
 
 

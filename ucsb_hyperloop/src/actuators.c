@@ -78,6 +78,10 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->enable[1] = 0;     // Stopped
   board->target_pos[0] = 0;
   board->target_pos[1] = 0;
+  board->times[0][0] = 0;
+  board->times[0][1] = 0;
+  board->times[1][0] = 0;
+  board->times[1][1] = 0;
 
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
@@ -140,7 +144,7 @@ uint8_t update_actuator_board(ACTUATORS* board) {
 #define USABLE_STROKE_LEN 2000.0
 #define MIN_DUTY_CYCLE 0.05
 
-void move(ACTUATORS *board, int num, int destination){
+void move_to_pos(ACTUATORS *board, int num, int destination){
     // Begin the routine for an actuator to move to a target position
 
     // Do an off-cycle update to make sure that the position feedback data is not stale
@@ -165,12 +169,19 @@ void move(ACTUATORS *board, int num, int destination){
     update_actuator_board(board);
 }
 
+void move_time(ACTUATORS *board, int num, int dir, int interval){
+    board->times[num][0] = getRuntime();
+    board->times[num][1] = interval;
+    board->direction[num] = dir;
+    board->enable[num] = TIME_CONTROL_PWM_DUTY;
+}
+
 void calculate_actuator_control(ACTUATORS *board, int num){
     if (board->target_pos[num] < 0){
         return;
     }
 
-    // Check to see if the destination has been reached (and movement should be stopped)
+    // Position control - Check to see if the destination has been reached (and movement should be stopped)
     if (abs(board->position[num] - board->target_pos[num]) <= 2){
         // Stop movement (and write to the PWM output immediately to prevent overshoot)
         board->enable[num] = 0.0;
@@ -195,6 +206,18 @@ void calculate_actuator_control(ACTUATORS *board, int num){
         }
         board->enable[num] = cycle;
         DEBUGOUT("Output duty cycle is %f \n", cycle);
+    }
+
+    // Time control - check if time interval has been completed
+    int i = 0;
+    for (i = 0; i < 2; i++){
+        if (board->times[i][1] > 0){
+            if (getRuntime() > board->times[i][0] + board->times[i][1]){
+                // If time has elapsed, stop actuation and clear time control varaible
+                board->enable[num] = 0.0;
+                board->times[i][1] = 0;
+            }
+        }
     }
 }
 
