@@ -12,6 +12,9 @@
 #define MAX_MAGLEV_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!
 #define MAX_18V5_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!
 #define MAX_PWR_DST_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!
+#define MAX_MAGLEV_CURRENT 50.0 // TODO: Set realistic max maglev current reading
+#define MAX_BRAKING_CURRENT 50.0 // TODO: Set realistic max braking current reading
+#define MAX_SERV_PAYLOAD_CURRENT 30.0 // Todo: Set realistic max service propulsion + payload actuator current reading
 
 // INFO ON FAULTS
 // Each BMS struct has an alarm variable for each chain of batteries wired in series which are connected to it

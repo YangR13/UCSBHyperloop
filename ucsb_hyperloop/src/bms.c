@@ -28,11 +28,12 @@ const uint8_t I2C_ADC_Maglev_subBMS_Addresses[3] = {0x19, 0x0B, 0x18};
 
 // BMS_18V5 Data:
 const uint8_t BMS_18V5_HUB_PORT[1][2] = {   // Only 1
-  {1, 0},   // {Hub, Port}; // TODO: Check me!
+  {0, 0},   // {Hub, Port}; // TODO: Check me! (Hub may be right but port is not)
 };
 // TODO: Calibrated conversions reference voltage table for 18V5 BMS?
 
-const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x19, 0x0B, 0x18, 0xFF}; // TODO: What is address for 4th ADC?!?
+// Addressing pins for ADCs: LOW-HIGH / FLOAT-HIGH / FLOAT-LOW / HIGH-LOW
+const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x0A, 0x0B, 0x19, 0x1A};
 
 // (Electronics) Power Distribution Board BMS Data:
 const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
@@ -40,7 +41,8 @@ const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
 };
 // TODO: Calibrated conversions reference voltage table for Power Distribution Board BMS?
 
-const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x19, 0x0B}; // TODO: FIX ME
+// Addressing pins for ADCs: LOW-FLOAT / HIGH-FLOAT
+const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x09, 0x1B};
 
 // MAGLEV BMS
 
@@ -81,6 +83,7 @@ Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
 uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
   int batt, i;
   float prev_voltage;
+  int new_alarms = 0b00;
 
   //0x19 FLOAT LOW
   //0x0B FLOAT HIGH
@@ -94,6 +97,21 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
     }
     bms->battery_voltage[batt] = prev_voltage;
 
+    // Check cell voltages for a substantial imbalance, set an alarm if present
+    float min = 9.9;
+    float max = 0.0;
+    for (i = 0; i < 5; i++){
+        if (bms->cell_voltages[batt][i] < min){
+            min = bms->cell_voltages[batt][i];
+        }
+        if (bms->cell_voltages[batt][i] > max){
+            max = bms->cell_voltages[batt][i];
+        }
+    }
+    if ((max - min) > MAX_MAGLEV_BATT_CELL_DELTA){
+        new_alarms |= 0b10;
+    }
+
     //Record Temperatures
     int temp_counter = 0;
     for (temp_counter = 0; temp_counter < 2; temp_counter++) {
@@ -101,9 +119,21 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
       new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-        bms->alarm |= 0b00000001;
+        new_alarms |= 0b01;
       }
     }
+  }
+
+  // Update alarm flags in the Maglev BMS struct
+  // Unrecoverable faults are persistent, recoverable alarms are cleared
+  // New alarms detected in this update cycle are always added
+  if ((bms->alarm & 0b10) == 0b00){
+      // No unrecoverable alarms previously existed, just save current alarms (clearing recoverable from previous cycles)
+      bms->alarm = new_alarms;
+  }
+  else{
+      // An unrecoverable fault previously existed, only update recoverable alarm bit of flag (bit 0)
+      bms->alarm |= new_alarms;
   }
 
   GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], bms->relay_active_low);
@@ -148,10 +178,10 @@ BMS_18V5* initialize_BMS_18V5(uint8_t identity) {
 void update_BMS_18V5(BMS_18V5* bms) {
   int batt, i;
   float prev_voltage;
+  // New alarms set this update cycle: 0 and 1 are braking pairs, 2 is service propulsion + payload actuators
 
-  //0x19 FLOAT LOW
-  //0x0B FLOAT HIGH
-  //0x18 FLOAT FLOAT
+  int new_alarms[3] = {0,0,0};
+
   for (batt = 0; batt < 4; batt++) {
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
@@ -175,11 +205,11 @@ void update_BMS_18V5(BMS_18V5* bms) {
     }
     if ((max - min) > MAX_18V5_BATT_CELL_DELTA){
         if (batt < 2){
-            bms->alarm[0] |= 0b00000010; // Braking pair 1 alarm
-            bms->alarm[2] |= 0b00000010; // Service propulsion + payload actuators alarm
+            new_alarms[0] |= 0b00000010; // Braking pair 1 alarm
+            new_alarms[2] |= 0b00000010; // Service propulsion + payload actuators alarm
         }
         else{
-            bms->alarm[1] |= 0b00000010; // Braking pair 2 alarm
+            new_alarms[1] |= 0b00000010; // Braking pair 2 alarm
         }
     }
 
@@ -191,21 +221,52 @@ void update_BMS_18V5(BMS_18V5* bms) {
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
           if (batt < 2){
-              bms->alarm[0] = 1; // Braking pair 1 alarm
-              bms->alarm[2] = 1; // Service propulsion + payload actuators alarm
+              new_alarms[0] |= 0b01; // Braking pair 1 alarm
+              new_alarms[1] |= 0b01; // Service propulsion + payload actuators alarm
+
           }
           else{
-              bms->alarm[1] = 1; // Braking pair 2 alarm
+              new_alarms[1] |= 0b01; // Braking pair 2 alarm
           }
       }
     }
 
     // Get current readings
-    // TODO:
-    // READ FROM ADC CHANNEL FOR CURRENT SENSOR
-    // CONVERT TO AMPS, SAVE TO bms->amps[batt];
-    // IF CURRENT ON PORTS 0 or 3 ARE HIGH, bms->alarm[0] or bms->alarm[1] |= 0b00000001
-    // CURRENT SENSOR ACS770 HIGH -> bms->alarm[2] |= 0b00000001
+    for (i = 0; i < 4; i += 3){
+        // Read from ACS770 current sensors for the two pairs of braking actuators
+        // Braking current sensors are connected to ports SENS0 and SENS3 of the 18V5 BMS
+
+        // get data from ports 0 and 3
+        float reading = 0.0; // dummy value
+
+        bms->amps[batt % 2] = reading;
+        if (reading >= MAX_BRAKING_CURRENT){
+            new_alarms[batt % 2] |= 0b01; // Save to indexes 0 or 1 (braking pairs)
+        }
+    }
+
+    // Get current reading from the ACS759 for the service propulsion and braking actuators
+    // TODO: Make the index of bms->amps[] match that of the port the current sensor is connected to
+    //get data from port 1
+    float reading = 0.0; // dummy value
+    bms->amps[1] = reading;
+    if (reading >= MAX_SERV_PAYLOAD_CURRENT){
+        new_alarms[2] |= 0b01;
+    }
+  }
+
+  // Update alarm flags in the 18V5 BMS struct
+  // Unrecoverable faults are persistent, recoverable alarms are cleared
+  // New alarms detected in this update cycle are always added
+  for (i = 0; i < 3; i++){
+      if ((bms->alarm[i] & 0b10) == 0b00){
+          // No unrecoverable alarms previously existed, just save current alarms (clearing recoverable from previous cycles)
+          bms->alarm[i] = new_alarms[i];
+      }
+      else{
+          // An unrecoverable fault previously existed, only update recoverable alarm bit of flag (bit 0)
+          bms->alarm[i] |= new_alarms[i];
+      }
   }
 
 }
@@ -243,10 +304,8 @@ PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
 uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
   int batt, i;
   float prev_voltage;
+  int new_alarms = 0b00;
 
-  //0x19 FLOAT LOW
-  //0x0B FLOAT HIGH
-  //0x18 FLOAT FLOAT
   for (batt = 0; batt < 4; batt++) {
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
@@ -269,7 +328,7 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
         }
     }
     if ((max - min) > MAX_PWR_DST_BATT_CELL_DELTA){
-        bms->alarm = 2;
+        new_alarms |= 0b10;
     }
 
     //Record Temperatures
@@ -279,11 +338,22 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
       new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-        bms->alarm |= 0b00000001;
+        new_alarms |= 0b01;
       }
     }
   }
 
+  // Update alarm flags in the power distribution BMS struct
+  // Unrecoverable faults are persistent, recoverable alarms are cleared
+  // New alarms detected in this update cycle are always added
+  if ((bms->alarm & 0b10) == 0b00){
+      // No unrecoverable alarms previously existed, just save current alarms (clearing recoverable from previous cycles)
+      bms->alarm = new_alarms;
+  }
+  else{
+      // An unrecoverable fault previously existed, only update recoverable alarm bit of flag (bit 0)
+      bms->alarm |= new_alarms;
+  }
 
   return bms->alarm;
 }
