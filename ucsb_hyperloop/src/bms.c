@@ -36,7 +36,7 @@ const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x19, 0x0B, 0x18, 0xFF}; // TO
 
 // (Electronics) Power Distribution Board BMS Data:
 const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
-  {0, 0},   // {Hub, Port}; // TODO: FIX ME
+  {0, 3},   // {Hub, Port};
 };
 // TODO: Calibrated conversions reference voltage table for Power Distribution Board BMS?
 
