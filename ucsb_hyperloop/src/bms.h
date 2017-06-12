@@ -58,6 +58,28 @@ typedef struct{   // Designed for 4x 5S batteries;
 BMS_18V5* initialize_BMS_18V5(uint8_t identity);
 uint8_t update_BMS_18V5(BMS_18V5* bms);
 
+// (Electronics) Power Distribution Board BMS
 
+typedef struct{   // Designed for 4x 5S batteries;
+  uint8_t identity;
+
+  //I2C Parameters
+  uint8_t bus;                // Only one per bus
+
+  //Data Storage
+  float battery_voltage[4];   // From left to right on the board.
+  float cell_voltages[4][5];
+  int temperatures[4][2];
+  uint8_t amps[4];            // 4 current sensors, one for each battery
+
+  //Controls
+  uint8_t relay_active_low;       //Active Low
+
+  float timestamp;
+  uint8_t alarm;
+} PWR_DST_BMS;
+
+PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity);
+uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms);
 
 #endif

@@ -70,6 +70,10 @@ void initializeSensorsAndControls(){
         bms_18v5 = initialize_BMS_18V5(1);
     }
 
+    if (PWR_DST_BMS_ACTIVE){
+        pwr_dst_bms = initialize_PWR_DST_BMS_(1);
+    }
+
     if (CONTACT_SENSOR_ACTIVE){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }

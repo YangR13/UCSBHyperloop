@@ -128,6 +128,10 @@ void collectData(){
         update_BMS_18V5(bms_18v5);
     }
 
+    if (PWR_DST_BMS_ACTIVE){
+        update_PWR_DST_BMS_ACTIVE(pwr_dst_bms);
+    }
+
     if(CONTACT_SENSOR_ACTIVE){
     	int contact_sensor_pushed;
     	contact_sensor_pushed = GPIO_Contact_Sensor_Pushed();

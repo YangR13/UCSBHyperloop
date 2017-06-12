@@ -15,6 +15,7 @@ void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, u
 HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
 BMS_18V5 *bms_18v5;
+PWR_DST_BMS *pwr_dst_bms;
 ACTUATORS *braking_boards[2]; // 2 Braking boards.
 ACTUATORS *payload;
 ACTUATORS *service_prop;
