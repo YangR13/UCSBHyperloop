@@ -40,6 +40,13 @@ void logAllData(){
 	}
 }
 
+void sprintFloatIfActive(char* out, float in, int active) {
+	if(active)
+		snprintf(out, 16, "%06.2f", in);
+	else
+		snprintf(out, 1, "%s", "");
+}
+
 void logData(LOG_TYPE log_type, int index)
 {
 	FRESULT rc;
@@ -54,7 +61,7 @@ void logData(LOG_TYPE log_type, int index)
 	char data[16] = "";
 
 	// Time
-	//snprintf(data, 16, "%s", sensorData.time);
+	snprintf(data, 16, "%s", sensorData.collectionTime);
 	//ethernet_add_data_to_packet(TIME, -1, -1, data);
 	//rc = f_write_log(log_type, index, data);
 	rc = f_write_log(log_type, index, "WIP");
@@ -63,74 +70,74 @@ void logData(LOG_TYPE log_type, int index)
 	case LOG_POSITION:
 
 		// X Position.
-		snprintf(data, 16, "%06.2f", sensorData.positionX);
+		sprintFloatIfActive(data, sensorData.positionX, X_POS_VEL_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// X Velocity.
-		snprintf(data, 16, "%06.2f", sensorData.velocityX);
+		sprintFloatIfActive(data, sensorData.velocityX, X_POS_VEL_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// X Acceleration.
-		snprintf(data, 16, "%06.2f", sensorData.accelX);
+		sprintFloatIfActive(data, sensorData.accelX, ACCEL_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Y Position.
-		snprintf(data, 16, "%06.2f", sensorData.positionY);
+		sprintFloatIfActive(data, sensorData.positionY, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Y Velocity.
-		snprintf(data, 16, "%06.2f", sensorData.velocityY);
+		sprintFloatIfActive(data, sensorData.velocityY, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Y Acceleration.
-		snprintf(data, 16, "%06.2f", sensorData.accelY);
+		sprintFloatIfActive(data, sensorData.accelY, ACCEL_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Z Position.
-		snprintf(data, 16, "%06.2f", sensorData.positionZ);
+		sprintFloatIfActive(data, sensorData.positionZ, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Z Velocity.
-		snprintf(data, 16, "%06.2f", sensorData.velocityZ);
+		sprintFloatIfActive(data, sensorData.velocityZ, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Z Acceleration.
-		snprintf(data, 16, "%06.2f", sensorData.accelZ);
+		sprintFloatIfActive(data, sensorData.accelZ, ACCEL_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Roll.
-		snprintf(data, 16, "%06.2f", sensorData.roll);
+		sprintFloatIfActive(data, sensorData.roll, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Pitch.
-		snprintf(data, 16, "%06.2f", sensorData.pitch);
+		sprintFloatIfActive(data, sensorData.pitch, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Yaw.
-		snprintf(data, 16, "%06.2f", sensorData.yaw);
+		sprintFloatIfActive(data, sensorData.yaw, RANGING_SENSORS_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 		// Contact.
-		snprintf(data, 16, "%d", sensorData.contact_sensor_pushed);
+		sprintFloatIfActive(data, sensorData.contact_sensor_pushed, CONTACT_SENSOR_ACTIVE);
 		//ethernet_add_data_to_packet(???, index, -1, data);
 		rc = f_write_log(log_type, index, data);
 
 #if 1
 		// Short Ranging
 		for(i=0; i<4; i++) {
-			snprintf(data, 16, "%06.2f", motors[i]->short_data[0]);
+			sprintFloatIfActive(data, motors[i]->short_data[0], RANGING_SENSORS_ACTIVE);
 			ethernet_add_data_to_packet(SR, i, -1, data);
 			//rc = f_write_log(log_type, index, data);
 		}
@@ -262,6 +269,7 @@ void logStateMachineEvent(int sig)
 {
 	char desc[64] = "Control signal: ";
 	char *sig_desc;
+	(void *) sig_desc;	// Unused variable.
 	strcat(desc, control_signal_names[sig]);
 	logEventString(desc);
 }

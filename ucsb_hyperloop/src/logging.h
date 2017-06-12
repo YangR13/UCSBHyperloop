@@ -28,4 +28,7 @@ void logStateMachineEvent(int sig);
 void logEvent(Event evt);
 void logError(Error err);
 
+// Helper functions.
+void sprintFloatIfActive(char* out, float in, int active);
+
 #endif // LOGGING_H_
