@@ -198,8 +198,8 @@ void payload_service_state_machine(){
 	// Transition signals due to actuators hitting end stops
 	for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
 		// TODO: FIX THIS IF DOING BOTH TOGETHER?
-		if (Payload_Actuator_HSM.actuator_enable[i]){
-			if (Payload_Actuator_HSM.actuator_direction[i]){
+		if (Payload_Actuator_HSM.actuator_enable){
+			if (Payload_Actuator_HSM.actuator_direction){
 				// Forward direction
 				// if (HIT END STOP){
 				//    ISSUE_SIG(PA_ADVANCE_DONE);
