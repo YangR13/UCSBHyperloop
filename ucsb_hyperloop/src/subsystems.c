@@ -129,7 +129,12 @@ void generate_signals_from_sensor_data(){
 		service_propulsion_service_state_machine();
 	}
 #endif
-
+#if PWR_DST_BMS_ACTIVE
+	if (pwr_dst_bms->alarm){
+	    // Handle faults indicated by the electronics power distribution board
+	    // TODO: Add routine for shut off of all pod systems?
+	}
+#endif
 }
 
 void braking_service_state_machine(){
@@ -189,6 +194,7 @@ void maglev_service_state_machine(){
 		QHsm_dispatch((QHsm *)&Maglev_HSM);
 		Maglev_HSM.send_spundown = 0;
 	}
+
 }
 
 void payload_service_state_machine(){
@@ -251,7 +257,7 @@ void generate_faults_from_sensor_data(){
 	if (Maglev_HSM.fault != 2){
 		// If the system is not in an unrecoverable fault condition, check for faults
 		fault = maglev_fault_from_sensors();
-		if (fault == 2){
+		if (fault > 1){
 			// New unrecoverable fault condition has occurred
 			ISSUE_SIG(Maglev_HSM, MAGLEV_FAULT_UNREC);
 		}
@@ -277,7 +283,7 @@ void generate_faults_from_sensor_data(){
 	if (Payload_Actuator_HSM.fault != 2){
 		// If the system is not in an unrecoverable fault condition, check for faults
 		fault = payload_fault_from_sensors();
-		if (fault == 2){
+		if (fault > 1){
 			// New unrecoverable fault condition has occurred
 			ISSUE_SIG(Payload_Actuator_HSM, PA_FAULT_UNREC);
 		}
@@ -303,7 +309,7 @@ void generate_faults_from_sensor_data(){
 	if (Service_Propulsion_HSM.fault != 2){
 		// If the system is not in an unrecoverable fault condition, check for faults
 		fault = service_fault_from_sensors();
-		if (fault == 2){
+		if (fault > 1){
 			// New unrecoverable fault condition has occurred
 			ISSUE_SIG(Service_Propulsion_HSM, SP_FAULT_UNREC);
 		}
@@ -329,18 +335,17 @@ void generate_faults_from_sensor_data(){
 
 void braking_fault_from_sensors(){
 	// TODO: Implement this stub.
-	/*
-	if (Braking_HSM.using_pushsens){
-		if (PUSHER FAULTED){
-			issue BRAKES_PUSHSENS_FAULT
-		}
-	}
-	if (Braking_HSM.using_acc){
-		if (ACC FAULTED){
-			issue BRAKES_ACC_FAULT
-		}
-	}
-	*/
+
+#if BMS_18V5_ACTIVE
+    // Handle faults from the 18V5 BMS
+    int i;
+    for (i = 0; i < 2; i++){
+        if (bms_18v5->alarm[i]){
+            // DISABLE BRAKING PAIR i
+        }
+    }
+#endif
+
 }
 
 int maglev_fault_from_sensors(){
@@ -384,6 +389,19 @@ int maglev_fault_from_sensors(){
 			}
 		}
 	}
+
+#if MAGLEV_BMS_ACTIVE
+	// Handle faults from the Maglev BMSes
+    int max_alarm = 0;
+    for (i = 0; i < 2; i++){
+        if (maglev_bmses[i]->alarm > max_alarm){
+            max_alarm = maglev_bmses[i]->alarm;
+        }
+        if (max_alarm > 0){
+            return max_alarm;
+        }
+    }
+#endif
 	return 0;
 }
 
@@ -399,6 +417,14 @@ int payload_fault_from_sensors(){
 		return 1;
 	}
 	 */
+
+#if BMS_18V5_ACTIVE
+    // Handle faults from the 18V5 BMS
+    if (bms_18v5->alarm[2]){
+        return bms_18v5->alarm[2];
+    }
+#endif
+
 	return 0;
 }
 
@@ -414,6 +440,14 @@ int service_fault_from_sensors(){
 		return 1;
 	}
 	 */
+
+#if BMS_18V5_ACTIVE
+    // Handle faults from the 18V5 BMS
+    if (bms_18v5->alarm[2]){
+        return bms_18v5->alarm[2];
+    }
+#endif
+
 	return 0;
 }
 

@@ -71,7 +71,7 @@ void initializeSensorsAndControls(){
     }
 
     if (PWR_DST_BMS_ACTIVE){
-        pwr_dst_bms = initialize_PWR_DST_BMS_(1);
+        pwr_dst_bms = initialize_PWR_DST_BMS(1);
     }
 
     if (CONTACT_SENSOR_ACTIVE){
