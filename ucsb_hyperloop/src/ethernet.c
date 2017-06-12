@@ -110,7 +110,7 @@ int Wiz_Check_Network_Registers() {
 	spi_Recv_Blocking(SHAR, 0x0006);
 	DEBUGOUT("MAC Address: %x:%x:%x:%x:%x:%x\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6],
 			Rx_Buf[7], Rx_Buf[8], Rx_Buf[9]);
-	uint_64t temp = 0;
+	uint64_t temp = 0;
 	int i;
 	for(i=4; i<=9; i++) {
 		temp = (temp << 8) | Rx_Buf[i];
