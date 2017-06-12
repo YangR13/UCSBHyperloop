@@ -27,14 +27,55 @@ void performActuation(){
 }
 
 void actuate_brakes(){
-	// TODO: Implement this!
+	// TODO: Finish implementing this!
 	if(Braking_HSM.engage){
+	    // Count if there are any faulted boards before beginning actuation
+	    int num_rec_faults = 0;
+	    int num_unrec_faults = 0;
+	    int i;
+        for (i = 0; i < 2; i++){
+            if (braking_boards[i]->faulted & 0b01){
+                num_rec_faults++;
+            }
+            if (braking_boards[i]->faulted >> 1){
+                num_unrec_faults++;
+            }
+        }
+
+        if (num_rec_faults % 2 == 0 && num_unrec_faults % 2 == 0){
+            // Both boards have the same fault status, may as well actuate both.
+            // TODO: Actuate both pairs of brakes.
+        }
+        else if (num_rec_faults % 2 == 1 && num_unrec_faults % 2 == 0){
+            // One board has a recoverable fault, just actuate the other
+            for (i = 0; i < 2; i++){
+                if (!(braking_boards[i]->faulted & 0b01)){
+                    // This board does not have the fault
+                    // TODO: ACTUATE THIS BOARD braking_boards[i] ONLY
+                }
+            }
+        }
+        else if (num_unrec_faults % 2 == 1){
+            // One board has an unrecoverable fault. The other may have a recoverable fault or not, but it's still the better choice
+            for (i = 0; i < 2; i++){
+                if (!(braking_boards[i]->faulted & 0b10)){
+                    // This board does not have the fault
+                    // TODO: ACTUATE THIS BOARD braking_boards[i] ONLY
+                }
+            }
+        }
+
+        /*
 	    if (Braking_HSM.feedback){
 	        // Engage with feedback
 	    }
 	    else{
 	        // Engage without feedback
 	    }
+	    */
+	}
+	else{
+	    // Call a routine to *stop* the brakes here?
 	}
 }
 
