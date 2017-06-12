@@ -27,31 +27,6 @@ const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {0,  255,  0,  255};
 const float HEMS_CAL_5V0REF[NUM_HEMS] = {5.08,  5.08, 5.08, 5.08};
 const float HEMS_CAL_3V3REF[NUM_HEMS] = {3.28,  3.28, 3.28, 3.30};
 
-//Maglev_BMS Data:
-const uint8_t MAGLEV_BMS_HUB_PORT[NUM_MAGLEV_BMS][2] = {   //Max 1 per I2C bus or Hub
-  {1, 0},   //{Hub, Port};
-  {2, 0}
-};
-const float MAGLEV_BMS_CAL_CONVERSIONS[NUM_MAGLEV_BMS][3][6] = {
-  { //BMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99}    //SubBMS2
-  },
-  { //BMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99}    //SubBMS2
-  }
-};
-
-
-
-
-
-
-
-
 // Global variables.
 const uint8_t ADC_Address_Select[4] = {0x8, 0xA, 0x1A, 0x28};
 const uint8_t DAC_Address_Select[2] = {0x62, 0x63};
@@ -201,73 +176,7 @@ uint8_t update_HEMS(HEMS* engine) {
 
 
 
-const uint8_t I2C_ADC_Maglev_subBMS_Addresses[3] = {0x19, 0x0B, 0x18};
-Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
-  Maglev_BMS* bms = malloc(sizeof(Maglev_BMS));
-  bms->identity = identity;
-  bms->bus = MAGLEV_BMS_HUB_PORT[bms->identity][0];
 
-
-  GPIO_Setup(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], OUT);
-  GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], 1);
-  bms->relay_active_low = 1;
-
-  int batt;
-  for (batt = 0; batt < 3; batt++) {
-    // Initialize battery voltages to a default value
-    bms->battery_voltage[batt] = 23.0; // TODO: Is this a good starting value? 23V?
-
-    // Initialize cell voltages to a default value
-    int i = 0;
-    for (i = 0; i < 6; i++) {
-      bms->cell_voltages[batt][i] = 2.833; // TODO: Is this a good starting value? 23V / 6 cells?
-    }
-
-    // Initialize thermistor moving averages (with first read)
-    int temp_counter = 0;
-    for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
-    }
-  }
-
-  bms->amps = 0;
-  bms->timestamp = 0;
-  bms->alarm = 0;
-  return bms;
-}
-
-uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
-  int batt, i;
-  float prev_voltage;
-
-  //0x19 FLOAT LOW
-  //0x0B FLOAT HIGH
-  //0x18 FLOAT FLOAT
-  for (batt = 0; batt < 3; batt++) {
-    prev_voltage = 0;
-    for (i = 0; i < 6; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
-      bms->cell_voltages[batt][i] = voltage - prev_voltage;
-      prev_voltage = voltage;
-    }
-    bms->battery_voltage[batt] = prev_voltage;
-
-    //Record Temperatures
-    int temp_counter = 0;
-    for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
-      new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
-      bms->temperatures[batt][temp_counter] = new_temperature;
-      if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-        bms->alarm |= 0b00000001;
-      }
-    }
-  }
-
-  GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], bms->relay_active_low);
-
-  return bms->alarm;
-}
 
 
 

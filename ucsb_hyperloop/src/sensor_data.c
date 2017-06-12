@@ -122,7 +122,10 @@ void collectData(){
     	for (i = 0; i < NUM_MAGLEV_BMS; i++){
     		update_Maglev_BMS(maglev_bmses[i]);
     	}
+    }
 
+    if (BMS_18V5_ACTIVE){
+        update_BMS_18V5(bms_18v5);
     }
 
     if(CONTACT_SENSOR_ACTIVE){

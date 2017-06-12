@@ -66,6 +66,10 @@ void initializeSensorsAndControls(){
     	}
     }
 
+    if (BMS_18V5_ACTIVE){
+        bms_18v5 = initialize_BMS_18V5(1);
+    }
+
     if (CONTACT_SENSOR_ACTIVE){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
@@ -76,6 +80,14 @@ void initializeSensorsAndControls(){
         for (i = 0; i < 2; i++){
             braking_boards[i] = initialize_actuator_board(i);
         }
+    }
+
+    if (PAYLOAD_ACTUATORS_ACTIVE){
+        payload = initialize_actuator_board(3);
+    }
+
+    if (SERVICE_PROPULSION_ACTIVE){
+        service_prop = initialize_actuator_board(4);
     }
 }
 
