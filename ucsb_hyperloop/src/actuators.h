@@ -34,6 +34,8 @@
 
 #define MAX12BITVAL 4095.0
 
+float current_reading;
+
 #define IN 0
 #define OUT 1
 
@@ -57,7 +59,7 @@ typedef struct {
   float enable[2]; // PWM - 0 is none, 1.0 is full cycle
 
   // Variable for control
-  uint16_t target_pos[2];
+  int16_t target_pos[2];
 
 } ACTUATORS;
 

@@ -2,7 +2,7 @@
 #include "pwm.h"
 #include "I2CPERIPHS.h"
 
-const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {1, 0, 0, 0};        // TODO: Set me
+const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {2, 0, 0, 0};        // TODO: Set me
 #ifdef ARDUINO
 // Pin values to use for GPIO and PWM signals
 const uint8_t BOARD_PINS[16] =      {52, 53, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -88,6 +88,9 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
       PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->enable[output_counter]);
   }
 
+  // TODO: Remove hack
+  current_reading = 0.0;
+
   return board;
 }
 
@@ -145,6 +148,14 @@ void move(ACTUATORS *board, int num, int destination){
 
     // Set the target destination value
     board->target_pos[num] = destination;
+    if (destination == -1){
+        board->direction[num] = 1;
+        board->enable[num] = 0.10;
+    }
+    else if (destination == -2){
+        board->direction[num] = 0;
+        board->enable[num] = 0.10;
+    }
 
     // Calculate the target direction and duty cycle
     // Must be called here because otherwise ->enable is currently 0 and will be blocked by the guard in update_actuator_board
@@ -155,6 +166,10 @@ void move(ACTUATORS *board, int num, int destination){
 }
 
 void calculate_actuator_control(ACTUATORS *board, int num){
+    if (board->target_pos[num] < 0){
+        return;
+    }
+
     // Check to see if the destination has been reached (and movement should be stopped)
     if (abs(board->position[num] - board->target_pos[num]) <= 2){
         // Stop movement (and write to the PWM output immediately to prevent overshoot)
@@ -201,7 +216,14 @@ void update_actuator_control(ACTUATORS *board){
     int pos_counter = 0;
     for (pos_counter = 0; pos_counter < 2; pos_counter++){
         uint16_t pos = ADC_read(board->bus, board->ADC_device_address, 5 - (4 * pos_counter));
-        board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
+        // THIS IS A TEMP HACK
+        if (pos_counter == 1){
+            current_reading = (0.5 * (((float)pos - 1322.0) * (5000.0 / MAX12BITVAL) / 8.7)) + 0.5 * current_reading;
+            DEBUGOUT("%f \n", current_reading);
+        }
+        else{
+            board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
+        }
 
         // Service actuator movement routine if it is currently active
         if (board->enable[pos_counter] >= MIN_DUTY_CYCLE){

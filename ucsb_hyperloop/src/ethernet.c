@@ -238,37 +238,32 @@ void recvDataPacket() {
 		CALIBRATE_FLAG = 1;
 	}
 
-	if(strcmp((char *)Net_Rx_Data, STOP_BRAKES_SIG) == 0){
+	if(strcmp((char *)Net_Rx_Data, "STOP_BRAKES_SIG\0") == 0){
 		printf("STOP_BRAKES_SIG RECEIVED\n");
-		braking_boards[0]->enable[0] = 0.0;
-		braking_boards[0]->enable[1] = 0.0;
+		braking_boards[0]->target_pos[0] = braking_boards[0]->position[0];
+		braking_boards[0]->target_pos[1] = braking_boards[0]->position[1];
+        braking_boards[0]->enable[0] = 0.0;
+        braking_boards[0]->enable[1] = 0.0;
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
-		braking_boards[0]->enable[0] = 0.5;
-		braking_boards[0]->enable[1] = 0.5;
-		braking_boards[0]->direction[0] = 1;
-		braking_boards[0]->direction[1] = 1;
-
+		move(braking_boards[0], 0, -1);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
-        braking_boards[0]->enable[0] = 0.5;
-        braking_boards[0]->enable[1] = 0.5;
-        braking_boards[0]->direction[0] = 0;
-        braking_boards[0]->direction[1] = 0;
+		move(braking_boards[0], 0, -2);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
 		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
-		move(braking_boards[0], 0, 1000);
+		move(braking_boards[0], 0, braking_boards[0]->position[0] - 10);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
 		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
-		move(braking_boards[0], 0, 3000);
+		move(braking_boards[0], 0, braking_boards[0]->position[0] + 10);
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
