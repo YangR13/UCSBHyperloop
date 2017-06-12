@@ -11,6 +11,9 @@ typedef struct Maglev_HSM_data {
     uint8_t send_spunup;
     uint8_t send_spundown;
     uint8_t fault;
+
+    // Maglev variables not managed by HSM.
+    uint8_t test;
 } Maglev_HSM_t;
 
 // The global instance of the state machine object (with added data members defined above)
