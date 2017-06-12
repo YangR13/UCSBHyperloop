@@ -342,7 +342,7 @@ void braking_fault_from_sensors(){
     for (i = 0; i < 2; i++){
         if (bms_18v5->alarm[i]){
             // DISABLE BRAKING PAIR i
-            braking_boards[i]->faulted |= alarm;
+            braking_boards[i]->faulted |= bms_18v5->alarm[i];
         }
     }
 #endif

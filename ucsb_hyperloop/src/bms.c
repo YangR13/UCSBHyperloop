@@ -306,7 +306,7 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
   float prev_voltage;
   int new_alarms = 0b00;
 
-  for (batt = 0; batt < 4; batt++) {
+  for (batt = 0; batt < 2; batt++) {
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
