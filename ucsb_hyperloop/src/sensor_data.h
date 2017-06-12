@@ -3,15 +3,17 @@
 
 #include "board.h"
 #include "ranging.h"
-#include "HEMS.h"
+#include "I2CPERIPHS.h"
+#include "actuators.h"
 
 void 	collectCalibrationData(I2C_ID_T id);
 void    collectData();
-void    TIMER1_IRQHandler(void);
+void    printSensorData();
 void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 
 HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
+ACTUATORS *braking_boards[2]; // 2 Braking boards.
 
 typedef struct{
 
@@ -25,9 +27,11 @@ typedef struct{
 
   uint32_t dataPrintFlag;
 
-  float initialAccelX;
-  float initialAccelY;
-  float initialAccelZ;
+  XYZ initialAccel1;
+  XYZ initialAccel2;
+
+  XYZ accel1;
+  XYZ accel2;
 
   float accelX;
   float accelY;
@@ -67,9 +71,13 @@ typedef struct{
 
 
 } sensor;
-
-uint8_t collectDataFlag;
-uint8_t getPressureFlag;
 sensor sensorData;
+
+uint8_t getPressureFlag;
+
+int CALIBRATE_FLAG;
+float pitch_i;
+float roll_i;
+float z_ci;
 
 #endif

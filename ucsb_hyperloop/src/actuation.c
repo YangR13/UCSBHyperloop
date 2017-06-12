@@ -4,7 +4,7 @@
 #include "payload_actuator_sm.h"
 #include "service_propulsion_sm.h"
 #include "initialization.h"
-#include "HEMS.h"
+#include "I2CPERIPHS.h"
 #include "sensor_data.h"
 #include "actuation.h"
 
@@ -37,14 +37,9 @@ void actuate_brakes(){
         //     return;
         // {
 
-        if(Braking_HSM.engage_1){
+        if(Braking_HSM.engage){
             /* TODO
-            ENGAGE PAIR 1
-             */
-        }
-        if(Braking_HSM.engage_2){
-            /* TODO
-            ENGAGE PAIR 2
+            ENGAGE BRAKES
              */
         }
     }
@@ -56,14 +51,24 @@ void actuate_maglev(){
         for(i = 0; i < 4; i++) {
             set_motor_throttle(i, 0);
         }
+
+#if MAGLEV_BMS_ACTIVE
+            maglev_bmses[0]->relay_active_low = 1;
+            maglev_bmses[1]->relay_active_low = 1;
+#endif
     }
     else{
+
         // Apply changes if a transition occurred
         if(Maglev_HSM.update) {
             // Set engine behavior
             if(Maglev_HSM.enable_motors) {
                 DEBUGOUT("Engines engaged.\n");
                 prototypeRunStartTime = getRuntime()/1000;
+    #if MAGLEV_BMS_ACTIVE
+                maglev_bmses[0]->relay_active_low = 0;
+                maglev_bmses[1]->relay_active_low = 0;
+    #endif
                 //update and maintain engine throttle
             }
             else {
@@ -73,6 +78,10 @@ void actuate_maglev(){
                 for(i = 0; i < NUM_HEMS; i++) {
                     set_motor_throttle(i, 0);
                 }
+    #if MAGLEV_BMS_ACTIVE
+                maglev_bmses[0]->relay_active_low = 1;
+                maglev_bmses[1]->relay_active_low = 1;
+    #endif
             }
             Maglev_HSM.update = 0;
             DEBUGOUT("\n\n");
@@ -85,7 +94,6 @@ void actuate_maglev(){
 
             if(PROTOTYPE_PRERUN) {  // PRERUN
                 if (time_sec < prototypeRunStartTime + 10) {    // Spin up to tenth power.
-
                     DEBUGOUT("ENGINE 3 ON\n");
                     motors[0]->throttle_voltage = 0;
                     motors[1]->throttle_voltage = 0;
@@ -129,8 +137,13 @@ void actuate_maglev(){
             for(i = 0; i < 4; i++) {
                 set_motor_throttle(i, 0);
             }
-        }
-    }
+#if MAGLEV_BMS_ACTIVE
+            maglev_bmses[0]->relay_active_low = 1;
+            maglev_bmses[1]->relay_active_low = 1;
+#endif
+	    }
+	}
+	// TODO: Update HEMS here.
 }
 
 void actuate_payload(){

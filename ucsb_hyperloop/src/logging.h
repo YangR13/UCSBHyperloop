@@ -5,6 +5,7 @@
 
 #include "ethernet.h"
 #include "subsystems.h"
+#include "sdcard.h"
 
 typedef enum {
 	MAX_EVT
@@ -15,6 +16,9 @@ typedef enum {
 } Error;
 
 #define ERR
+
+void logAllData();
+void logData(LOG_TYPE log_type, int index);
 
 void initEventLogFile();
 void initErrorLogFile();

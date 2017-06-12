@@ -1,6 +1,7 @@
 #include "ethernet.h"
+#include "initialization.h"
 #include "sensor_data.h"
-#include "HEMS.h"
+#include "I2CPERIPHS.h"
 #include <string.h>
 #include "stdio.h"
 #include "timer.h"
@@ -21,17 +22,6 @@ uint16_t gSn_TX_BASE[] = {
 	0x8000,	0x8800,	0x9000,	0x9800,	// Socket 0, 1, 2, 3
 	0xA000, 0xA800,	0xB000,	0xB800	// Socket 4, 5, 6, 7
 };
-
-/* Data Send Timer Interrupt */
-void TIMER2_IRQHandler(void){
-	sendDataFlag = 1;
-	Chip_TIMER_ClearMatch( LPC_TIMER2, 1 );
-}
-
-/* Initialize Data Send Timer */
-void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
-	 timerInit(timer, timerInterrupt, tickRate);
-}
 
 /* SSP Initialization */
 void Wiz_SSP_Init() {
@@ -178,14 +168,28 @@ void send_method(char *method, char* val, int val_len) {
 
 }
 
-void send_data_packet_helper(char *method, char *val, int *position) {
+void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position) {
 	if (val != 0) {
-		memcpy(Net_Tx_Data + *position, method, 3);
-		*position += 3;
+		memcpy(Net_Tx_Data + *position, method, strlen(method));
+		*position += strlen(method);
+		if(index != -1){
+			char index_string[4];
+			snprintf(index_string, 4, "%d", index);
+			memcpy(Net_Tx_Data + *position, index_string, strlen(index_string));
+			*position += strlen(index_string);
+		}
+		if(sensorNum != -1){
+			char sensor_string[4];
+			snprintf(sensor_string, 4, "%d", sensorNum);
+			memcpy(Net_Tx_Data + *position, "_", strlen("_"));
+			*position += strlen("_");
+			memcpy(Net_Tx_Data + *position, sensor_string, strlen(sensor_string));
+			*position += strlen(sensor_string);
+		}
 		memcpy(Net_Tx_Data + *position, ":", 1);
 		*position += 1;
-		memcpy(Net_Tx_Data + *position, val, 6);
-		*position += 6;
+		memcpy(Net_Tx_Data + *position, val, strlen(val));
+		*position += strlen(val);
 		memcpy(Net_Tx_Data + *position, "\n", 1);
 		*position += 1;
 	}
@@ -200,6 +204,8 @@ void send_data_ack_helper(char *method, int *position) {
 
 
 void recvDataPacket() {
+	// Don't guard for connectionOpen here, doing so breaks receiving packets D=
+
 	// TODO: Expand this back to support other subsystems
 	int pos = 0;
 	memset(Net_Tx_Data, 0, 64);
@@ -209,7 +215,13 @@ void recvDataPacket() {
 //	for (i = 0; i < DATA_BUF_SIZE; i++) {
 //		DEBUGOUT("%i:%c\n", i, Net_Rx_Data[i]);
 //	}
+
 //	DEBUGOUT("Receiving Data Packet!\n");
+
+	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
+		DEBUGOUT("CALIBRATE_SIG RECEIVED\n");
+		CALIBRATE_FLAG = 1;
+	}
 
 	// Check if the message received matches any state machine control signals, issue it if so.
 	int i;
@@ -219,6 +231,44 @@ void recvDataPacket() {
 			DEBUGOUT(" RECEIVED\n");
 			dispatch_signal_from_webapp(i); // Corresponding entry in enum control_signals
 		}
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
+		printf("CALIBRATE_SIG RECEIVED\n");
+		CALIBRATE_FLAG = 1;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, STOP_BRAKES_SIG) == 0){
+		printf("STOP_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.0;
+		braking_boards[0]->enable[1] = 0.0;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.5;
+		braking_boards[0]->enable[1] = 0.5;
+		braking_boards[0]->direction[0] = 1;
+		braking_boards[0]->direction[1] = 1;
+
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
+        braking_boards[0]->enable[0] = 0.5;
+        braking_boards[0]->enable[1] = 0.5;
+        braking_boards[0]->direction[0] = 0;
+        braking_boards[0]->direction[1] = 0;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
+		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 1);
+	}
+
+	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
+		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 0);
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
@@ -325,7 +375,7 @@ void recvDataPacket() {
 				timeIterator++;
 			}
 		}
-//		rtc_initialize();
+		rtc_initialize();
 		RTC theTime;
 		theTime.year = (WORD)yearVal;
 		theTime.month = (BYTE)monthVal;
@@ -334,7 +384,7 @@ void recvDataPacket() {
 		theTime.hour = (BYTE)hourVal;
 		theTime.min = (BYTE)minVal;
 		theTime.sec = (BYTE)secVal;
-//		rtc_settime(&theTime);
+		rtc_settime(&theTime);
 		send_data_ack_helper(TAK, &pos);
 	}
 
@@ -343,208 +393,20 @@ void recvDataPacket() {
 	}
 }
 
-void sendPrototypePacket(){
-	sendDataFlag = 0;
+void ethernet_prepare_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
+	memset(Net_Tx_Data, 0, 1024);
+	tx_pos = 0;
+}
 
-	// Copy strings to Net_Tx_Data
-	int pos = 0;
-	memset(Net_Tx_Data, 0, 1024); // Make sure this clears enough space
+void ethernet_add_data_to_packet(char *method, int index, int sensorNum, char* val){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
+	send_data_packet_helper(method, index, sensorNum, val, &tx_pos);
+}
 
-	/* DAC Output */
-	snprintf(PrototypePacket.dac, 16, "%06.2f", motors[0]->throttle_voltage);
-	/* Short Ranging */
-	snprintf(PrototypePacket.sr1, 16, "%06.2f", (float)motors[0]->short_data[0]);
-	snprintf(PrototypePacket.sr2, 16, "%06.2f", (float)motors[1]->short_data[0]);
-	snprintf(PrototypePacket.sr3, 16, "%06.2f", (float)motors[2]->short_data[0]);
-	snprintf(PrototypePacket.sr4, 16, "%06.2f", (float)motors[3]->short_data[0]);
-	/* Photoelectric */
-	snprintf(PrototypePacket.ph1, 16, "%06.2f", (float)sensorData.photoelectric);
-	/* Current Output */
-	snprintf(PrototypePacket.cu1, 16, "%06.2f", (float)motors[0]->amps);
-	snprintf(PrototypePacket.cu2, 16, "%06.2f", (float)motors[1]->amps);
-	snprintf(PrototypePacket.cu3, 16, "%06.2f", (float)motors[2]->amps);
-	snprintf(PrototypePacket.cu4, 16, "%06.2f", (float)motors[3]->amps);
-	/* Tachometer Output */ // TODO: EXPAND THIS TO READING BOTH VALUES
-	snprintf(PrototypePacket.ta1, 16, "%06.2f", (float)motors[0]->rpm[1]);
-	snprintf(PrototypePacket.ta2, 16, "%06.2f", (float)motors[1]->rpm[1]);
-	snprintf(PrototypePacket.ta3, 16, "%06.2f", (float)motors[2]->rpm[1]);
-	snprintf(PrototypePacket.ta4, 16, "%06.2f", (float)motors[3]->rpm[1]);
-	/* Temperature Output */
-	snprintf(PrototypePacket.m1tmp1, 16, "%06.f", (float)motors[0]->temperatures[0]);
-	snprintf(PrototypePacket.m1tmp2, 16, "%06.f", (float)motors[0]->temperatures[1]);
-	snprintf(PrototypePacket.m1tmp3, 16, "%06.f", (float)motors[0]->temperatures[2]);
-	snprintf(PrototypePacket.m1tmp4, 16, "%06.f", (float)motors[0]->temperatures[3]);
-	snprintf(PrototypePacket.m2tmp1, 16, "%06.f", (float)motors[1]->temperatures[0]);
-	snprintf(PrototypePacket.m2tmp2, 16, "%06.f", (float)motors[1]->temperatures[1]);
-	snprintf(PrototypePacket.m2tmp3, 16, "%06.f", (float)motors[1]->temperatures[2]);
-	snprintf(PrototypePacket.m2tmp4, 16, "%06.f", (float)motors[1]->temperatures[3]);
-	snprintf(PrototypePacket.m3tmp1, 16, "%06.f", (float)motors[2]->temperatures[0]);
-	snprintf(PrototypePacket.m3tmp2, 16, "%06.f", (float)motors[2]->temperatures[1]);
-	snprintf(PrototypePacket.m3tmp3, 16, "%06.f", (float)motors[2]->temperatures[2]);
-	snprintf(PrototypePacket.m3tmp4, 16, "%06.f", (float)motors[2]->temperatures[3]);
-	snprintf(PrototypePacket.m4tmp1, 16, "%06.f", (float)motors[3]->temperatures[0]);
-	snprintf(PrototypePacket.m4tmp2, 16, "%06.f", (float)motors[3]->temperatures[1]);
-	snprintf(PrototypePacket.m4tmp3, 16, "%06.f", (float)motors[3]->temperatures[2]);
-	snprintf(PrototypePacket.m4tmp4, 16, "%06.f", (float)motors[3]->temperatures[3]);
-	/* BMS 0 Voltage */
-	snprintf(PrototypePacket.bms0volt0, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][0]);
-	snprintf(PrototypePacket.bms0volt1, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][1]);
-	snprintf(PrototypePacket.bms0volt2, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][2]);
-	snprintf(PrototypePacket.bms0volt3, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][3]);
-	snprintf(PrototypePacket.bms0volt4, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][4]);
-	snprintf(PrototypePacket.bms0volt5, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[0][5]);
-	snprintf(PrototypePacket.bms0volt6, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][0]);
-	snprintf(PrototypePacket.bms0volt7, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][1]);
-	snprintf(PrototypePacket.bms0volt8, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][2]);
-	snprintf(PrototypePacket.bms0volt9, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][3]);
-	snprintf(PrototypePacket.bms0volt10, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][4]);
-	snprintf(PrototypePacket.bms0volt11, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[1][5]);
-	snprintf(PrototypePacket.bms0volt12, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][0]);
-	snprintf(PrototypePacket.bms0volt13, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][1]);
-	snprintf(PrototypePacket.bms0volt14, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][2]);
-	snprintf(PrototypePacket.bms0volt15, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][3]);
-	snprintf(PrototypePacket.bms0volt16, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][4]);
-	snprintf(PrototypePacket.bms0volt17, 16, "%06.f", (float)maglev_bmses[0]->cell_voltages[2][5]);
-	/* BMS 0 Temperature */
-	snprintf(PrototypePacket.bms0temp0, 16, "%06.f", (float)maglev_bmses[0]->temperatures[0][0]);
-	snprintf(PrototypePacket.bms0temp1, 16, "%06.f", (float)maglev_bmses[0]->temperatures[0][1]);
-	snprintf(PrototypePacket.bms0temp2, 16, "%06.f", (float)maglev_bmses[0]->temperatures[1][0]);
-	snprintf(PrototypePacket.bms0temp3, 16, "%06.f", (float)maglev_bmses[0]->temperatures[1][1]);
-	snprintf(PrototypePacket.bms0temp4, 16, "%06.f", (float)maglev_bmses[0]->temperatures[2][0]);
-	snprintf(PrototypePacket.bms0temp5, 16, "%06.f", (float)maglev_bmses[0]->temperatures[2][1]);
-	/* BMS 0 Voltage */
-	snprintf(PrototypePacket.bms1volt0, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][0]);
-	snprintf(PrototypePacket.bms1volt1, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][1]);
-	snprintf(PrototypePacket.bms1volt2, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][2]);
-	snprintf(PrototypePacket.bms1volt3, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][3]);
-	snprintf(PrototypePacket.bms1volt4, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][4]);
-	snprintf(PrototypePacket.bms1volt5, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[0][5]);
-	snprintf(PrototypePacket.bms1volt6, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][0]);
-	snprintf(PrototypePacket.bms1volt7, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][1]);
-	snprintf(PrototypePacket.bms1volt8, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][2]);
-	snprintf(PrototypePacket.bms1volt9, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][3]);
-	snprintf(PrototypePacket.bms1volt10, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][4]);
-	snprintf(PrototypePacket.bms1volt11, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[1][5]);
-	snprintf(PrototypePacket.bms1volt12, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][0]);
-	snprintf(PrototypePacket.bms1volt13, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][1]);
-	snprintf(PrototypePacket.bms1volt14, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][2]);
-	snprintf(PrototypePacket.bms1volt15, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][3]);
-	snprintf(PrototypePacket.bms1volt16, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][4]);
-	snprintf(PrototypePacket.bms1volt17, 16, "%06.f", (float)maglev_bmses[1]->cell_voltages[2][5]);
-	/* BMS 0 Temperature */
-	snprintf(PrototypePacket.bms1temp0, 16, "%06.f", (float)maglev_bmses[1]->temperatures[0][0]);
-	snprintf(PrototypePacket.bms1temp1, 16, "%06.f", (float)maglev_bmses[1]->temperatures[0][1]);
-	snprintf(PrototypePacket.bms1temp2, 16, "%06.f", (float)maglev_bmses[1]->temperatures[1][0]);
-	snprintf(PrototypePacket.bms1temp3, 16, "%06.f", (float)maglev_bmses[1]->temperatures[1][1]);
-	snprintf(PrototypePacket.bms1temp4, 16, "%06.f", (float)maglev_bmses[1]->temperatures[2][0]);
-	snprintf(PrototypePacket.bms1temp5, 16, "%06.f", (float)maglev_bmses[1]->temperatures[2][1]);
-
-	/* DAC Data */
-	send_data_packet_helper(DAC, PrototypePacket.dac, &pos);
-	/* Photoelectric Data */
-	send_data_packet_helper(PH1, PrototypePacket.ph1, &pos);
-	/* Short Ranging */
-	send_data_packet_helper(SR1, PrototypePacket.sr1, &pos);
-	send_data_packet_helper(SR2, PrototypePacket.sr2, &pos);
-	send_data_packet_helper(SR3, PrototypePacket.sr3, &pos);
-	send_data_packet_helper(SR4, PrototypePacket.sr4, &pos);
-	/* Current Data */
-	send_data_packet_helper(CU1, PrototypePacket.cu1, &pos);
-	send_data_packet_helper(CU2, PrototypePacket.cu2, &pos);
-	send_data_packet_helper(CU3, PrototypePacket.cu3, &pos);
-	send_data_packet_helper(CU4, PrototypePacket.cu4, &pos);
-	/* Tachometer Data */
-	send_data_packet_helper(TA1, PrototypePacket.ta1, &pos);
-	send_data_packet_helper(TA2, PrototypePacket.ta2, &pos);
-	send_data_packet_helper(TA3, PrototypePacket.ta3, &pos);
-	send_data_packet_helper(TA4, PrototypePacket.ta4, &pos);
-	/* Temperature Data */
-	send_data_packet_helper(TM1, PrototypePacket.m1tmp1, &pos);
-	send_data_packet_helper(TM2, PrototypePacket.m1tmp2, &pos);
-	send_data_packet_helper(TM3, PrototypePacket.m1tmp3, &pos);
-	send_data_packet_helper(TM4, PrototypePacket.m1tmp4, &pos);
-	send_data_packet_helper(TM5, PrototypePacket.m2tmp1, &pos);
-	send_data_packet_helper(TM6, PrototypePacket.m2tmp2, &pos);
-	send_data_packet_helper(TM7, PrototypePacket.m2tmp3, &pos);
-	send_data_packet_helper(TM8, PrototypePacket.m2tmp4, &pos);
-	send_data_packet_helper(TM9, PrototypePacket.m3tmp1, &pos);
-	send_data_packet_helper(T10, PrototypePacket.m3tmp2, &pos);
-	send_data_packet_helper(T11, PrototypePacket.m3tmp3, &pos);
-	send_data_packet_helper(T12, PrototypePacket.m3tmp4, &pos);
-	send_data_packet_helper(T13, PrototypePacket.m4tmp1, &pos);
-	send_data_packet_helper(T14, PrototypePacket.m4tmp2, &pos);
-	send_data_packet_helper(T15, PrototypePacket.m4tmp3, &pos);
-	send_data_packet_helper(T16, PrototypePacket.m4tmp4, &pos);
-
-	// Send intitial data
+void ethernet_send_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
-
-	// Copy strings to Net_Tx_Data
-	int pos = 0;
-	memset(Net_Tx_Data, 0, 1024); // Make sure this clears enough space
-	/* BMS 0 Voltage Data */
-	send_data_packet_helper(V00, PrototypePacket.bms0volt0, &pos);
-	send_data_packet_helper(V01, PrototypePacket.bms0volt1, &pos);
-	send_data_packet_helper(V02, PrototypePacket.bms0volt2, &pos);
-	send_data_packet_helper(V03, PrototypePacket.bms0volt3, &pos);
-	send_data_packet_helper(V04, PrototypePacket.bms0volt4, &pos);
-	send_data_packet_helper(V05, PrototypePacket.bms0volt5, &pos);
-	send_data_packet_helper(V06, PrototypePacket.bms0volt6, &pos);
-	send_data_packet_helper(V07, PrototypePacket.bms0volt7, &pos);
-	send_data_packet_helper(V08, PrototypePacket.bms0volt8, &pos);
-	send_data_packet_helper(V09, PrototypePacket.bms0volt9, &pos);
-	send_data_packet_helper(V0A, PrototypePacket.bms0volt10, &pos);
-	send_data_packet_helper(V0B, PrototypePacket.bms0volt11, &pos);
-	send_data_packet_helper(V0C, PrototypePacket.bms0volt12, &pos);
-	send_data_packet_helper(V0D, PrototypePacket.bms0volt13, &pos);
-	send_data_packet_helper(V0E, PrototypePacket.bms0volt14, &pos);
-	send_data_packet_helper(V0F, PrototypePacket.bms0volt15, &pos);
-	send_data_packet_helper(V0G, PrototypePacket.bms0volt16, &pos);
-	send_data_packet_helper(V0H, PrototypePacket.bms0volt17, &pos);
-//	/* BMS 0 Temperature Data*/
-	send_data_packet_helper(T00, PrototypePacket.bms0temp0, &pos);
-	send_data_packet_helper(T01, PrototypePacket.bms0temp1, &pos);
-	send_data_packet_helper(T02, PrototypePacket.bms0temp2, &pos);
-	send_data_packet_helper(T03, PrototypePacket.bms0temp3, &pos);
-	send_data_packet_helper(T04, PrototypePacket.bms0temp4, &pos);
-	send_data_packet_helper(T05, PrototypePacket.bms0temp5, &pos);
-	send_data_packet_helper(T06, PrototypePacket.bms0temp6, &pos);
-	send_data_packet_helper(T07, PrototypePacket.bms0temp7, &pos);
-//	/* BMS 1 Voltage Data */
-	send_data_packet_helper(V10, PrototypePacket.bms1volt0, &pos);
-	send_data_packet_helper(V11, PrototypePacket.bms1volt1, &pos);
-	send_data_packet_helper(V12, PrototypePacket.bms1volt2, &pos);
-	send_data_packet_helper(V13, PrototypePacket.bms1volt3, &pos);
-	send_data_packet_helper(V14, PrototypePacket.bms1volt4, &pos);
-	send_data_packet_helper(V15, PrototypePacket.bms1volt5, &pos);
-	send_data_packet_helper(V16, PrototypePacket.bms1volt6, &pos);
-	send_data_packet_helper(V17, PrototypePacket.bms1volt7, &pos);
-	send_data_packet_helper(V18, PrototypePacket.bms1volt8, &pos);
-	send_data_packet_helper(V19, PrototypePacket.bms1volt9, &pos);
-	send_data_packet_helper(V1A, PrototypePacket.bms1volt10, &pos);
-	send_data_packet_helper(V1B, PrototypePacket.bms1volt11, &pos);
-	send_data_packet_helper(V1C, PrototypePacket.bms1volt12, &pos);
-	send_data_packet_helper(V1D, PrototypePacket.bms1volt13, &pos);
-	send_data_packet_helper(V1E, PrototypePacket.bms1volt14, &pos);
-	send_data_packet_helper(V1F, PrototypePacket.bms1volt15, &pos);
-	send_data_packet_helper(V1G, PrototypePacket.bms1volt16, &pos);
-	send_data_packet_helper(V1H, PrototypePacket.bms1volt17, &pos);
-//	/* BMS 1 Temperature Data*/
-	send_data_packet_helper(TB0, PrototypePacket.bms1temp0, &pos);
-	send_data_packet_helper(TB1, PrototypePacket.bms1temp1, &pos);
-	send_data_packet_helper(TB2, PrototypePacket.bms1temp2, &pos);
-	send_data_packet_helper(TB3, PrototypePacket.bms1temp3, &pos);
-	send_data_packet_helper(TB4, PrototypePacket.bms1temp4, &pos);
-	send_data_packet_helper(TB5, PrototypePacket.bms1temp5, &pos);
-	send_data_packet_helper(TB6, PrototypePacket.bms1temp6, &pos);
-	send_data_packet_helper(TB7, PrototypePacket.bms1temp7, &pos);
-
-	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
-
-//	int i;
-//	for (i = 0; i < DATA_BUF_SIZE; i++) {
-//		printf("%i:%c\n", i, Net_Tx_Data[i]);
-//	}
 }
 
 // Singular, will change to multiple, or do an interrupt or something

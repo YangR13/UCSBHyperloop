@@ -1,17 +1,12 @@
 #include "sdcard.h"
 
-const char sd_file_names[MAX_FILES][32] = {
-	"logfile",
-	"datafile"
-};
-
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 
 STATIC FATFS fatFS;	/* File system object */
 STATIC FIL fileObj;	/* File object */
-STATIC INT buffer[SD_BUFFER_SIZE / 4];		/* Working buffer */
+//STATIC INT buffer[SD_BUFFER_SIZE / 4];		/* Working buffer */
 STATIC volatile int32_t sdcWaitExit = 0;
 STATIC SDMMC_EVENT_T *event;
 STATIC volatile Status  eventResult = ERROR;
@@ -96,17 +91,6 @@ STATIC void initAppSDMMC()
  ****************************************************************************/
 
 /**
- * @brief	Error processing function: stop with dying message
- * @param	rc	: FatFs return value
- * @return	Nothing
- */
-void die(FRESULT rc)
-{
-	DEBUGOUT("Failed with rc=%u.\r\n", rc);
-	//	for (;; ) {}
-}
-
-/**
  * @brief	System tick interrupt handler
  * @return	Nothing
  */
@@ -163,6 +147,7 @@ void SDIO_IRQHandler(void)
 }
 
 void sdcardInit() {
+	if(!SDCARD_ACTIVE) return;
 	initAppSDMMC();
 
 	/* Initialize Repetitive Timer */
@@ -172,334 +157,127 @@ void sdcardInit() {
 	NVIC_EnableIRQ(SDC_IRQn);
 
 	f_mount(0, &fatFS);		/* Register volume work area (never fails) */
-
-	initSessionFiles();
 }
 
-void writeData(char* filename, const void *buff, int size){
-	FRESULT rc;		/* Result code */
-	DIR dir;		/* Directory object */
-	FILINFO fno;	/* File information object */
-	char debugBuf[64];
-	UINT bw, i;
-	debugstr("Create a new file filename.\r\n");
-	rc = f_open(&fileObj, filename, FA_WRITE | FA_CREATE_ALWAYS);
-	if (rc) {
-		die(rc);
-	}
-	else {
+void init_csv_files() {
+	if(!SDCARD_ACTIVE) return;
+	int i, j;
 
-		debugstr("Write a sensor data\r\n");
+	/* Get local time */
+	RTC rtc;
+	rtc_gettime(&rtc);
 
+	// Create a new log directory for this session. Directory names limited to 8 characters.
+	snprintf(g_log_directory, 8, "%02d-%02d-%02d", rtc.hour, rtc.min, rtc.sec);
+	f_mkdir(g_log_directory);
 
-		rc = f_write(&fileObj, buff, size, &bw);
-
-		if (rc) {
-			die(rc);
-		}
-		else {
-			sprintf(debugBuf, "%u bytes written.\r\n", bw);
-			debugstr(debugBuf);
-		}
-		debugstr("Close the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
+	// Initialize array for keeping track of file positions.
+	for(i=0; i<NUM_LOGS; i++) {
+		for(j=0; j<6; j++) {
+			LOG_POSITIONS[i][j] = 0;
 		}
 	}
-	debugstr("Open root directory.\r\n");
-	rc = f_opendir(&dir, "");
-	if (rc) {
-		die(rc);
-	}
-	else {
-		debugstr("Directory listing...\r\n");
-		for (;; ) {
-			/* Read a directory item */
-			rc = f_readdir(&dir, &fno);
-			if (rc || !fno.fname[0]) {
-				break;					/* Error or end of dir */
-			}
-			if (fno.fattrib & AM_DIR) {
-				sprintf(debugBuf, "   <dir>  %s\r\n", fno.fname);
-			}
-			else {
-				sprintf(debugBuf, "   %8lu  %s\r\n", fno.fsize, fno.fname);
-			}
-			debugstr(debugBuf);
-		}
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("Test completed.\r\n");
-}
-void readData(char *filename){
-	FRESULT rc;		/* Result code */
-	UINT br, i;
-	uint8_t *ptr;
 
-	debugstr("Open an existing file.\r\n");
+	// Create new files and add headers.
+	create_csv(g_log_directory, LOG_POSITION, 0);
 
-	rc = f_open(&fileObj, filename, FA_READ);
-	if (rc) {
-		die(rc);
+	for(i=0; i<4; i++) {
+		create_csv(g_log_directory, LOG_HEMS, i);
 	}
-	else {
-		for (;; ) {
-			/* Read a chunk of file */
-			rc = f_read(&fileObj, buffer, sizeof buffer, &br);
-			if (rc || !br) {
-				break;					/* Error or end of file */
-			}
-			ptr = (uint8_t *) buffer;
-			for (i = 0; i < br; i++) {	/* Type the data */
-				DEBUGOUT("%c", ptr[i]);
-			}
-		}
-		if (rc) {
-			die(rc);
-		}
-
-		debugstr("Close the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
+	for(i=0; i<6; i++) {
+		create_csv(g_log_directory, LOG_MAGLEV_BMS, i);
 	}
 }
 
-void readTest() {
-	FRESULT rc;		/* Result code */
-	DIR dir;		/* Directory object */
-	FILINFO fno;	/* File information object */
-	UINT br, i;
-	uint8_t *ptr;
-	char debugBuf[64];
-
-	debugstr("\r\nOpen an existing file (message.txt).\r\n");
-
-	rc = f_open(&fileObj, "MESSAGE.TXT", FA_READ);
-	if (rc) {
-		die(rc);
-	}
-	else {
-		for (;; ) {
-			/* Read a chunk of file */
-			rc = f_read(&fileObj, buffer, sizeof buffer, &br);
-			if (rc || !br) {
-				break;					/* Error or end of file */
-			}
-			ptr = (uint8_t *) buffer;
-			for (i = 0; i < br; i++) {	/* Type the data */
-				DEBUGOUT("%c", ptr[i]);
-			}
-		}
-		if (rc) {
-			die(rc);
-		}
-
-		debugstr("\r\nClose the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-}
-
-void writeTest() {
-	FRESULT rc;		/* Result code */
-	DIR dir;		/* Directory object */
-	FILINFO fno;	/* File information object */
-	UINT bw, i;
-	uint8_t *ptr;
-	char debugBuf[64];
-
-	debugstr("Create a new file (hello.txt).\r\n");
-	rc = f_open(&fileObj, "HELLO.TXT", FA_WRITE | FA_CREATE_ALWAYS);
-	if (rc) {
-		die(rc);
-	}
-	else {
-
-		debugstr("Write a text data. (Hello world!)\r\n");
-
-			rc = f_write(&fileObj, "Hello world!\r\n", 14, &bw);
-		if (rc) {
-			die(rc);
-		}
-		else {
-			sprintf(debugBuf, "%u bytes written.\r\n", bw);
-			debugstr(debugBuf);
-		}
-		debugstr("Close the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("Open root directory.\r\n");
-	rc = f_opendir(&dir, "");
-	if (rc) {
-		die(rc);
-	}
-	else {
-		debugstr("Directory listing...\r\n");
-		for (;; ) {
-			/* Read a directory item */
-			rc = f_readdir(&dir, &fno);
-			if (rc || !fno.fname[0]) {
-				break;					/* Error or end of dir */
-			}
-			if (fno.fattrib & AM_DIR) {
-				sprintf(debugBuf, "   <dir>  %s\r\n", fno.fname);
-			}
-			else {
-				sprintf(debugBuf, "   %8lu  %s\r\n", fno.fsize, fno.fname);
-			}
-			debugstr(debugBuf);
-		}
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("Test completed.\r\n");
-}
-
-void initSessionFiles() {
-	FRESULT rc;		/* Result code */
-
-	// TODO Move old files to an archive directory before creating new files.
-
-	debugstr("Opening new session files.\n");
-
-	int i;
-	for(i=0; i<MAX_FILES; i++) {
-		rc = f_open(&sd_files[i], sd_file_names[i], FA_WRITE | FA_CREATE_ALWAYS);
-		if(rc) die(rc);
-	}
-}
-
-void deinitSessionFiles() {
-	FRESULT rc;		/* Result code */
-
-	debugstr("Closing session files.\n");
-
-	int i;
-	for(i=0; i<MAX_FILES; i++) {
-		rc = f_close(&sd_files[i]);
-		if(rc) die(rc);
-	}
-}
-
-#if 0
-/**
- * @brief	Main routine for SDMMC example
- * @return	Nothing
- */
-int main(void)
+void create_csv(char* dir, LOG_TYPE log_type, int index)
 {
-	FRESULT rc;		/* Result code */
-	DIR dir;		/* Directory object */
-	FILINFO fno;	/* File information object */
-	UINT bw, br, i;
-	uint8_t *ptr;
-	char debugBuf[64];
-
-	SystemCoreClockUpdate();
-	Board_Init();
-
-	initAppSDMMC();
-
-	/* Initialize Repetitive Timer */
-	initAppTimer();
-
-	debugstr("\r\nHello NXP Semiconductors\r\nSD Card demo\r\n");
-
-	/* Enable SD interrupt */
-	NVIC_EnableIRQ(SDC_IRQn);
-
-	f_mount(0, &fatFS);		/* Register volume work area (never fails) */
-
-	debugstr("\r\nOpen an existing file (message.txt).\r\n");
-
-	rc = f_open(&fileObj, "MESSAGE.TXT", FA_READ);
-	if (rc) {
-		die(rc);
+	if(!SDCARD_ACTIVE) return;
+	FRESULT rc = 0;
+	UINT bw;
+	f_open_log (log_type, index, FA_WRITE | FA_CREATE_ALWAYS);
+	// Add headers.
+	char header[128] = "";
+	switch(log_type) {
+	case LOG_POSITION:
+		snprintf(header, 128, "Time,X-Pos,X-Vel,X-Accel,Y-Pos,Y-Vel,Y-Accel,Z-Pos,Z-Vel,Z-Accel,Roll,Pitch,Yaw,Contact\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	case LOG_HEMS:
+		snprintf(header, 128, "Time,DAC,Current,RPM,Temp 0,Temp 1,Temp 2,Temp 3\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	case LOG_MAGLEV_BMS:
+		snprintf(header, 128, "Time,B0 Low,B0 High,B0 Temp 0,B0 Temp 1,B1 Low,B1 High,B1 Temp 0,B1 Temp 1,B2 Low,B2 High,B2 Temp 0,B2 Temp 1\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	case LOG_BRAKING:
+		snprintf(header, 128, "Time,A0 PWM,A0 Dir,A0 Pos,A0 Current,A0 Temp 0,A0, Temp 1,A1 PWM,A1 Dir,A1 Pos,A1 Current,A1 Temp 0,A1, Temp 1\r\n");
+		rc = f_write(&fileObj, header, strlen(header), &bw);
+		break;
+	default:
+		break;
 	}
-	else {
-		for (;; ) {
-			/* Read a chunk of file */
-			rc = f_read(&fileObj, buffer, sizeof buffer, &br);
-			if (rc || !br) {
-				break;					/* Error or end of file */
-			}
-			ptr = (uint8_t *) buffer;
-			for (i = 0; i < br; i++) {	/* Type the data */
-				DEBUGOUT("%c", ptr[i]);
-			}
-		}
-		if (rc) {
-			die(rc);
-		}
+	// Update file position.
+	LOG_POSITIONS[log_type][index] += bw;
 
-		debugstr("\r\nClose the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-
-	debugstr("\r\nCreate a new file (hello.txt).\r\n");
-	rc = f_open(&fileObj, "HELLO.TXT", FA_WRITE | FA_CREATE_ALWAYS);
-	if (rc) {
-		die(rc);
-	}
-	else {
-
-		debugstr("\r\nWrite a text data. (Hello world!)\r\n");
-
-		rc = f_write(&fileObj, "Hello world!\r\n", 14, &bw);
-		if (rc) {
-			die(rc);
-		}
-		else {
-			sprintf(debugBuf, "%u bytes written.\r\n", bw);
-			debugstr(debugBuf);
-		}
-		debugstr("\r\nClose the file.\r\n");
-		rc = f_close(&fileObj);
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("\r\nOpen root directory.\r\n");
-	rc = f_opendir(&dir, "");
-	if (rc) {
-		die(rc);
-	}
-	else {
-		debugstr("\r\nDirectory listing...\r\n");
-		for (;; ) {
-			/* Read a directory item */
-			rc = f_readdir(&dir, &fno);
-			if (rc || !fno.fname[0]) {
-				break;					/* Error or end of dir */
-			}
-			if (fno.fattrib & AM_DIR) {
-				sprintf(debugBuf, "   <dir>  %s\r\n", fno.fname);
-			}
-			else {
-				sprintf(debugBuf, "   %8lu  %s\r\n", fno.fsize, fno.fname);
-			}
-			debugstr(debugBuf);
-		}
-		if (rc) {
-			die(rc);
-		}
-	}
-	debugstr("\r\nTest completed.\r\n");
-	for (;; ) {}
+	if(rc != 0) DEBUGOUT("ERROR: %s f_write rc=%d\n", LOG_TYPE_STRINGS[log_type], rc);
+	f_close_();
 }
 
-#endif	// 0
+FRESULT f_open_log (LOG_TYPE log_type, int index, BYTE mode)
+{
+	if(!SDCARD_ACTIVE) return FR_OK;
+	FRESULT rc;
+	char filepath[32] = "";
+	get_filepath(filepath, g_log_directory, log_type, index, TYPE_CSV);
+	rc = f_open(&fileObj, filepath, mode);
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_open_log rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
+
+FRESULT f_close_()
+{
+	if(!SDCARD_ACTIVE) return FR_OK;
+	return f_close(&fileObj);
+}
+
+FRESULT f_lseek_(DWORD ofs)
+{
+	if(!SDCARD_ACTIVE) return FR_OK;
+	return f_lseek(&fileObj, ofs);
+}
+
+FRESULT f_write_log(LOG_TYPE log_type, int index, char* data)
+{
+	if(!SDCARD_ACTIVE) return FR_OK;
+	FRESULT rc;
+	UINT bw;
+	char data_[17];
+	snprintf(data_, 17, "%s,", data);
+	rc = f_write(&fileObj, data_, strlen(data_), &bw);
+	LOG_POSITIONS[log_type][index] += bw;
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_write_log rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
+
+FRESULT f_write_newline(LOG_TYPE log_type, int index)
+{
+	if(!SDCARD_ACTIVE) return FR_OK;
+	FRESULT rc;
+	UINT bw;
+	rc = f_write(&fileObj, "\r\n", 2, &bw);
+	LOG_POSITIONS[log_type][index] += bw;
+	if(rc != 0) DEBUGOUT("ERROR: %s_%d f_write_newline rc=%d\n", LOG_TYPE_STRINGS[log_type], index, rc);
+	return rc;
+}
+
+void get_filepath(char* filepath, char* dir, LOG_TYPE log_type, int index, char* filetype) {
+	if(!SDCARD_ACTIVE) return;
+	// Concat the dir and name variables and save to the filepath variable.
+	if(strcmp("", dir) == 0) {
+		sprintf(filepath, "%s_%d.%s", LOG_TYPE_STRINGS[log_type], index, filetype);
+	}
+	else {
+		sprintf(filepath, "%s/%s_%d.%s", dir, LOG_TYPE_STRINGS[log_type], index, filetype);
+	}
+}

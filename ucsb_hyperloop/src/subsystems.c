@@ -3,7 +3,7 @@
 #include "braking_state_machine.h"
 #include "payload_actuator_sm.h"
 #include "service_propulsion_sm.h"
-#include "HEMS.h"
+#include "I2CPERIPHS.h"
 #include "initialization.h"
 #include "sensor_data.h"
 #include "logging.h"
@@ -143,38 +143,37 @@ void braking_service_state_machine(){
 		 */
 	}
 
-	uint8_t pusher_go = 0; // TODO: IF PUSHER RELEASED
-	uint8_t acc_go = 0; // TODO: IF ACC NEGATIVE
+    /*
+    // TODO - use data for these. MAKE SURE THEY ONLY ISSUE ONCE!
 
-	if (Braking_HSM.using_pushsens && Braking_HSM.using_accsens){
-		if (pusher_go && acc_go){
-			ISSUE_SIG(Braking_HSM, BRAKES_BOTHSENS_GO);
-		}
-	}
-	else if (Braking_HSM.using_pushsens && !Braking_HSM.using_accsens){
-		if (pusher_go){
-			ISSUE_SIG(Braking_HSM, BRAKES_PUSHSENS_GO);
-		}
-	}
-	else if (Braking_HSM.using_accsens && !Braking_HSM.using_pushsens){
-		if (acc_go){
-			ISSUE_SIG(Braking_HSM, BRAKES_ACC_GO);
-		}
-	}
-	else if (Braking_HSM.using_timer){
-		/* TODO
-		if (TIMER PASSES THRESHOLD){
-			issue BRAKES_TIMER_PERMIT
-		}
-		*/
-	}
-	/* TODO
-	if (ENGAGE BRAKES AUTOMATICALLY VIA TIME / DISTANCE){
-		ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
-	}
+    if (Braking_HSM.timer_lockout && TIMER PASSES FIRST THRESHOLD){
+        // Timing profile window started - allow braking now
+        ISSUE_SIG(Braking_HSM, BRAKES_TIMER_PERMIT)
+    }
+    if (!Braking_HSM.engage && TIMER PASSES SECOND THRESHOLD){
+        // Timing profile window ended - force braking now.
+        ISSUE_SIG(Braking_HSM, BRAKES_TIMER_REQUIRE);
+    {
 
-	if SWITCHING BETWEEN BRAKE PAIRS
-		DO THAT SWITCHING HERE!
+    if (!Braking_HSM.timer_lockout){
+        if (Braking_HSM.distance_lockout && DISTANCE PASSES FIRST THRESHOLD){
+            // Distance lockout threshold reached - allow braking requests now
+            ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_PERMIT);
+        }
+        else if (!Braking_HSM.distance_lockout && DISTANCE PASSES SECOND THRESHOLD){
+            // Distance threshold reached - request braking now
+            ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_ENGAGE);
+        }
+
+    if (!Braking_HSM.stopped && POD STOPPED){
+        // Pod came to a stop - stop braking now
+        ISSUE_SIG(Braking_HSM, BRAKES_DONE);
+    }
+    else if (Braking_HSM.stopped && POD MOVES AGAIN AND SERVICE PROP ISN'T ON){
+        // Pod started moving again? Need to brake again because we shouldn't have stopped yet.
+        ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
+    }
+
 	*/
 }
 
