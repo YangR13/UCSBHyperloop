@@ -27,6 +27,8 @@ typedef struct{
 
   uint32_t dataPrintFlag;
 
+  char collectionTime[16];
+
   XYZ initialAccel1;
   XYZ initialAccel2;
 
@@ -48,16 +50,6 @@ typedef struct{
   float roll;
   float pitch;
   float yaw;
-
-  float temp1;
-  float temp2;
-  float temp3;
-  float temp4;
-
-  float tacho1;
-  float tacho2;
-  float tacho3;
-  float tacho4;
 
   float pressure1;
   float pressure2;
