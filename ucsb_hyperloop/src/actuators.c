@@ -74,22 +74,31 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   // Initialize control values
   board->direction[0] = 1;  // Forward
   board->direction[1] = 1;  // Forward
-  board->enable[0] = 0;     // Stopped
-  board->enable[1] = 0;     // Stopped
+  board->enable[0] = 0;     // Output disabled
+  board->enable[0] = 0;     // Output disabled
+  board->pwm[0] = 0;        // Stopped
+  board->pwm[1] = 0;        // Stopped
   board->target_pos[0] = 0;
   board->target_pos[1] = 0;
   board->times[0][0] = 0;
   board->times[0][1] = 0;
   board->times[1][0] = 0;
   board->times[1][1] = 0;
+  board->pwm_algorithm[0] = 0;
+  board->pwm_algorithm[1] = 0;
+  board->stalled_cycles[0] = 0;
+  board->stalled_cycles[1] = 0;
+  board->prev_position[0] = 0;
+  board->prev_position[1] = 0;
+  board->has_feedback = identity < 1; // TODO: Change this is braking boards aren't board #0 and #1!!!!
 
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
   for (output_counter = 0; output_counter < 2; output_counter++){
       // Direction signal
       GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
-      // PMW enable/speed signal
-      PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->enable[output_counter]);
+      // Disable PWM at startup
+      PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], 0.0);
   }
 
   // TODO: Remove hack
@@ -140,10 +149,6 @@ uint8_t update_actuator_board(ACTUATORS* board) {
   return 0;
 }
 
-// TODO: Change the usable stroke length to a realistic value!
-#define USABLE_STROKE_LEN 2000.0
-#define MIN_DUTY_CYCLE 0.05
-
 void move_to_pos(ACTUATORS *board, int num, int destination){
     // Begin the routine for an actuator to move to a target position
 
@@ -152,47 +157,144 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
 
     // Set the target destination value
     board->target_pos[num] = destination;
+    board->prev_position[num] = board->position[num];
+    board->enable[num] = 1;
+
+    if (destination > 0){
+        board->pwm_algorithm[num] = 1; // Exponential function based on distance to target position!
+    }
+    else{
+        board->pwm_algorithm[num] = 0; // Running continuously? Just start with the PWM-based-on-movement function
+
+    }
+
+    // Set a base PWM to start movement
+    if (board->pwm[num] == 0){
+        board->pwm[num] = 0.05;
+    }
+
     if (destination == -1){
         board->direction[num] = 1;
-        board->enable[num] = 0.10;
     }
     else if (destination == -2){
         board->direction[num] = 0;
-        board->enable[num] = 0.10;
     }
 
     // Calculate the target direction and duty cycle
-    // Must be called here because otherwise ->enable is currently 0 and will be blocked by the guard in update_actuator_board
+    // Must be called here because otherwise -> enable is currently 0 and will be blocked by the guard in update_actuator_board
+    // ^ Comment probably irrelevant now...
     calculate_actuator_control(board, num);
 
     // Then update to write the calculated control signals to the board
     update_actuator_board(board);
 }
 
-void move_time(ACTUATORS *board, int num, int dir, int interval){
+void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm){
+    // Start moving for a set amount of time...
     board->times[num][0] = getRuntime();
     board->times[num][1] = interval;
     board->direction[num] = dir;
-    board->enable[num] = TIME_CONTROL_PWM_DUTY;
+    board->pwm[num] = pwm;
 }
 
 void calculate_actuator_control(ACTUATORS *board, int num){
-    if (board->target_pos[num] < 0){
+    // Check if actuator is even currently moving
+    if (!board->enable[num]){
+        // Actuator isn't currently moving so nothing to do here
         return;
     }
 
-    // Position control - Check to see if the destination has been reached (and movement should be stopped)
-    if (abs(board->position[num] - board->target_pos[num]) <= 2){
-        // Stop movement (and write to the PWM output immediately to prevent overshoot)
-        board->enable[num] = 0.0;
-        PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + num], BOARD_PWM_CHANNELS[(board->identity * 2) + num], board->enable[num]);
-        DEBUGOUT("Target reached! Target: %d, Actual: %d\n", board->target_pos[num], board->position[num]);
+    // CHECK WHETHER TO STOP
+
+    // Check if actuator has reached time interval
+    // Time control - check if time interval has been completed
+    int i = 0;
+    for (i = 0; i < 2; i++){
+        if (board->times[i][1] > 0){
+            if (getRuntime() > board->times[i][0] + board->times[i][1]){
+                // If time has elapsed, stop actuation and clear time control variable
+                board->enable[num] = 0;
+                board->times[i][1] = 0;
+            }
+        }
+    }
+
+    if (!board->has_feedback){
+        // Exit at this point if the board's actuators don't have feedback signals
+        return;
+    }
+
+    // Only stop based on distance if the actuator isn't set to run continuously
+    if (board->target_pos >= 0){
+        // Position control - Check to see if the destination has been reached (and movement should be stopped)
+        if (abs(board->position[num] - board->target_pos[num]) <= 2){
+            // Stop movement (and write to the PWM output immediately to prevent overshoot)
+            board->enable[num] = 0;
+            PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + num], BOARD_PWM_CHANNELS[(board->identity * 2) + num], 0.0);
+            DEBUGOUT("Target reached! Target: %d, Actual: %d\n", board->target_pos[num], board->position[num]);
+        }
+     }
+
+    // UPDATE OUTPUT PWM IF STILL MOVING
+
+    // Determine direction: forwards = 1, backwards = 0
+    if (board->target_pos[num] > 0){
+        // Forward movement (direction = 1) => position values decrease
+        board->direction[num] = board->position[num] > board->target_pos[num];
+    }
+    // For continuous operation in a single direction, just continue going in that direction.
+
+    // Update the PWM based on the appropriate function
+    if (board->pwm_algorithm[num] == 0){
+        // PWM-based-on-feedback function (Update PWM as necessary to sustain movement)
+        if (board->direction[num] && board->position[num] < board->prev_position[num]){
+            board->prev_position[num] = board->position[num];
+            board->stalled_cycles[num] = 0;
+            board->pwm[num] -= 0.03;
+            if (board->pwm[num] < 0.05){
+                board->pwm[num] = 0.05;
+            }
+        }
+        else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
+            board->prev_position[num] = board->position[num];
+            board->stalled_cycles[num] = 0;
+            board->pwm[num] -= 0.03;
+            if (board->pwm[num] < 0.05){
+                board->pwm[num] = 0.05;
+            }
+        }
+        else{
+            board->stalled_cycles[num]++;
+            if (board->stalled_cycles[num] >= 5){
+                board->pwm[num] += 0.01;
+                board->stalled_cycles[num] = 0;
+            }
+        }
     }
     else{
-        // Determine direction: forwards = 1, backwards = 0
-        board->direction[num] = board->position[num] > board->target_pos[num];
+        // Exponential relation function
 
-        // Otherwise determine the updated duty cycle to drive the actuator at
+        // First, determine if we're stalled and need to switch to the other algorithm
+        if (board->direction[num] && board->position[num] < board->prev_position[num]){
+            board->prev_position[num] = board->position[num];
+            board->stalled_cycles[num] = 0;
+        }
+        else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
+            board->prev_position[num] = board->position[num];
+            board->stalled_cycles[num] = 0;
+        }
+        else{
+            board->stalled_cycles[num]++;
+            if (board->stalled_cycles[num] >= STALL_CYCLES_ALG_SWITCH){
+                board->stalled_cycles[num] = 0;
+                board->pwm_algorithm[num] = 0;
+#if PRINT_SENSOR_DATA_ACTIVE
+                DEBUGOUT("Switching to variable-PWM algorithm!\n");
+#endif
+            }
+        }
+
+        // Otherwise, set the PWM based on the exponential function
         // Percentage of usable stroke length to travel => percentage of duty cycle to use (with minimum at 5%)
         float pct_away = (float)abs(board->position[num] - board->target_pos[num]) / USABLE_STROKE_LEN;
         float cycle = 1;
@@ -200,25 +302,27 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             // 5th-power relation between distance to travel and output duty cycle
             cycle -= pow((1 - pct_away), 3);
         }
-
-        if (cycle < MIN_DUTY_CYCLE){
-            cycle = MIN_DUTY_CYCLE;
-        }
-        board->enable[num] = cycle;
-        DEBUGOUT("Output duty cycle is %f \n", cycle);
+        board->pwm[num] = cycle;
     }
 
-    // Time control - check if time interval has been completed
-    int i = 0;
-    for (i = 0; i < 2; i++){
-        if (board->times[i][1] > 0){
-            if (getRuntime() > board->times[i][0] + board->times[i][1]){
-                // If time has elapsed, stop actuation and clear time control varaible
-                board->enable[num] = 0.0;
-                board->times[i][1] = 0;
-            }
+    if (board->pwm[num] < MIN_DUTY_CYCLE){
+        board->pwm[num] = MIN_DUTY_CYCLE;
+    }
+    else{
+        if (board->direction[num] && (board->pwm[num] > MAX_FWD_DUTY_CYCLE)){
+            // Constrain to max forwards duty cycle
+            board->pwm[num] = MAX_FWD_DUTY_CYCLE;
+        }
+        else if (!board->direction[num] && (board->pwm[num] > MAX_BWD_DUTY_CYCLE)){
+            // Constrain to max backwards duty cycle (higher)
+            board->pwm[num] = MAX_BWD_DUTY_CYCLE;
         }
     }
+
+#if PRINT_SENSOR_DATA_ACTIVE
+    DEBUGOUT("Output duty cycle is %f \n", board->pwm[num]);
+#endif
+
 }
 
 void update_actuator_control(ACTUATORS *board){
@@ -227,29 +331,26 @@ void update_actuator_control(ACTUATORS *board){
     // Read position feedback signal from linear potentiometer -> ADC
     // Write direction signal to GPIO pins, set output PWM frequency
 
-
-// Position values that are greater than this percentage away from the previous moving average
-//  are considered erroneous and are discarded
-#define MAX_POSITION_DIFF_PCT 0.30
-// Alpha value for moving average window
-#define AVG_ALPHA 0.50
-
     // Read and process position feedback
     //  Calculate a moving average using only those values not considered erroneous
     int pos_counter = 0;
     for (pos_counter = 0; pos_counter < 2; pos_counter++){
         uint16_t pos = ADC_read(board->bus, board->ADC_device_address, 5 - (4 * pos_counter));
+
         // THIS IS A TEMP HACK
         if (pos_counter == 1){
-            current_reading = (0.5 * (((float)pos - 1322.0) * (5000.0 / MAX12BITVAL) / 8.7)) + 0.5 * current_reading;
+            // ADC reading * (5000 mV / 4096 ADC reading) * (40.96 mV/amp for ACS770 || 8.7 mV/amp for ACS759) => amps
+            // ADC linear offsets - 1326 for ACS759 powered from HEMS 3.3V, 2038 for ACS770 powered from braking board 0's 5V
+            current_reading = (0.005 * (((float)pos - 1326.0) * (5000.0 / MAX12BITVAL) / 8.7)) + 0.995 * current_reading;
+
             DEBUGOUT("%f \n", current_reading);
         }
         else{
-            board->position[pos_counter] = (AVG_ALPHA * pos) + ((1 - AVG_ALPHA) * board->position[pos_counter]);
+            board->position[pos_counter] = (POS_MOV_AVG_ALPHA * pos) + ((1 - POS_MOV_AVG_ALPHA) * board->position[pos_counter]);
         }
 
         // Service actuator movement routine if it is currently active
-        if (board->enable[pos_counter] >= MIN_DUTY_CYCLE){
+        if (board->enable[pos_counter]){
             calculate_actuator_control(board, pos_counter);
         }
 
@@ -261,7 +362,12 @@ void update_actuator_control(ACTUATORS *board){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
         // PMW enable/speed signal
-        PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->enable[output_counter]);
+        if (board->enable[output_counter]){
+            PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
+        }
+        else{
+            PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], 0.0);
+        }
     }
 }
 

@@ -209,7 +209,7 @@ void printSensorData(){
         DEBUGOUT("Current - H-BRIDGE: %d \n", braking_boards[0]->amps[0]);
         DEBUGOUT("Current - EXT SENSOR: %f \n", current_reading);
         DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-        DEBUGOUT("Enable: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
+        DEBUGOUT("Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
         DEBUGOUT("\n\n");
     }
 }

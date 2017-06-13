@@ -258,12 +258,12 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
 		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] - 10);
+		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] - 30);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
 		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 10);
+		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 30);
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
