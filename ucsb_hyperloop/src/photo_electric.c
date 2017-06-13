@@ -47,14 +47,20 @@ void TIMER3_IRQHandler(void)
 
 /* Setup Photoelectric sensor pin as input */
 void Photoelectric_GPIO_Init() {
-	/* Configure photoelectric interrupt pin as input */
-	GPIO_Input_Init(PHOTOELECTRIC_INT_PORT, PHOTOELECTRIC_INT_PIN);
+	/* Configure photoelectric1 interrupt pin as input */
+	GPIO_Input_Init(PHOTOELECTRIC_INT_PORT1, PHOTOELECTRIC_INT_PIN1);
+
+	/* Configure photoelectric2 interrupt pin as input */
+	GPIO_Input_Init(PHOTOELECTRIC_INT_PORT2, PHOTOELECTRIC_INT_PIN2);
 }
 
 /* Initialize and enable photoelectric sensor interrupts */
 void Photoelectric_Interrupt_Enable() {
 	/* Configure the GPIO interrupt */
-	Chip_GPIOINT_SetIntRising(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT, 1 << PHOTOELECTRIC_INT_PIN); // Set to rising edge trigger
+	Chip_GPIOINT_SetIntRising(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT1, 1 << PHOTOELECTRIC_INT_PIN1); // Set to rising edge trigger
+
+	/* Configure the GPIO interrupt */
+	Chip_GPIOINT_SetIntRising(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT2, 1 << PHOTOELECTRIC_INT_PIN2); // Set to rising edge trigger
 }
 
 void photoelectricInit() {

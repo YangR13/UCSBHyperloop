@@ -44,6 +44,8 @@ typedef struct{
   float positionY;
   float positionZ;
 
+  float time_prev;
+
   float roll;
   float pitch;
   float yaw;
@@ -79,7 +81,7 @@ typedef struct{
   int deadFlag; // flag to determine whether tachs have passed a 100ft increment
 
   float finalDistanceX;						// Final distance of pod
-
+  float oldFinalDistanceX;					// Previous final distance of pod
 
   int   photoelectric1InterruptFlag;		// Hit Tape
   float photoelectric1InterruptPosition;	// Value used for miss on distance marker

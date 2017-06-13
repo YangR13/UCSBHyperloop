@@ -3,8 +3,10 @@
 
 #include "board.h"
 #define PHOTOELECTRIC_TIMER_RATE      (1)        /* 1 ticks per second */
-#define PHOTOELECTRIC_INT_PIN         1       /* GPIO pin number mapped to interrupt */
-#define PHOTOELECTRIC_INT_PORT        GPIOINT_PORT2 /* GPIO port number mapped to interrupt */
+#define PHOTOELECTRIC_INT_PIN1         1       /* GPIO pin number mapped to interrupt */
+#define PHOTOELECTRIC_INT_PORT1        GPIOINT_PORT2 /* GPIO port number mapped to interrupt */
+#define PHOTOELECTRIC_INT_PIN2         2       /* GPIO pin number mapped to interrupt */
+#define PHOTOELECTRIC_INT_PORT2        GPIOINT_PORT2 /* GPIO port number mapped to interrupt */
 #define PHOTOELECTRIC_IRQ_HANDLER     GPIO_IRQHandler /* GPIO interrupt IRQ function name */
 #define PHOTOELECTRIC_INTERRUPT_NVIC  GPIO_IRQn   /* GPIO interrupt NVIC interrupt name */
 

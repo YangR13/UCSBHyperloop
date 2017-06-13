@@ -13,12 +13,33 @@ void GPIO_IRQHandler(void)
 //	DEBUGOUT("interrupt_bits_port0: %d\n", interrupt_bits_port0);
 //	DEBUGOUT("interrupt_bits_port2: %d\n", interrupt_bits_port2);
 
-	/* Photoelectric Interrupt Pin */
-	if(interrupt_bits_port2 & (1 << PHOTOELECTRIC_INT_PIN)){
+	/* Photoelectric1 Interrupt Pin */
+	if(interrupt_bits_port2 & (1 << PHOTOELECTRIC_INT_PIN1)){
 		Chip_TIMER_MatchDisableInt(LPC_TIMER3, 1);
 		Chip_TIMER_Disable(LPC_TIMER3);
 
-		Chip_GPIOINT_ClearIntStatus(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT, 1 << PHOTOELECTRIC_INT_PIN);
+		Chip_GPIOINT_ClearIntStatus(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT1, 1 << PHOTOELECTRIC_INT_PIN1);
+		sensorData.photoelectric1InterruptFlag = 1;
+		sensorData.photoelectric+=100.0;
+
+		/* Old and unused
+		stripCount++;
+		regionalStripCount++;
+		*/
+
+		Reset_Timer_Counter(LPC_TIMER3);
+		Chip_TIMER_Enable(LPC_TIMER3);
+		Chip_TIMER_MatchEnableInt(LPC_TIMER3, 1);
+
+		return;
+	}
+
+	/* Photoelectric2 Interrupt Pin */
+	if(interrupt_bits_port2 & (1 << PHOTOELECTRIC_INT_PIN2)){
+		Chip_TIMER_MatchDisableInt(LPC_TIMER3, 1);
+		Chip_TIMER_Disable(LPC_TIMER3);
+
+		Chip_GPIOINT_ClearIntStatus(LPC_GPIOINT, PHOTOELECTRIC_INT_PORT2, 1 << PHOTOELECTRIC_INT_PIN2);
 		sensorData.photoelectric1InterruptFlag = 1;
 		sensorData.photoelectric+=100.0;
 

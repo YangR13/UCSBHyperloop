@@ -36,10 +36,10 @@ void collectData(){
         //DEBUGOUT("accel1 %f, %f, %f \n", sensorData.accel1.x, sensorData.accel1.y, sensorData.accel1.z);
         //DEBUGOUT("accel2 %f, %f, %f\n", sensorData.accel2.x, sensorData.accel2.y, sensorData.accel2.z);
         DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
-        velocity = getInertialVelocity();
-        sensorData.velocityX = velocity.x;
-        sensorData.velocityY = velocity.y;
-        sensorData.velocityZ = velocity.z;
+        //velocity = getInertialVelocity();
+        //sensorData.velocityX = velocity.x;
+        //sensorData.velocityY = velocity.y;
+        //sensorData.velocityZ = velocity.z;
         position = getInertialPosition();
         sensorData.positionX = position.x;
         sensorData.positionY = position.y;
@@ -48,8 +48,6 @@ void collectData(){
 
 
 	if(RANGING_SENSORS_ACTIVE) {
-
-
 		float d_F = 17.0;
 		float d_R = 11.0;
 		float d_B = 17.0;
@@ -92,33 +90,38 @@ void collectData(){
 		}
 
 		// pitch
-		float pitch = ((z_1 + z_2 - z_0 - z_3) / 2*(d_F + d_B)) - pitch_i;
+		sensorData.pitch = ((z_1 + z_2 - z_0 - z_3) / 2*(d_F + d_B)) - pitch_i;
 
 		// roll
-		float roll = ((z_0 + z_1 - z_2 - z_3) / 2*(d_L + d_R)) - roll_i;
+		sensorData.roll = ((z_0 + z_1 - z_2 - z_3) / 2*(d_L + d_R)) - roll_i;
 
 		// COM vertical displacement
-		float z_c = (z_0 - (d_L * roll) + (d_F * pitch)) - z_ci;
+		float z_c = (z_0 - (d_L * sensorData.roll) + (d_F * sensorData.pitch)) - z_ci;
 
 		// yaw
 		float yaw_i = (y_0i - y_1i) / (d0 + d1);
-		float yaw = ((y_0 - y_1) / (d0 + d1)) - yaw_i;
+		sensorData.yaw = ((y_0 - y_1) / (d0 + d1)) - yaw_i;
 
 		// lateral position
 		float y_ci = y_0i - (d0 * yaw_i);
-		float y_c = (y_0 - (d0 * yaw)) - y_ci;
+		float y_c = (y_0 - (d0 * sensorData.yaw)) - y_ci;
 		//DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
+
+		sensorData.velocityY = (((y_0+y_1)/2.0) - sensorData.positionY) / (getRuntime()-sensorData.time_prev);
+		sensorData.velocityZ = (((z_0+z_1+z_2+z_3)/4.0) - sensorData.positionZ) / (getRuntime()-sensorData.time_prev);
+
 	}
 
     if (PHOTO_ELECTRIC_ACTIVE){
     	int i;
         /* Handle Photoelectric Strip Detected */
         if(sensorData.photoelectric1InterruptFlag) {
+        	sensorData.oldFinalDistanceX = sensorData.finalDistanceX;
         	sensorData.modAvg = (int)(sensorData.finalDistanceX) % 100;
         	for(i=0; i<4; i++) {
         		sensorData.oldActualDistanceX[i] = sensorData.actualDistanceX[i];
         		if (sensorData.modAvg >= 85.0 || sensorData.modAvg <= 15.0) {
-        			if(sensorData.wheelTachAlive[i]) {	//change order of loops, wheeltach % 100
+        			if(sensorData.wheelTachAlive[i]) {
         				if(((int)sensorData.actualDistanceX[i] % 100) >= 85.0)
         					sensorData.offsetPositionX[i] = 100.0 - ((int)sensorData.wheelTachPositionX[i] % 100);
         				else if (((int)sensorData.actualDistanceX[i] % 100) <= 15.0)
@@ -137,6 +140,9 @@ void collectData(){
         		}
         	}
         	sensorData.finalDistanceX = sum/(float)sensorData.numAlive; // average
+
+        	sensorData.velocityX = (sensorData.finalDistanceX - sensorData.oldFinalDistanceX) / (getRuntime()-sensorData.time_prev);
+    		sensorData.time_prev = getRuntime();
 
         	sensorData.wheelTachsDistanceInLastHundred = 0.0; //  reset value
         	//determine if any tachs are dead
@@ -224,7 +230,7 @@ void collectData(){
 
     	//gather wheel tach values
     	for(i=0;i<4;i++){
-    		sensorData.wheelTachPositionX[i] = motors[i]->tachometer_counter[1] * r * 3.14159265358979323846 / 5;	//multiply by 2piR, divide by number of wheel spokes
+    		sensorData.wheelTachPositionX[i] = motors[i]->tachometer_counter[1] * r * 3.14159265358979323846 / 5.0;	//multiply by 2piR, divide by number of wheel spokes
     	}
     }
 

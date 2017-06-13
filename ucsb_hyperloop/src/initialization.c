@@ -37,6 +37,10 @@ void initializeSensorsAndControls(){
     if(RANGING_SENSORS_ACTIVE){
         rangingSensorsInit();
         CALIBRATE_FLAG = 0;
+        sensorData.positionX = 0.0;
+        sensorData.positionY = 0.0;
+        sensorData.positionZ = 0.0;
+        sensorData.time_prev = 0.0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */
@@ -72,7 +76,7 @@ void initializeSensorsAndControls(){
     	sensorData.numAlive = 4;
     	for(i=0;i<4;i++){
     		sensorData.wheelTachAlive[i] = 1;
-    }
+    	}
     }
 }
 
