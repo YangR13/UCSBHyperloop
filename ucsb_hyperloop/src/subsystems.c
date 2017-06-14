@@ -200,11 +200,11 @@ void payload_service_state_machine(){
         //if (!payload->enable[0] || !payload->enable[1]){ // If actuator movement has finished
             if (Payload_Actuator_HSM.actuator_direction){
                 // Forward direction
-                ISSUE_SIG(PA_ADVANCE_DONE);
+                ISSUE_SIG(Payload_Actuator_HSM, PA_ADVANCE_DONE);
             }
             else{
                 // Backwards direction
-                ISSUE_SIG(PA_RETRACT_DONE);
+                ISSUE_SIG(Payload_Actuator_HSM, PA_RETRACT_DONE);
             }
         //}
     }

@@ -55,8 +55,6 @@
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
 
-float current_reading;
-
 #define IN 0
 #define OUT 1
 

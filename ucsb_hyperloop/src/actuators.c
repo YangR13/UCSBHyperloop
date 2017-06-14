@@ -105,9 +105,6 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
       PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], 0.0);
   }
 
-  // TODO: Remove hack
-  current_reading = 0.0;
-
   return board;
 }
 
@@ -384,18 +381,7 @@ void update_actuator_control(ACTUATORS *board){
     int pos_counter = 0;
     for (pos_counter = 0; pos_counter < 2; pos_counter++){
         uint16_t pos = ADC_read(board->bus, board->ADC_device_address, 5 - (4 * pos_counter));
-
-        // THIS IS A TEMP HACK
-        if (pos_counter == 1){
-            // ADC reading * (5000 mV / 4096 ADC reading) * (40.96 mV/amp for ACS770 || 8.7 mV/amp for ACS759) => amps
-            // ADC linear offsets - 1326 for ACS759 powered from HEMS 3.3V, 2038 for ACS770 powered from braking board 0's 5V
-            current_reading = (0.005 * (((float)pos - 1326.0) * (5000.0 / MAX12BITVAL) / 8.7)) + 0.995 * current_reading;
-
-            //DEBUGOUT("%f \n", current_reading);
-        }
-        else{
-            board->position[pos_counter] = (POS_MOV_AVG_ALPHA * pos) + ((1 - POS_MOV_AVG_ALPHA) * board->position[pos_counter]);
-        }
+        board->position[pos_counter] = (POS_MOV_AVG_ALPHA * pos) + ((1 - POS_MOV_AVG_ALPHA) * board->position[pos_counter]);
 
         // Service actuator movement routine if it is currently active
         if (board->enable[pos_counter]){
