@@ -31,6 +31,8 @@ const uint8_t BMS_18V5_HUB_PORT[1][2] = {   // Only 1
   {0, 0},   // {Hub, Port}; // TODO: Check me! (Hub may be right but port is not)
 };
 // TODO: Calibrated conversions reference voltage table for 18V5 BMS?
+const float BMS_18V5_CAL_5V0REF = 5.08;
+const float BMS_18V5_CAL_3V3REF = 3.30;
 
 // Addressing pins for ADCs: LOW-HIGH / FLOAT-HIGH / FLOAT-LOW / HIGH-LOW
 const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x0A, 0x0B, 0x19, 0x1A};
@@ -162,12 +164,14 @@ BMS_18V5* initialize_BMS_18V5(uint8_t identity) {
     // Initialize thermistor moving averages (with first read)
     int temp_counter = 0;
     for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], temp_counter + 6));
+      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], temp_counter + 5));
     }
   }
 
   bms->amps[0] = 0;
   bms->amps[1] = 0;
+  bms->amps[2] = 0;
+  bms->amps[3] = 0;
   bms->timestamp = 0;
   bms->alarm[0] = 0;
   bms->alarm[1] = 0;
@@ -216,7 +220,7 @@ void update_BMS_18V5(BMS_18V5* bms) {
     //Record Temperatures
     int temp_counter = 0;
     for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], temp_counter + 6));
+      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], temp_counter + 5));
       new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
@@ -228,31 +232,37 @@ void update_BMS_18V5(BMS_18V5* bms) {
           else{
               new_alarms[1] |= 0b01; // Braking pair 2 alarm
           }
-      }
+       }
     }
 
     // Get current readings
-    for (i = 0; i < 4; i += 3){
-        // Read from ACS770 current sensors for the two pairs of braking actuators
-        // Braking current sensors are connected to ports SENS0 and SENS3 of the 18V5 BMS
-
-        // get data from ports 0 and 3
-        float reading = 0.0; // dummy value
-
-        bms->amps[batt % 2] = reading;
-        if (reading >= MAX_BRAKING_CURRENT){
-            new_alarms[batt % 2] |= 0b01; // Save to indexes 0 or 1 (braking pairs)
+    for (i = 0; i < 4; i++){
+        // Read from ADC to get voltage
+        uint16_t ammeter_ratio = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[i], 7);
+        uint8_t new_amps = 0.0;
+        switch(i){
+            case 0:
+            case 3:{
+                // ACS770 - Braking actuator pairs
+                new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_5V0REF / 2) / AMMETER_150A_SENSITIVITY; // Done in mV
+                if (new_amps >= MAX_BRAKING_CURRENT){
+                    new_alarms[i % 2] |= 0b01; // Save to indexes 0 or 1 (braking pairs)
+                }
+                break;
+            }
+            case 1:
+            case 2:{
+                // ACS759 - Service propulsion / Payload actuators
+                new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_3V3REF / 2) / AMMETER_50A_SENSITIVITY; // Done in mV
+                // TODO: Check that the alarm doesn't get set by the 4th port not having any sensor plugged into it!!!
+                if (new_amps >= MAX_SERV_PAYLOAD_CURRENT){
+                    new_alarms[2] |= 0b01;
+                }
+                break;
+            }
         }
-    }
-
-    // Get current reading from the ACS759 for the service propulsion and braking actuators
-    // TODO: Make the index of bms->amps[] match that of the port the current sensor is connected to
-    //get data from port 1
-    float reading = 0.0; // dummy value
-    bms->amps[1] = reading;
-    if (reading >= MAX_SERV_PAYLOAD_CURRENT){
-        new_alarms[2] |= 0b01;
-    }
+        bms->amps[i] = new_amps;
+     }
   }
 
   // Update alarm flags in the 18V5 BMS struct
@@ -274,11 +284,11 @@ void update_BMS_18V5(BMS_18V5* bms) {
 // POWER DISTRIBUTION BOARD BMS
 
 PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
-    PWR_DST_BMS* bms = malloc(sizeof(PWR_DST_BMS));
+  PWR_DST_BMS* bms = malloc(sizeof(PWR_DST_BMS));
   bms->identity = identity;
   bms->bus = PWR_DST_BMS_HUB_PORT[bms->identity][0];
 
-  int batt;
+  int batt = 0;
   for (batt = 0; batt < 2; batt++) {
     // Initialize battery voltages to a default value
     bms->battery_voltage[batt] = 18.5; // TODO: Is this a good starting value? 18.5V?
@@ -292,7 +302,7 @@ PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
     // Initialize thermistor moving averages (with first read)
     int temp_counter = 0;
     for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], temp_counter + 6));
+      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], temp_counter + 5));
     }
   }
 
@@ -318,7 +328,6 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
     float max = 0.0;
-    int i;
     for (i = 0; i < 5; i++){
         if (bms->cell_voltages[batt][i] < min){
             min = bms->cell_voltages[batt][i];
@@ -334,7 +343,7 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
     //Record Temperatures
     int temp_counter = 0;
     for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], temp_counter + 6));
+      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], temp_counter + 5));
       new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
