@@ -9,6 +9,7 @@
 #define NUM_18V5_BMS 2
 #define BATT_MAX_TEMP 60      //Too hot
 #define BATT_MIN_TEMP 5
+#define MIN_CELL_VOLTS 3.4 // TODO: Verify this
 #define MAX_MAGLEV_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!
 #define MAX_18V5_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!
 #define MAX_PWR_DST_BATT_CELL_DELTA 0.37    // TODO: Is 10% of normal cell voltage a valid threshold?!

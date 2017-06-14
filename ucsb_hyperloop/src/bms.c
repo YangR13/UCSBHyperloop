@@ -95,6 +95,10 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
     for (i = 0; i < 6; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
       bms->cell_voltages[batt][i] = voltage - prev_voltage;
+      if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
+          // Set an alarm if any cell is below minimum safe voltage
+          new_alarms |= 0b10;
+      }
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
@@ -191,6 +195,17 @@ void update_BMS_18V5(BMS_18V5* bms) {
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
       bms->cell_voltages[batt][i] = voltage - prev_voltage;
+      if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
+          // Set an alarm if any cell is below minimum safe voltage
+          if (batt == 0 || batt == 3){
+              new_alarms[0] |= 0b00000010; // Braking pair 1 alarm
+              new_alarms[2] |= 0b00000010; // Service propulsion + payload actuators alarm
+          }
+          else{
+              new_alarms[1] |= 0b00000010; // Braking pair 2 alarm
+          }
+
+      }
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
@@ -208,7 +223,7 @@ void update_BMS_18V5(BMS_18V5* bms) {
         }
     }
     if ((max - min) > MAX_18V5_BATT_CELL_DELTA){
-        if (batt < 2){
+        if (batt == 0 || batt == 3){
             new_alarms[0] |= 0b00000010; // Braking pair 1 alarm
             new_alarms[2] |= 0b00000010; // Service propulsion + payload actuators alarm
         }
@@ -224,7 +239,7 @@ void update_BMS_18V5(BMS_18V5* bms) {
       new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
       bms->temperatures[batt][temp_counter] = new_temperature;
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-          if (batt < 2){
+          if (batt == 0 || batt == 3){
               new_alarms[0] |= 0b01; // Braking pair 1 alarm
               new_alarms[1] |= 0b01; // Service propulsion + payload actuators alarm
 
@@ -240,25 +255,19 @@ void update_BMS_18V5(BMS_18V5* bms) {
         // Read from ADC to get voltage
         uint16_t ammeter_ratio = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[i], 7);
         uint8_t new_amps = 0.0;
-        switch(i){
-            case 0:
-            case 3:{
-                // ACS770 - Braking actuator pairs
-                new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_5V0REF / 2) / AMMETER_150A_SENSITIVITY; // Done in mV
-                if (new_amps >= MAX_BRAKING_CURRENT){
-                    new_alarms[i % 2] |= 0b01; // Save to indexes 0 or 1 (braking pairs)
-                }
-                break;
+        if (i == 0 || i == 3){
+            // ACS770 - Braking actuator pairs
+            new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_5V0REF / 2) / AMMETER_150A_SENSITIVITY; // Done in mV
+            if (new_amps >= MAX_BRAKING_CURRENT){
+                new_alarms[i % 2] |= 0b01; // Save to indexes 0 or 1 (braking pairs)
             }
-            case 1:
-            case 2:{
-                // ACS759 - Service propulsion / Payload actuators
-                new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_3V3REF / 2) / AMMETER_50A_SENSITIVITY; // Done in mV
-                // TODO: Check that the alarm doesn't get set by the 4th port not having any sensor plugged into it!!!
-                if (new_amps >= MAX_SERV_PAYLOAD_CURRENT){
-                    new_alarms[2] |= 0b01;
-                }
-                break;
+        }
+        else{
+            // ACS759 - Service propulsion / Payload actuators
+            new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_3V3REF / 2) / AMMETER_50A_SENSITIVITY; // Done in mV
+            // TODO: Check that the alarm doesn't get set by the 4th port not having any sensor plugged into it!!!
+            if (new_amps >= MAX_SERV_PAYLOAD_CURRENT){
+                new_alarms[2] |= 0b01;
             }
         }
         bms->amps[i] = new_amps;
@@ -321,6 +330,10 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
       bms->cell_voltages[batt][i] = voltage - prev_voltage;
+      if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
+          // Set an alarm if any cell is below minimum safe voltage
+          new_alarms |= 0b10;
+      }
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
