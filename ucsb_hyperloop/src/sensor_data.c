@@ -192,7 +192,7 @@ void printSensorData(){
         // Print sensor data at 1Hz.
         int i;
         for(i=0; i<NUM_HEMS; i++) {
-            DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
+            //DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
             sum += motors[i]->tachometer_counter[1];
         }
         avg = sum/4.0; // average tachometer count based on four wheel tachometers
