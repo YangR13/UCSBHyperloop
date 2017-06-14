@@ -196,23 +196,19 @@ void payload_service_state_machine(){
 	int i;
 
 	// Transition signals due to actuators hitting end stops
-	for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-		// TODO: FIX THIS IF DOING BOTH TOGETHER?
-		if (Payload_Actuator_HSM.actuator_enable){
-			if (Payload_Actuator_HSM.actuator_direction){
-				// Forward direction
-				// if (HIT END STOP){
-				//    ISSUE_SIG(PA_ADVANCE_DONE);
-				// }
-			}
-			else{
-				// Backwards direction
-				// if (HIT END STOP){
-				//    ISSUE_SIG(PA_RETRACT_DONE);
-				// }
-			}
-		}
-	}
+    if (Payload_Actuator_HSM.actuator_enable){
+        //if (!payload->enable[0] || !payload->enable[1]){ // If actuator movement has finished
+            if (Payload_Actuator_HSM.actuator_direction){
+                // Forward direction
+                ISSUE_SIG(PA_ADVANCE_DONE);
+            }
+            else{
+                // Backwards direction
+                ISSUE_SIG(PA_RETRACT_DONE);
+            }
+        //}
+    }
+
 
 	// TODO: Add signal due to motors supporting weight or not, here!!!
 	/*
@@ -229,13 +225,17 @@ void service_propulsion_service_state_machine(){
 	// Issue transition signals if the service propulsion motor actuator has reached an endstop
 	/*
 	if (Service_Propulsion_Hsm.actuator_enable){
-		if (ADVANCE ENDSTOP REACHED){
-			ISSUE_SIG(SP_ADVANCE_DONE);
-		}
-		else if (RETRACT ENDSTOP REACHED){
-			ISSUE_SIG(SP_RETRACT_DONE);
-		}
-	}
+        if (!service->enable[0]){ // If actuator movement has finished
+            if (Service_Propulsion_HSM.actuator_direction){
+                // Forward direction
+                ISSUE_SIG(Service_Propulsion_HSM, SP_ADVANCE_DONE);
+            }
+            else{
+                // Backwards direction
+                ISSUE_SIG(Service_Propulsion_HSM, SP_RETRACT_DONE);
+            }
+        }
+    }
 	*/
 }
 
