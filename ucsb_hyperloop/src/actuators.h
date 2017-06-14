@@ -36,8 +36,9 @@
 
 // Control
 #define MIN_DUTY_CYCLE 0.05
-#define MAX_FWD_DUTY_CYCLE 0.20
-#define MAX_BWD_DUTY_CYCLE 0.40
+#define MAX_FWD_DUTY_CYCLE 0.15 // Determined via load force testing 6/13/17
+#define MAX_BWD_DUTY_CYCLE 0.30 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
+
 #define USABLE_STROKE_LEN 2000.0 // TODO: Change the usable stroke length to a realistic value!
 
 // TODO: SET THESE TO REALISTIC VALUES
@@ -85,10 +86,12 @@ typedef struct {
 
   // BRAKING ACTUATORS ONLY
   uint16_t position[2];         // Positioning feedback data from linear potentiometers
+  uint8_t stop_mode[2];         // Stop mode 0 -> none, stop mode 1 -> time, stop mode 2 -> position, stop mode 3 -> stall at PWM
   int16_t target_pos[2];        // Go to this point
-  uint8_t pwm_algorithm[2];     // 0-> pwm based on whether actuator is successfully moving, 1 -> exponential algorithm
-  uint16_t stalled_cycles[2];    // Number of cycles since position feedback has changed
-  uint16_t prev_position[2];     // Previous position feedback value
+  uint8_t pwm_algorithm[2];     // 0 -> pwm based on whether actuator is successfully moving, 1 -> exponential algorithm
+  float target_pwm[2];          // In target PWM mode, go until position movement stalls at *this* target PWM
+  uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
+  uint16_t prev_position[2];    // Previous position feedback value
 
 } ACTUATORS;
 
@@ -98,6 +101,7 @@ void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
 void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm);
 void move_to_pos(ACTUATORS * board, int num, int destination);
+void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm);
 void calculate_actuator_control(ACTUATORS *board, int num);
 
 

@@ -242,8 +242,8 @@ void recvDataPacket() {
 		printf("STOP_BRAKES_SIG RECEIVED\n");
 		braking_boards[0]->target_pos[0] = braking_boards[0]->position[0];
 		braking_boards[0]->target_pos[1] = braking_boards[0]->position[1];
-        braking_boards[0]->enable[0] = 0.0;
-        braking_boards[0]->enable[1] = 0.0;
+        braking_boards[0]->enable[0] = 0;
+        braking_boards[0]->enable[1] = 0;
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
@@ -265,6 +265,16 @@ void recvDataPacket() {
 		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
 		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 30);
 	}
+
+    if(strcmp((char *)Net_Rx_Data, "ENGINES_REVED_SIG\0") == 0){
+        printf("ENGINES_REVED_SIG (Move forwards to PWM %f) received\n", braking_boards[0]->pwm[0] + 0.01);
+        move_to_pwm(braking_boards[0], 0, 1, braking_boards[0]->pwm[0] + 0.01);
+    }
+
+//    if(strcmp((char *)Net_Rx_Data, "MAX_SIG\0") == 0){
+//        printf("MAX_SIG (Move backwards to PWM %f) received\n", braking_boards[0]->pwm[0] + 0.01);
+//        move_to_pwm(braking_boards[0], 0, braking_boards[0]->pwm[0] + 0.01);
+//    }
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
 		DEBUGOUT("DAC SET RECEIVED\n");
