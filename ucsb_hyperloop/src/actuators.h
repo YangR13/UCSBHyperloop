@@ -52,11 +52,22 @@
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
+#define POS_MAX_DELTA 100 // Readings greater than this delta away from the current moving average are considered erroneous.
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
+#define STALL_CYCLES_PWM_INCREASE 5
+#define MOVE_CYCLE_PWM_DECREASE 0.01
 
 #define IN 0
 #define OUT 1
+
+// Enum for when to stop an actuator
+enum stop_modes{
+    NO_STOP,
+    STOP_FROM_TIME,
+    STOP_FROM_POSITION,
+    STOP_FROM_PWM_STALL
+};
 
 typedef struct {
   uint8_t identity;
