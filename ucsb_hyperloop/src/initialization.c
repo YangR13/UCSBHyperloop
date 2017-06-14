@@ -67,11 +67,11 @@ void initializeSensorsAndControls(){
     }
 
     if (BMS_18V5_ACTIVE){
-        bms_18v5 = initialize_BMS_18V5(1);
+        bms_18v5 = initialize_BMS_18V5(0);
     }
 
     if (PWR_DST_BMS_ACTIVE){
-        pwr_dst_bms = initialize_PWR_DST_BMS(1);
+        pwr_dst_bms = initialize_PWR_DST_BMS(0);
     }
 
     if (CONTACT_SENSOR_ACTIVE){

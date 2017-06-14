@@ -43,8 +43,8 @@ const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
 };
 // TODO: Calibrated conversions reference voltage table for Power Distribution Board BMS?
 
-// Addressing pins for ADCs: FLOAT-LOW / FLOAT-HIGH
-const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x19, 0x0B};
+// Addressing pins for ADCs: LOW-HIGH / HIGH-LOW
+const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x0A, 0x1A};
 
 // MAGLEV BMS
 
