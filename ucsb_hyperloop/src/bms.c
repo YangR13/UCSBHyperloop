@@ -34,8 +34,8 @@ const uint8_t BMS_18V5_HUB_PORT[1][2] = {   // Only 1
 const float BMS_18V5_CAL_5V0REF = 5.08;
 const float BMS_18V5_CAL_3V3REF = 3.30;
 
-// Addressing pins for ADCs: LOW-HIGH / FLOAT-HIGH / FLOAT-LOW / HIGH-LOW
-const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x0A, 0x0B, 0x19, 0x1A};
+// Addressing pins for ADCs: HIGH-LOW / HIGH-FLOAT / LOW-FLOAT / LOW-HIGH
+const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x1A, 0x1B, 0x09, 0x0A};
 
 // (Electronics) Power Distribution Board BMS Data:
 const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
@@ -43,8 +43,8 @@ const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
 };
 // TODO: Calibrated conversions reference voltage table for Power Distribution Board BMS?
 
-// Addressing pins for ADCs: LOW-FLOAT / HIGH-FLOAT
-const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x09, 0x1B};
+// Addressing pins for ADCs: FLOAT-LOW / FLOAT-HIGH
+const uint8_t I2C_ADC_PWR_DST_subBMS_Addresses[4] = {0x19, 0x0B};
 
 // MAGLEV BMS
 

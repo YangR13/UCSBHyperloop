@@ -148,6 +148,18 @@ float runtime();
 #define LTC2309_CHN_6	0xB0
 #define LTC2309_CHN_7	0xF0
 
+// ADC addresses - read as AS1 / AS0
+// #define LTC2309_I2C_ADDRESS 0x08    //  LOW       LOW
+// #define LTC2309_I2C_ADDRESS 0x09    //  LOW       Float
+// #define LTC2309_I2C_ADDRESS 0x0A    //  LOW       HIGH
+// #define LTC2309_I2C_ADDRESS 0x0B    //  Float     HIGH
+// #define LTC2309_I2C_ADDRESS 0x18    //  Float     Float
+// #define LTC2309_I2C_ADDRESS 0x19    //  Float     LOW
+// #define LTC2309_I2C_ADDRESS 0x1A    //  HIGH      LOW
+// #define LTC2309_I2C_ADDRESS 0x1B    //  HIGH      Float
+// #define LTC2309_I2C_ADDRESS 0x28    //  High      HIGH
+
+
 //ADC Associated Functions:
 uint16_t ADC_read(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
 
