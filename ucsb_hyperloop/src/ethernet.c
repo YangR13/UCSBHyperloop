@@ -1,4 +1,5 @@
 #include "ethernet.h"
+#include "initialization.h"
 #include "sensor_data.h"
 #include "I2CPERIPHS.h"
 #include <string.h>
@@ -21,17 +22,6 @@ uint16_t gSn_TX_BASE[] = {
 	0x8000,	0x8800,	0x9000,	0x9800,	// Socket 0, 1, 2, 3
 	0xA000, 0xA800,	0xB000,	0xB800	// Socket 4, 5, 6, 7
 };
-
-/* Data Send Timer Interrupt */
-void TIMER2_IRQHandler(void){
-	sendDataFlag = 1;
-	Chip_TIMER_ClearMatch( LPC_TIMER2, 1 );
-}
-
-/* Initialize Data Send Timer */
-void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
-	 timerInit(timer, timerInterrupt, tickRate);
-}
 
 /* SSP Initialization */
 void Wiz_SSP_Init() {
@@ -214,6 +204,8 @@ void send_data_ack_helper(char *method, int *position) {
 
 
 void recvDataPacket() {
+	// Don't guard for connectionOpen here, doing so breaks receiving packets D=
+
 	// TODO: Expand this back to support other subsystems
 	int pos = 0;
 	memset(Net_Tx_Data, 0, 64);
@@ -244,6 +236,39 @@ void recvDataPacket() {
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
 		printf("CALIBRATE_SIG RECEIVED\n");
 		CALIBRATE_FLAG = 1;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, STOP_BRAKES_SIG) == 0){
+		printf("STOP_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.0;
+		braking_boards[0]->enable[1] = 0.0;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
+		braking_boards[0]->enable[0] = 0.5;
+		braking_boards[0]->enable[1] = 0.5;
+		braking_boards[0]->direction[0] = 1;
+		braking_boards[0]->direction[1] = 1;
+
+	}
+
+	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
+		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
+        braking_boards[0]->enable[0] = 0.5;
+        braking_boards[0]->enable[1] = 0.5;
+        braking_boards[0]->direction[0] = 0;
+        braking_boards[0]->direction[1] = 0;
+	}
+
+	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
+		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 1);
+	}
+
+	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
+		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
+		step(braking_boards[0], 0);
 	}
 
 	if(strstr((char *)Net_Rx_Data, SETDAC) != NULL) {	// Set the DAC
@@ -350,7 +375,7 @@ void recvDataPacket() {
 				timeIterator++;
 			}
 		}
-//		rtc_initialize();
+		rtc_initialize();
 		RTC theTime;
 		theTime.year = (WORD)yearVal;
 		theTime.month = (BYTE)monthVal;
@@ -359,7 +384,7 @@ void recvDataPacket() {
 		theTime.hour = (BYTE)hourVal;
 		theTime.min = (BYTE)minVal;
 		theTime.sec = (BYTE)secVal;
-//		rtc_settime(&theTime);
+		rtc_settime(&theTime);
 		send_data_ack_helper(TAK, &pos);
 	}
 
@@ -369,15 +394,18 @@ void recvDataPacket() {
 }
 
 void ethernet_prepare_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	memset(Net_Tx_Data, 0, 1024);
 	tx_pos = 0;
 }
 
 void ethernet_add_data_to_packet(char *method, int index, int sensorNum, char* val){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	send_data_packet_helper(method, index, sensorNum, val, &tx_pos);
 }
 
 void ethernet_send_packet(){
+	if(!(ETHERNET_ACTIVE && connectionOpen)) return;
 	Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 }
 

@@ -6,8 +6,8 @@
 #include "temp_press.h"
 #include "kinematics.h"
 #include "photo_electric.h"
+#include "timer.h"
 
-int y = 0;
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
 
@@ -20,14 +20,12 @@ void collectCalibrationData( I2C_ID_T id ){
 }
 
 void collectData(){
-
-	collectDataFlag = 0;
 	sensorData.dataPrintFlag += 1;
 
 	XYZ acceleration1, acceleration2, velocity, position;
 	positionAttitudeData positionAttitude;
-
     if (ACCEL_ACTIVE) {
+
         sensorData.accel1 = getSmoothenedAccelerometerData(I2C1);
         sensorData.accel2 = getSmoothenedAccelerometerData(I2C2);
         sensorData.accelX = (sensorData.accel1.x + sensorData.accel2.x) / 2.0;
@@ -168,27 +166,8 @@ void collectData(){
 
     if(MOTOR_BOARD_I2C_ACTIVE) {
     	int i;
-    	float sum = 0.0; // used to sum up four tachometer distances
-    	float avg; // average of four tachometer differences
-    	float dist; // distance traveled based on tachometer
-    	float r = 1.0; // radius of wheel
     	for(i=0; i < NUM_HEMS; i++) {
     		update_HEMS(motors[i]);
-    	}
-
-    	if(y%10 == 0) {
-    		// Print sensor data at 1Hz.
-    		int i;
-    		for(i=0; i<NUM_HEMS; i++) {
-    			DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
-				sum += motors[i]->tachometer_counter[1];
-			}
-    		avg = sum/4.0; // average tachometer count based on four wheel tachometers
-    		dist = avg * 2 * 3.14159265358979323846 * r; // average distance traveled based on four wheel tachometers
-    		for(i=0; i<NUM_HEMS; i++) {
-    			DEBUGOUT("Motor %d sensors: RPM0=%d, RPM1=%d CURRENT=%d, TEMP=%d,%d,%d,%d, SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
-    		}
-    		DEBUGOUT("\n");
     	}
     }
 
@@ -198,25 +177,12 @@ void collectData(){
     		update_Maglev_BMS(maglev_bmses[i]);
     	}
 
-    	if(y%10 == 0) {
-    		// Print sensor data at 1Hz.
-    		int i;
-    		for(i=0; i<NUM_MAGLEV_BMS; i++) {
-    			DEBUGOUT("BMS %d sensors: \n", i);
-    			int j = 0;
-    			for (j = 0; j < 3; j++){
-    				DEBUGOUT("Batt %d: %f v - cell voltages %f | %f | %f | %f | %f | %f - temperatures %d | %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
-    			}
-    		}
-    		DEBUGOUT("\n");
-    	}
     }
 
     if(CONTACT_SENSOR_ACTIVE){
     	int contact_sensor_pushed;
     	contact_sensor_pushed = GPIO_Contact_Sensor_Pushed();
     	sensorData.contact_sensor_pushed = contact_sensor_pushed;
-    	DEBUGOUT("contact_sensor_pushed: %d\n", contact_sensor_pushed);
     }
 
     if (POSITIONING_ACTIVE) {
@@ -234,11 +200,26 @@ void collectData(){
     	}
     }
 
-	// Currently disabled debug-out printing of data.
-#if 0
-    if (sensorData.dataPrintFlag == 2) { // Print every 2/1 = 2 seconds.
-        DEBUGOUT( "temperature1 = %f\n", sensorData.temp1 );
-        DEBUGOUT( "temperature2 = %f\n", sensorData.temp2 );
+    if (BRAKING_ACTIVE){
+        int i = 0;
+        for (i = 0; i < 2; i++){
+            update_actuator_control(braking_boards[i]);
+            update_actuator_board(braking_boards[i]);
+        }
+    }
+
+    if (PRINT_SENSOR_DATA_ACTIVE){
+        if (printSensorDataFlag){
+            printSensorData();
+        }
+    }
+}
+
+void printSensorData(){
+    // Print all data from active sensors to the debug terminal.
+    printSensorDataFlag = 0;
+
+    if (POSITIONING_ACTIVE){
         DEBUGOUT( "pressure1 = %f\n", sensorData.pressure1 );
         DEBUGOUT( "pressure2 = %f\n", sensorData.pressure2 );
         DEBUGOUT( "accelX = %f\t", sensorData.accelX );
@@ -254,17 +235,65 @@ void collectData(){
         DEBUGOUT( "Pitch = %f\t", sensorData.pitch );
         DEBUGOUT( "Yaw = %f\n", sensorData.yaw );
         DEBUGOUT( "\n" );
-        sensorData.dataPrintFlag = 0;
     }
-#endif
 
-}
+    if (PHOTO_ELECTRIC_ACTIVE){
+        /* Handle Photoelectric Strip Detected */
+        if(stripDetectedFlag) {
+            stripDetectedFlag = 0;
+            DEBUGOUT("Distance: %f feet\n", sensorData.photoelectric);
+        }
+    }
 
-void TIMER1_IRQHandler(void){
-	collectDataFlag = 1;
-	Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
-}
+    if (ACCEL_ACTIVE){
+//        DEBUGOUT("accel %f, %f, %f \n", acceleration1.x, acceleration1.y, acceleration1.z);
+//        DEBUGOUT("accel %f, %f, %f\n", acceleration2.x, acceleration2.y, acceleration2.z);
+        DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
+    }
 
-void gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate){
-  	timerInit(timer, timerInterrupt, tickRate);
+    if (MOTOR_BOARD_I2C_ACTIVE){
+
+        float sum = 0.0; // used to sum up four tachometer distances
+        float avg; // average of four tachometer differences
+        float dist; // distance traveled based on tachometer
+        float r = 1.0; // radius of wheel
+
+        // Print sensor data at 1Hz.
+        int i;
+        for(i=0; i<NUM_HEMS; i++) {
+            DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
+            sum += motors[i]->tachometer_counter[1];
+        }
+        avg = sum/4.0; // average tachometer count based on four wheel tachometers
+        dist = avg * 2 * 3.14159265358979323846 * r; // average distance traveled based on four wheel tachometers
+        for(i=0; i<NUM_HEMS; i++) {
+            DEBUGOUT("Motor %d sensors: RPM0=%d \t RPM1=%d \t CURRENT=%d \t TEMP=%d \t %d \t %d \t %d \t SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
+        }
+        DEBUGOUT("\n");
+    }
+
+    if (MAGLEV_BMS_ACTIVE){
+        int i;
+        for(i=0; i<NUM_MAGLEV_BMS; i++) {
+            DEBUGOUT("BMS %d sensors: \n", i);
+            int j = 0;
+            for (j = 0; j < 3; j++){
+                DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
+            }
+        }
+        DEBUGOUT("\n");
+    }
+
+    if (CONTACT_SENSOR_ACTIVE){
+        DEBUGOUT("contact_sensor_pushed: %d\n", sensorData.contact_sensor_pushed);
+    }
+
+    if (BRAKING_ACTIVE){
+        DEBUGOUT("Braking board 0 sensor data:\n");
+        DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+        DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+        DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+        DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
+        DEBUGOUT("\n\n");
+    }
 }

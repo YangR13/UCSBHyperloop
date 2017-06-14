@@ -1,147 +1,224 @@
 #include "logging.h"
 #include "subsystems.h"
 #include "ethernet.h"
-#include "I2CPERIPHS.h"
 #include "sensor_data.h"
+#include "rtc.h"
+#include "I2CPERIPHS.h"
 #include "sdcard.h"
+#include "timer.h"
 
-void get_filepath(char* filepath, char* dir, char* name, int index) {
-	// Concat the dir and name variables and save to the filepath variable.
-}
-
-void initSDCard() {
-	// Create a new directory for this session.
-	char path[32];
-
-
-	// Create new files and add headers.
-	create_position_csv();
-	int i;
-	for(i=0; i<4; i++) {
-		create_hems_csv(i);
-	}
-
-}
-
-void create_csv(char* dir, char* filetype, int index)
-{
-	FIL fileObj;	/* File object */
-	char filepath[32];
-	get_filepath(filepath, dir, filetype, index);
-	f_open(&fileObj, filepath, FA_WRITE | FA_CREATE_ALWAYS);
-
-	// Add headers.
-	if(strcmp(filetype, FILE_POSITION) == 0) {
-
-	}
-	if(strcmp(filetype, FILE_HEMS) == 0) {
-
-	}
-	if(strcmp(filetype, FILE_BMS) == 0) {
-
-	}
-
-	f_close(&fileObj);
-}
-
-void logData(){
-
+void logAllData(){
 	int i;
 
-	if(RANGING_SENSORS_ACTIVE) {
+	if(GATHER_DATA_ACTIVE) {
 		ethernet_prepare_packet();
-		for(i=0; i<4; i++){
-			logPosition(i);
-		}
-		if((sendDataFlag && connectionOpen))
-			ethernet_send_packet();
+		logData(LOG_POSITION, 0);
+		ethernet_send_packet();
 	}
 
 	if(MOTOR_BOARD_I2C_ACTIVE) {
-		ethernet_prepare_packet();
 		for(i=0; i<4; i++) {
-			logHEMS(i);
-		}
-		if((sendDataFlag && connectionOpen))
-			ethernet_send_packet();
-	}
-
-	if(MAGLEV_BMS_ACTIVE){
-		for(i=0; i<2; i++){
 			ethernet_prepare_packet();
-			logBMS(i);
-			if((sendDataFlag && connectionOpen))
-				ethernet_send_packet();
+			logData(LOG_HEMS, i);
+			ethernet_send_packet();
+		}
+	}
+	if(MAGLEV_BMS_ACTIVE) {
+		for(i=0; i<2; i++) {
+			ethernet_send_packet();
+			logData(LOG_MAGLEV_BMS, i);
+			ethernet_send_packet();
+		}
+	}
+
+	if(BRAKING_ACTIVE) {
+		for(i=0; i<4; i++) {
+			ethernet_send_packet();
+			logData(LOG_BRAKING, i);
+			ethernet_send_packet();
 		}
 	}
 }
 
-void logPosition(index){
-
-	char data[16];
-//	snprintf(data, 16, "%06.2f", sensorData.photoelectric);
-//	ethernet_add_data_to_packet(PH, -1, -1, data);
-
-	// Short Ranging
-	snprintf(data, 16, "%06.2f", motors[index]->short_data[0]);
-	ethernet_add_data_to_packet(SR, index, -1, data);
-}
-
-void logHEMS(int index){
-	char data[16];
-	// DAC
-	if(index == 0) {
-		snprintf(data, 16, "%06.2f", motors[index]->throttle_voltage);
-		ethernet_add_data_to_packet(DAC, -1, -1, data);
-	}
-
-	// Current
-	snprintf(data, 16, "%06.2f", (float)motors[index]->amps);
-	ethernet_add_data_to_packet(CU, index, -1, data);
-
-	// RPM
-	snprintf(data, 16, "%06.2f", (float)motors[index]->rpm[1]);
-	ethernet_add_data_to_packet(TA, index, -1, data);
-
-	// Temperature (0 to 3)
-	int i;
-	for(i=0; i<4; i++){
-		snprintf(data, 16, "%06.f", (float)motors[index]->temperatures[i]);
-		ethernet_add_data_to_packet(TM, index, i, data);
-	}
-
-}
-
-void logBMS(int index){
-	char data[16];
-	memset(data, 0, 16);
-	// BMS(index) Voltages
+void logData(LOG_TYPE log_type, int index)
+{
+	FRESULT rc;
+	(void) rc;	// Unused variable.
 	int i, j;
-	for(j=0; j<3; j++){
-		for(i=0; i<6; i++){
-			snprintf(data, 16, "%06.2f", maglev_bmses[index]->cell_voltages[j][i]);
-			if(j>0){
+
+	rc = f_open_log(log_type, index, FA_WRITE);
+
+	// Seek current position in log file.
+	rc = f_lseek_(LOG_POSITIONS[log_type][index]);
+
+	char data[16] = "";
+
+	// Time
+	//snprintf(data, 16, "%s", sensorData.time);
+	//ethernet_add_data_to_packet(TIME, -1, -1, data);
+	//rc = f_write_log(log_type, index, data);
+	rc = f_write_log(log_type, index, "WIP");
+
+	switch(log_type) {
+	case LOG_POSITION:
+
+		// X Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// X Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// X Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelX);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Y Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelY);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Position.
+		snprintf(data, 16, "%06.2f", sensorData.positionZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Velocity.
+		snprintf(data, 16, "%06.2f", sensorData.velocityZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Z Acceleration.
+		snprintf(data, 16, "%06.2f", sensorData.accelZ);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Roll.
+		snprintf(data, 16, "%06.2f", sensorData.roll);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Pitch.
+		snprintf(data, 16, "%06.2f", sensorData.pitch);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Yaw.
+		snprintf(data, 16, "%06.2f", sensorData.yaw);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Contact.
+		snprintf(data, 16, "%d", sensorData.contact_sensor_pushed);
+		//ethernet_add_data_to_packet(???, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+#if 1
+		// Short Ranging
+		for(i=0; i<4; i++) {
+			snprintf(data, 16, "%06.2f", motors[i]->short_data[0]);
+			ethernet_add_data_to_packet(SR, i, -1, data);
+			//rc = f_write_log(log_type, index, data);
+		}
+#endif // 0|1
+		// Newline
+		rc = f_write_newline(log_type, index);
+
+		break;
+	case LOG_HEMS:
+
+		// DAC
+		if(index == 0) {
+			snprintf(data, 16, "%06.2f", motors[index]->throttle_voltage);
+			ethernet_add_data_to_packet(DAC, -1, -1, data);
+		}
+		rc = f_write_log(log_type, index, data);
+
+		// Current
+		snprintf(data, 16, "%06.2f", (float)motors[index]->amps);
+		ethernet_add_data_to_packet(CU, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// RPM
+		snprintf(data, 16, "%06.2f", (float)motors[index]->rpm[1]);
+		ethernet_add_data_to_packet(TA, index, -1, data);
+		rc = f_write_log(log_type, index, data);
+
+		// Temperature (0 to 3)
+		int i;
+		for(i=0; i<4; i++){
+			snprintf(data, 16, "%06.f", (float)motors[index]->temperatures[i]);
+			ethernet_add_data_to_packet(TM, index, i, data);
+			rc = f_write_log(log_type, index, data);
+		}
+
+		// Newline
+		rc = f_write_newline(log_type, index);
+		break;
+	case LOG_MAGLEV_BMS:
+
+		for(j=0; j<3; j++){
+			// BMS(index) Voltages
+			float v_low = -1;
+			float v_high = -1;
+			for(i=0; i<6; i++){
+				float v = maglev_bmses[index]->cell_voltages[j][i];
+				if(v_low == -1 || v < v_low) v_low = v;
+				if(v_high == -1 || v > v_high) v_high = v;
+				snprintf(data, 16, "%06.2f", v);
 				ethernet_add_data_to_packet(BMSV, index, (6*j)+i, data);
 			}
-			else{
-				ethernet_add_data_to_packet(BMSV, index, i, data);
-			}
-		}
-	}
-	// BMS(index) Temperature
-	for(j=0; j<3; j++){
-		for(i=0; i<2; i++){
-			snprintf(data, 16, "%06.2f", maglev_bmses[index]->temperatures[j][i]);
-			if(j>0){
-				ethernet_add_data_to_packet(BMST, index, (2*j)+i, data);
-			}
-			else{
-				ethernet_add_data_to_packet(BMST, index, i, data);
-			}
-		}
-	}
-}
+			// BMS(index) Low/High Voltages
+			snprintf(data, 16, "%06.2f", v_low);
+			//ethernet_add_data_to_packet(BMSVL, index, -1, data);
+			rc = f_write_log(log_type, index, data);
+			snprintf(data, 16, "%06.2f", v_high);
+			//ethernet_add_data_to_packet(BMSVH, index, -1, data);
+			rc = f_write_log(log_type, index, data);
 
+			// BMS(index) Temperatures
+			for(i=0; i<2; i++){
+				snprintf(data, 16, "%06.2f", maglev_bmses[index]->temperatures[j][i]);
+				ethernet_add_data_to_packet(BMST, index, (2*j)+i, data);
+				rc = f_write_log(log_type, index, data);
+			}
+		}
+
+		break;
+	case LOG_BRAKING:
+		for(i=0; i<2; i++) {
+			// PWM.
+
+			// Direction.
+
+			// Position.
+
+			// Current.
+
+			// Temperature. x2
+		}
+
+		break;
+	default:
+		break;
+	}
+
+	f_close_();
+}
 
 void initEventLogFile()
 {
@@ -185,8 +262,7 @@ void logStateMachineEvent(int sig)
 {
 	char desc[64] = "Control signal: ";
 	char *sig_desc;
-	sig_desc = control_signal_names[sig];
-	strcat(desc, sig_desc);
+	strcat(desc, control_signal_names[sig]);
 	logEventString(desc);
 }
 

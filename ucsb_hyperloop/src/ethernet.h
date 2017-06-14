@@ -137,6 +137,12 @@
 
 /* Web App control for intializing the positioning */
 #define CALIBRATE_SIG	"CALIBRATE_SIG\0"
+/* Web App controls for braking */
+#define STOP_BRAKES_SIG "STOP_BRAKES_SIG\0"
+#define CONTINUOUSLY_TIGHTEN_BRAKES_SIG "CONTINUOUSLY_TIGHTEN_BRAKES_SIG\0"
+#define CONTINUOUSLY_LOOSEN_BRAKES_SIG "CONTINUOUSLY_LOOSEN_BRAKES_SIG\0"
+#define TIGHTEN_BRAKES_SIG "TIGHTEN_BRAKES_SIG\0"
+#define LOOSEN_BRAKES_SIG "LOOSEN_BRAKES_SIG\0"
 
 extern uint16_t gSn_RX_BASE[];
 extern uint16_t gSn_TX_BASE[];
@@ -183,8 +189,6 @@ void ethernetInit(uint8_t protocol, uint8_t socket);
 void Wiz_Deinit(uint8_t protocol, uint8_t socket);
 void spi_Send_Blocking(uint16_t address, uint16_t length);
 void spi_Recv_Blocking(uint16_t address, uint16_t length);
-void TIMER2_IRQHandler(void);
-void sendSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
 void send_data_packet_helper(char *method, int index, int sensorNum, char *val, int *position);
 void send_data_ack_helper(char *method, int *position);
 uint8_t Wiz_Check_Socket(uint8_t n);

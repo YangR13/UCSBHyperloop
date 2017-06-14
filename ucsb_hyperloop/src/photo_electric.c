@@ -33,17 +33,17 @@ void Photoelectric_Timer_Init() {
 	NVIC_EnableIRQ(TIMER3_IRQn);
 }
 
-void TIMER3_IRQHandler(void)
-{
-  if (Chip_TIMER_MatchPending(LPC_TIMER3, 1)) {
-    Chip_TIMER_ClearMatch(LPC_TIMER3, 1);
-    Chip_TIMER_MatchDisableInt(LPC_TIMER3, 1);
-    Chip_TIMER_Disable(LPC_TIMER3);
-    Reset_Timer_Counter(LPC_TIMER3);
-  }
-  stripRegion++;
-  regionalStripCount = 0;
-}
+//void TIMER3_IRQHandler(void)
+//{
+//  if (Chip_TIMER_MatchPending(LPC_TIMER3, 1)) {
+//    Chip_TIMER_ClearMatch(LPC_TIMER3, 1);
+//    Chip_TIMER_MatchDisableInt(LPC_TIMER3, 1);
+//    Chip_TIMER_Disable(LPC_TIMER3);
+//    Reset_Timer_Counter(LPC_TIMER3);
+//  }
+//  stripRegion++;
+//  regionalStripCount = 0;
+//}
 
 /* Setup Photoelectric sensor pin as input */
 void Photoelectric_GPIO_Init() {

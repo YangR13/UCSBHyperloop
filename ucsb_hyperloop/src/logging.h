@@ -5,10 +5,7 @@
 
 #include "ethernet.h"
 #include "subsystems.h"
-
-#define FILE_POSITION "position"
-#define FILE_HEMS "maglev"
-#define FILE_BMS "bms"
+#include "sdcard.h"
 
 typedef enum {
 	MAX_EVT
@@ -20,10 +17,8 @@ typedef enum {
 
 #define ERR
 
-void logData();
-void logPosition(int index);
-void logHEMS(int index);
-void logBMS(int index);
+void logAllData();
+void logData(LOG_TYPE log_type, int index);
 
 void initEventLogFile();
 void initErrorLogFile();
