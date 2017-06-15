@@ -130,6 +130,17 @@ void collectData(){
 
     if (PWR_DST_BMS_ACTIVE){
         update_PWR_DST_BMS_ACTIVE(pwr_dst_bms);
+        if (pwr_dst_bms->alarm | 0b10 == 0b10){
+            DEBUGOUT("\n*****\n");
+            DEBUGOUT("Fault condition on one or more Electronics Power Distribution batteries!\n");
+            DEBUGOUT("Examine details ASAP and power down pod if necessary! Details: \n");
+            int j = 0;
+            for (j = 0; j < 2; j++){
+                DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
+            }
+            DEBUGOUT("*****\n\n");
+
+        }
     }
 
     if(CONTACT_SENSOR_ACTIVE){

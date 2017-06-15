@@ -11,9 +11,9 @@
 #define ACCEL_ACTIVE				0
 #define MOTOR_BOARD_I2C_ACTIVE		0
 #define GATHER_DATA_ACTIVE      	(ACCEL_ACTIVE || PHOTO_ELECTRIC_ACTIVE || RANGING_SENSORS_ACTIVE || ACCEL_ACTIVE || MOTOR_BOARD_I2C_ACTIVE || CONTACT_SENSOR_ACTIVE || ACTUATORS_ACTIVE || MAGLEV_BMS_ACTIVE || BMS_18V5_ACTIVE || PWR_DST_BMS_ACTIVE)
-#define MAGLEV_BMS_ACTIVE       	0
-#define BMS_18V5_ACTIVE             0
-#define PWR_DST_BMS_ACTIVE          1
+#define MAGLEV_BMS_ACTIVE       	MOTOR_BOARD_I2C_ACTIVE // You should only turn this off if you've manually checked all the maglev batteries.
+#define BMS_18V5_ACTIVE             0 // Set equal to ACTUATORS_ACTIVE?
+#define PWR_DST_BMS_ACTIVE          1 // You should only turn this off if you're working with a bare board and not the whole pod.
 #define I2C_ACTIVE					(MOTOR_BOARD_I2C_ACTIVE || ACCEL_ACTIVE || MAGLEV_BMS_ACTIVE || BMS_18V5_ACTIVE || PWR_DST_BMS_ACTIVE || ACTUATORS_ACTIVE)
 #define	CONTACT_SENSOR_ACTIVE		0
 
@@ -29,6 +29,9 @@
 #define COMMUNICATION_ACTIVE    	(ETHERNET_ACTIVE || SDCARD_ACTIVE)
 #define GPIO_INT_ACTIVE         	(ETHERNET_ACTIVE || PHOTO_ELECTRIC_ACTIVE)
 #define PRINT_SENSOR_DATA_ACTIVE    1
+
+// For testing - controls whether subsystems.c generates fault transition signals to the subsystem state machines.
+#define IGNORE_FAULTS               0
 
 // Initialize all the things
 void initializeTimers();

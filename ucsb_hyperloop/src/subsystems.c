@@ -13,7 +13,6 @@
 	QHsm_dispatch((QHsm *)&hsm);\
 	} while(0)
 
-#define IGNORE_FAULTS 1 	// For testing
 
 const char *control_signal_names[] = {
 		// Special sequences
