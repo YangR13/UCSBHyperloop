@@ -23,7 +23,7 @@ const uint8_t HEMS_HUB_PORT[NUM_HEMS][2] = {    //Max 2 per I2C bus or Hub
   {2, 2},
   {1, 3}
 };
-const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {0,  255,  0,  255};
+const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {255,  255,  0,  0};
 const float HEMS_CAL_5V0REF[NUM_HEMS] = {5.08,  5.08, 5.08, 5.08};
 const float HEMS_CAL_3V3REF[NUM_HEMS] = {3.28,  3.28, 3.28, 3.30};
 
