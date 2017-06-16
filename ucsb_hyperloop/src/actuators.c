@@ -2,7 +2,7 @@
 #include "pwm.h"
 #include "I2CPERIPHS.h"
 
-const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {2, 0, 0, 0};        // TODO: Set me
+const uint8_t BOARD_I2C_BUS[NUM_ACTUATOR_BOARDS] = {0, 0, 0, 0};        // TODO: Set me
 #ifdef ARDUINO
 // Pin values to use for GPIO and PWM signals
 const uint8_t BOARD_PINS[16] =      {52, 53, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -21,13 +21,14 @@ const uint8_t BOARD_PIN_PORTS[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 // GPIO pins on the PCB (data values) correspond to, in order:
 //  Board 1 - DIR1, DIR2, FAULT1, FAULT2 | Board 2 (same) | etc.
-const uint8_t BOARD_PIN_PORTS[16] = {3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t BOARD_PINS[16] =      {12, 13, 15, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t BOARD_PIN_PORTS[16] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
+const uint8_t BOARD_PINS[16] =      {7, 5, 6, 4, 3, 1, 2, 0, 15, 13, 14, 12, 11, 9, 10, 8};
 
 // PWM pins on the PCB (data values) correspond to, in order:
 //  Board 1 - PWM1, PWM2 | Board 2 (same), etc.
-const LPC_PWM_T * BOARD_PWM_PORTS[8] = {LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1};
-const uint8_t BOARD_PWM_CHANNELS[8] = {6, 5, 4, 3, 2, 1, 1, 1};
+// LPC_PWM1 is port J196, LPC_PWM0 is port J197
+const LPC_PWM_T * BOARD_PWM_PORTS[8] = {LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM1, LPC_PWM0, LPC_PWM0, LPC_PWM0, LPC_PWM0};
+const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
