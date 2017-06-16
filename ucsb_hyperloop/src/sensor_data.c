@@ -7,6 +7,7 @@
 #include "kinematics.h"
 #include "photo_electric.h"
 #include "timer.h"
+#include "bms.h"
 
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
@@ -129,8 +130,8 @@ void collectData(){
     }
 
     if (PWR_DST_BMS_ACTIVE){
-        update_PWR_DST_BMS_ACTIVE(pwr_dst_bms);
-        if (pwr_dst_bms->alarm | 0b10 == 0b10){
+        update_PWR_DST_BMS(pwr_dst_bms);
+        if ((pwr_dst_bms->alarm & 0b10) == 0b10){
             DEBUGOUT("\n*****\n");
             DEBUGOUT("Fault condition on one or more Electronics Power Distribution batteries!\n");
             DEBUGOUT("Examine details ASAP and power down pod if necessary! Details: \n");

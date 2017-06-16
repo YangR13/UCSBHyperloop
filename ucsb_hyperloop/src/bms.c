@@ -320,7 +320,7 @@ PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
   return bms;
 }
 
-uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
+uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
   int batt, i;
   float prev_voltage;
   int new_alarms = 0b00;
@@ -337,6 +337,10 @@ uint8_t update_PWR_DST_BMS_ACTIVE(PWR_DST_BMS* bms) {
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
+    if (bms->battery_voltage[batt] < 1.0){
+        // Total battery voltage < 1V? Probably disconnected. Clear alarm.
+        new_alarms &= 0b01;
+    }
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
