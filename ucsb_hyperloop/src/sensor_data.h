@@ -4,6 +4,7 @@
 #include "board.h"
 #include "ranging.h"
 #include "I2CPERIPHS.h"
+#include "bms.h"
 #include "actuators.h"
 
 void 	collectCalibrationData(I2C_ID_T id);
@@ -13,7 +14,11 @@ void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, u
 
 HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];
+BMS_18V5 *bms_18v5;
+PWR_DST_BMS *pwr_dst_bms;
 ACTUATORS *braking_boards[2]; // 2 Braking boards.
+ACTUATORS *payload;
+ACTUATORS *service_prop;
 
 typedef struct{
 
@@ -61,7 +66,6 @@ typedef struct{
 
   float pressure1;
   float pressure2;
-  float power;
 
   float photoelectric;
 
