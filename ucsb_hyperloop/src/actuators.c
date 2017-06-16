@@ -38,6 +38,7 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
   board->bus = BOARD_I2C_BUS[board->identity];
+  board->faulted = 0;
 
   // TODO: Check if this works right for boards #2 and #3, especially with #0 and #1 present on the same bus.
   board->ADC_device_address = ADC_Address_Select_Actuators[board->identity];

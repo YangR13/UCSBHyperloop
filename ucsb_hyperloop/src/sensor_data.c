@@ -7,6 +7,7 @@
 #include "kinematics.h"
 #include "photo_electric.h"
 #include "timer.h"
+#include "bms.h"
 
 void collectCalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
@@ -122,7 +123,25 @@ void collectData(){
     	for (i = 0; i < NUM_MAGLEV_BMS; i++){
     		update_Maglev_BMS(maglev_bmses[i]);
     	}
+    }
 
+    if (BMS_18V5_ACTIVE){
+        update_BMS_18V5(bms_18v5);
+    }
+
+    if (PWR_DST_BMS_ACTIVE){
+        update_PWR_DST_BMS(pwr_dst_bms);
+        if ((pwr_dst_bms->alarm & 0b10) == 0b10){
+            DEBUGOUT("\n*****\n");
+            DEBUGOUT("Fault condition on one or more Electronics Power Distribution batteries!\n");
+            DEBUGOUT("Examine details ASAP and power down pod if necessary! Details: \n");
+            int j = 0;
+            for (j = 0; j < 2; j++){
+                DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
+            }
+            DEBUGOUT("*****\n\n");
+
+        }
     }
 
     if(CONTACT_SENSOR_ACTIVE){
@@ -174,13 +193,13 @@ void printSensorData(){
         // Print sensor data at 1Hz.
         int i;
         for(i=0; i<NUM_HEMS; i++) {
-            DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
+            //DEBUGOUT("count[%d]: %f", i, motors[i]->tachometer_counter[1] * 2 * 3.14159265358979323846); // Also multiply by radius later
             sum += motors[i]->tachometer_counter[1];
         }
         avg = sum/4.0; // average tachometer count based on four wheel tachometers
         dist = avg * 2 * 3.14159265358979323846 * r; // average distance traveled based on four wheel tachometers
         for(i=0; i<NUM_HEMS; i++) {
-            DEBUGOUT("Motor %d sensors: RPM0=%d \t RPM1=%d \t CURRENT=%d \t TEMP=%d \t %d \t %d \t %d \t SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
+            DEBUGOUT("Motor %d sensors: RPM0=%d \t RPM1=%d \t DAC=%.2f \t CURRENT=%d \t TEMP=%d \t %d \t %d \t %d \t SHORT=%f\n", i, motors[i]->rpm[0], motors[i]->rpm[1], motors[i]->DAC_diagnostic, motors[i]->amps, motors[i]->temperatures[0], motors[i]->temperatures[1],motors[i]->temperatures[2],motors[i]->temperatures[3], motors[i]->short_data[0]);
         }
         DEBUGOUT("\n");
     }
@@ -193,6 +212,25 @@ void printSensorData(){
             for (j = 0; j < 3; j++){
                 DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
             }
+        }
+        DEBUGOUT("\n");
+    }
+
+    if (BMS_18V5_ACTIVE){
+        DEBUGOUT("18V5 BMS sensors: \n");
+        int j = 0;
+        for (j = 0; j < 4; j++){
+            DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, bms_18v5->battery_voltage[j], bms_18v5->cell_voltages[j][0], bms_18v5->cell_voltages[j][1], bms_18v5->cell_voltages[j][2], bms_18v5->cell_voltages[j][3], bms_18v5->cell_voltages[j][4], bms_18v5->temperatures[j][0], bms_18v5->temperatures[j][1]);
+            DEBUGOUT("Current sensor %d: %f \n", j, bms_18v5->amps);
+        }
+        DEBUGOUT("\n");
+    }
+
+    if (PWR_DST_BMS_ACTIVE){
+        DEBUGOUT("Power Distribution BMS sensors: \n");
+        int j = 0;
+        for (j = 0; j < 2; j++){
+            DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
         }
         DEBUGOUT("\n");
     }

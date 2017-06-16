@@ -83,6 +83,7 @@ typedef struct {
   // Safety
   uint8_t bridge_fault[2];
   uint8_t alarm[2];
+  uint8_t faulted;
 
   // Output control signals
   uint8_t direction[2];         // 0 = backwards, 1 forwards
