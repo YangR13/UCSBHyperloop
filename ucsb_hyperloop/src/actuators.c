@@ -183,6 +183,10 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
     else if (destination == -2){
         board->direction[num] = 0;
     }
+    else{
+        // We have a set target position, set the initial direction needed to reach it
+        board->direction[num] = board->position[num] > board->target_pos[num];
+    }
 
     if (board->direction[num] && (board->pwm[num] > MAX_FWD_DUTY_CYCLE)){
         // Constrain to max forwards duty cycle
@@ -267,8 +271,8 @@ void calculate_actuator_control(ACTUATORS *board, int num){
 
     // UPDATE OUTPUT PWM IF STILL MOVING
 
-    // Determine direction: forwards = 1, backwards = 0
-    if (board->target_pos[num] > 0){
+    // For 'target position' mode, determine direction: forwards = 1, backwards = 0
+    if (board->stop_mode[num] == STOP_FROM_POSITION){
         // Forward movement (direction = 1) => position values decrease
         board->direction[num] = board->position[num] > board->target_pos[num];
     }
