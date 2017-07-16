@@ -183,6 +183,14 @@ void printSensorData(){
         DEBUGOUT("accel %f, %f, %f\n", sensorData.accelX, sensorData.accelY, sensorData.accelZ);
     }
 
+    if(POSITIONING_ACTIVE) {
+    	int i;
+    	for(i=0; i<4; i++) {
+    		DEBUGOUT("Wheel %d spokes counter: %d | ", i, motors[i]->wheel_tach_spokes_counter);
+    		DEBUGOUT("Wheel %d distance traveled: %f feet\n", i, motors[i]->wheel_tach_spokes_counter * 0.575);
+    	}
+    }
+
     if (MOTOR_BOARD_I2C_ACTIVE){
 
         float sum = 0.0; // used to sum up four tachometer distances

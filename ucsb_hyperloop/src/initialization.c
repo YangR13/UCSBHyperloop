@@ -49,6 +49,13 @@ void initializeSensorsAndControls(){
         GPIO_Interrupt_Enable();
     }
 
+    if(POSITIONING_ACTIVE) {
+    	int i;
+    	for(i=0; i<4; i++) {
+        	sensorData.wheelTachPositionX[i] = 0;
+    	}
+    }
+
     if(MOTOR_BOARD_I2C_ACTIVE) {
     	// Create objects to hold parameters of the HEMS boards
         motors[0] = initialize_HEMS(0);   			// Front Left

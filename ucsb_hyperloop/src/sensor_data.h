@@ -64,6 +64,8 @@ typedef struct{
   float tacho3;
   float tacho4;
 
+  float wheelTachPositionX[4];
+
   float pressure1;
   float pressure2;
 

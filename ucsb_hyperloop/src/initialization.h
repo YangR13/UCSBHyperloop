@@ -9,7 +9,8 @@
 #define PHOTO_ELECTRIC_ACTIVE		0
 #define RANGING_SENSORS_ACTIVE		0
 #define ACCEL_ACTIVE				0
-#define MOTOR_BOARD_I2C_ACTIVE		0
+#define POSITIONING_ACTIVE			(MOTOR_BOARD_I2C_ACTIVE || PHOTO_ELECTRIC_ACTIVE)
+#define MOTOR_BOARD_I2C_ACTIVE		1
 #define GATHER_DATA_ACTIVE      	(ACCEL_ACTIVE || PHOTO_ELECTRIC_ACTIVE || RANGING_SENSORS_ACTIVE || ACCEL_ACTIVE || MOTOR_BOARD_I2C_ACTIVE || CONTACT_SENSOR_ACTIVE || ACTUATORS_ACTIVE || MAGLEV_BMS_ACTIVE || BMS_18V5_ACTIVE || PWR_DST_BMS_ACTIVE)
 #define MAGLEV_BMS_ACTIVE       	MOTOR_BOARD_I2C_ACTIVE // You should only turn this off if you've manually checked all the maglev batteries.
 #define BMS_18V5_ACTIVE             0 // Set equal to ACTUATORS_ACTIVE?
@@ -31,7 +32,7 @@
 #define PRINT_SENSOR_DATA_ACTIVE    1
 
 // For testing - controls whether subsystems.c generates fault transition signals to the subsystem state machines.
-#define IGNORE_FAULTS               0
+#define IGNORE_FAULTS               1
 
 // Initialize all the things
 void initializeTimers();

@@ -48,7 +48,8 @@
 #define AMMETER_150A_SENSITIVITY 8.8		//[mV/A] for the 150amp version of the sensor
 
 //Tachometer Data
-#define TACHOMETER_TICKS 1	// Number of reflective strips on the motor.
+#define MAGLEV_TACH_TICKS 1	// Number of reflective strips on the motor.
+#define WHEEL_TACH_TICKS 10	// Number of reflective spokes on the wheel.
 
 //Safety:
 #define HEMS_MAX_TEMP 60      //Too hot
@@ -91,6 +92,8 @@ typedef struct {
   //Helper Data
   float timestamp;
   uint16_t tachometer_counter[2];
+
+  int wheel_tach_spokes_counter;
 
   //Control
   float throttle_voltage;

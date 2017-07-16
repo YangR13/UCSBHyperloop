@@ -66,6 +66,8 @@ HEMS* initialize_HEMS(uint8_t identity) {
     engine->rpm[n] = 0;
   }
 
+  engine->wheel_tach_spokes_counter = 0;
+
   // Initialize thermistor moving averages (with first read)
   int temp_counter;
   for (temp_counter = 0; temp_counter < 4; temp_counter++) {
@@ -155,8 +157,13 @@ uint8_t update_HEMS(HEMS* engine) {
     else  //Account for edge case where the binary counter overflows and resets back to 0.
       delta_counter = current_tachometer_counter[n] + (4096 - previous_tachometer_counter[n]);
 
-    current_rpm[n] = 60.0 / TACHOMETER_TICKS * delta_counter / (current_time[n] - engine->timestamp);
+    current_rpm[n] = 60.0 / ((n == 1) ? MAGLEV_TACH_TICKS : WHEEL_TACH_TICKS) * delta_counter / (current_time[n] - engine->timestamp);
     engine->rpm[n] = (1 - TACHOMETER_AVG_WEIGHT) * current_rpm[n] + TACHOMETER_AVG_WEIGHT * engine->rpm[n];
+
+    if(n == 0) {	// Wheel tach.
+    	engine->wheel_tach_spokes_counter += delta_counter;
+    }
+
     engine->tachometer_counter[n] = current_tachometer_counter[n];
   }
   engine->timestamp = runtime();
