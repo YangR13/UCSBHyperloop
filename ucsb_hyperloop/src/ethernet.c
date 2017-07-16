@@ -248,12 +248,16 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, -1);
+		//move_to_pos(braking_boards[0], 0, -1);
+        move_to_pwm(braking_boards[0], 0, 1, braking_boards[0]->pwm[0] + 0.01);
+
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, -2);
+		//move_to_pos(braking_boards[0], 0, -2);
+		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 500);
+
 	}
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){

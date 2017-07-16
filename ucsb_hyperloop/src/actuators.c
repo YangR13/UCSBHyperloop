@@ -363,7 +363,8 @@ void calculate_actuator_control(ACTUATORS *board, int num){
         else if (board->stop_mode[num] == STOP_FROM_PWM_STALL){
             // Stop based on the PWM limit that was set
             if (board->pwm[num] >= board->target_pwm[num]){
-                stop = (board->pwm_algorithm == 0);
+            	stop = 1;
+                //stop = (board->pwm_algorithm == 0);
             }
         }
         if (stop){
