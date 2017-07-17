@@ -51,6 +51,9 @@
 #define MAGLEV_TACH_TICKS 1	// Number of reflective strips on the motor.
 #define WHEEL_TACH_TICKS 10	// Number of reflective spokes on the wheel.
 
+//Short Ranging Data
+#define SHORT_RANGING_VOLTAGE_OFFSET 0.2	// Voltage offset.
+
 //Safety:
 #define HEMS_MAX_TEMP 60      //Too hot
 #define HEMS_MIN_TEMP 5       //More to detect disconnects than for "too cold"

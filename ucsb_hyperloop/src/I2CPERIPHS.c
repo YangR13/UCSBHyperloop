@@ -79,7 +79,8 @@ HEMS* initialize_HEMS(uint8_t identity) {
   int short_counter;
   for (short_counter = 0; short_counter < 2; short_counter++) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    //Wtf. float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
     if (!((voltage < 0.34) || (voltage > 2.43))) {
       uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
@@ -119,14 +120,19 @@ uint8_t update_HEMS(HEMS* engine) {
   for (short_counter = 0; short_counter < 2; short_counter++) {
     ShortRangingMovingAverage = engine->short_data[short_counter];
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    //Wtf. float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
     if (!((voltage < 0.34) || (voltage > 2.43))) {
       uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
       ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT[index];
     }
     engine->short_data[short_counter] = ShortRangingMovingAverage;
+
+    //if(short_counter == 0)
+    	//DEBUGOUT("SR[%d]: %fV, %fcm\n", engine->identity, voltage, engine->short_data[0]);
   }
+
 #endif
 
   //Record Motor Controller Current

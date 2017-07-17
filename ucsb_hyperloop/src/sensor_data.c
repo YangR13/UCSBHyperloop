@@ -9,7 +9,7 @@
 #include "timer.h"
 #include "bms.h"
 
-void collectCalibrationData( I2C_ID_T id ){
+void CalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
 
 	if(id == I2C1) {
@@ -48,7 +48,7 @@ void collectData(){
 
 	if(RANGING_SENSORS_ACTIVE) {
 
-
+		//update for actual pod
 		float d_F = 17.0;
 		float d_R = 11.0;
 		float d_B = 17.0;
