@@ -128,9 +128,11 @@ uint8_t update_HEMS(HEMS* engine) {
       ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT[index];
     }
     engine->short_data[short_counter] = ShortRangingMovingAverage;
+    if((short_counter == 0) && (engine->identity == 1))
+    	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
 
-    if(short_counter == 0)
-    	DEBUGOUT("SR[%d]: %fV, %fcm\n", engine->identity, voltage, engine->short_data[0]);
+    //if(short_counter == 0)
+    	//DEBUGOUT("SR[%d]: %fV, %fcm\n", engine->identity, voltage, engine->short_data[0]);
   }
 
 #endif
@@ -166,7 +168,7 @@ uint8_t update_HEMS(HEMS* engine) {
     current_rpm[n] = 60.0 / ((n == 1) ? MAGLEV_TACH_TICKS : WHEEL_TACH_TICKS) * delta_counter / (current_time[n] - engine->timestamp);
     engine->rpm[n] = (1 - TACHOMETER_AVG_WEIGHT) * current_rpm[n] + TACHOMETER_AVG_WEIGHT * engine->rpm[n];
 
-    if(n == 0) {	// Wheel tach.
+    if(n == 0) {	// 0 = Wheel tach.
     	engine->wheel_tach_spokes_counter += delta_counter;
     }
 

@@ -3,6 +3,27 @@
 
 #include "board.h"
 
+// New Short-Ranging Code
+// Distances of down-ward facing short ranging sensors from the pod's center.
+#define d_F		125.0	// cm
+#define d_R		24.0
+#define d_B		125.0
+#define d_L		24.0
+
+// Distances of I-beam facing short ranging sensors from the pod's center.
+#define I_BEAM_RANGNG_FRONT	104.0		// TODO
+#define I_BEAM_RANGNG_BACK	96.0		// TODO
+
+#define PI_CONSTANT		3.14159262
+
+float pitch_i;
+float roll_i;
+float z_ci;
+
+float yaw_i;
+float y_ci;
+
+// Old Short-Ranging Code (DELETE LATER!)
 #define SHORT_FRONT_DIST		8.5f
 #define SHORT_BACK_DIST			8.5f
 #define SHORT_FRONT_HEIGHT		5.4f
@@ -159,6 +180,7 @@ void convertVoltage(uint16_t data, uint8_t sensor);
 rangingData getShortDistance();
 void ADC_IRQHandler();
 void rangingSensorsInit();
+void rangingSensorsCalibrate();
 void convertVoltageShort(uint8_t sensor);
 void convertVoltageLong(uint8_t sensor);
 void Ranging_Int_Measure();

@@ -37,6 +37,8 @@ int main(void)
     initializeSensorsAndControls();
     initializeSubsystemStateMachines();
 
+    rangingSensorsCalibrate();
+
     DEBUGOUT("_______________________________________\n");
     DEBUGOUT("UCSB Hyperloop Controller Initialized\n");
     DEBUGOUT("_______________________________________\n");

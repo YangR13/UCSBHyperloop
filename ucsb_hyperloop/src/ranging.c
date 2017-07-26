@@ -1,4 +1,6 @@
 #include "ranging.h"
+#include "I2CPERIPHS.h"
+#include "sensor_data.h"
 #include "math.h"
 
 float arcsin(float x) {
@@ -130,6 +132,7 @@ void initADCChannel(uint8_t channel, uint8_t port, uint8_t pin, uint8_t func, fl
 }
 
 void rangingSensorsInit(void)  {
+#if 0
 	Chip_ADC_Init(_LPC_ADC_ID, &ADCSetup);
 
 	Burst_Mode_Flag = 1;
@@ -157,6 +160,40 @@ void rangingSensorsInit(void)  {
 
 	Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, _bitRate);
 	Chip_ADC_SetBurstCmd(_LPC_ADC_ID, ENABLE);
+#endif 	// 0
+}
+
+void rangingSensorsCalibrate()
+{
+	int i;
+	for(i=0; i < NUM_HEMS; i++) {
+		update_HEMS(motors[i]);
+	}
+
+	// initial z values
+	float z_0i = motors[0]->short_data[0];
+	float z_1i = motors[1]->short_data[0];
+	float z_2i = motors[2]->short_data[0];
+	float z_3i = motors[3]->short_data[0];
+
+	// initial y values
+	float y_0i = motors[0]->short_data[1];
+	float y_1i = motors[1]->short_data[1];
+
+	pitch_i = (z_1i + z_2i - z_0i - z_3i) / (2*(d_F + d_B));
+	roll_i = (z_0i + z_1i - z_2i - z_3i) / (2*(d_L + d_R));
+	z_ci = z_0i - (d_L * roll_i) + (d_F * pitch_i);
+
+	yaw_i = (y_0i - y_1i) / (I_BEAM_RANGNG_FRONT + I_BEAM_RANGNG_BACK);
+	y_ci = y_0i - (I_BEAM_RANGNG_FRONT * yaw_i);
+
+#if 1
+	DEBUGOUT("CALIBRATION: Short-ranging: %f | %f | %f | %f\n",
+		z_0i, z_1i, z_2i, z_3i);
+
+	DEBUGOUT("CALIBRATION: Roll: %f | Pitch: %f | Yaw: %f | PositionY: %f | PositionZ: %f\n",
+		pitch_i*180/PI_CONSTANT, roll_i*180/PI_CONSTANT, yaw_i*180/PI_CONSTANT, y_ci, z_ci);
+#endif
 }
 
 void ADC_IRQHandler(void)

@@ -2,7 +2,6 @@
 #define SENSOR_DATA_H_
 
 #include "board.h"
-#include "ranging.h"
 #include "I2CPERIPHS.h"
 #include "bms.h"
 #include "actuators.h"
@@ -71,8 +70,6 @@ typedef struct{
 
   float photoelectric;
 
-  rangingData shortRangingData;
-  rangingData longRangingData;
   int contact_sensor_pushed;
 
 
