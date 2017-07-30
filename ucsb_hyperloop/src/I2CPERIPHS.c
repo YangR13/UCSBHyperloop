@@ -128,11 +128,8 @@ uint8_t update_HEMS(HEMS* engine) {
       ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT[index];
     }
     engine->short_data[short_counter] = ShortRangingMovingAverage;
-    if((short_counter == 0) && (engine->identity == 1))
-    	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
-
-    //if(short_counter == 0)
-    	//DEBUGOUT("SR[%d]: %fV, %fcm\n", engine->identity, voltage, engine->short_data[0]);
+    //if((short_counter == 0) && (engine->identity == 2))
+    	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 
 #endif
