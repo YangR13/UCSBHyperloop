@@ -60,7 +60,14 @@ void convertVoltageShort(uint8_t sensor)
 
 	if (!((voltage < 0.34) || (voltage > 2.43))){
 		index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-		ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT[index];
+		if (engine->identity == 0)
+			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT0[index];
+		if (engine->identity == 1)
+			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT1[index];
+		if (engine->identity == 2)
+			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT2[index];
+		if (engine->identity == 3)
+			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT3[index];
 	}
 }
 
