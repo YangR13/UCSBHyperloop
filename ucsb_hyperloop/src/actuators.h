@@ -35,9 +35,9 @@
 #define MAX12BITVAL 4095.0
 
 // Control
-#define MIN_DUTY_CYCLE 0.05
-#define MAX_FWD_DUTY_CYCLE 0.15 // Determined via load force testing 6/13/17
-#define MAX_BWD_DUTY_CYCLE 0.30 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
+#define MIN_DUTY_CYCLE 0.14
+#define MAX_FWD_DUTY_CYCLE 0.5 // Determined via load force testing 6/13/17
+#define MAX_BWD_DUTY_CYCLE 0.36 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
 
 #define USABLE_STROKE_LEN 2000.0 // TODO: Change the usable stroke length to a realistic value!
 
@@ -52,7 +52,7 @@
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 100 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 200 // Readings greater than this delta away from the current moving average are considered erroneous.
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
 #define STALL_CYCLES_PWM_INCREASE 5

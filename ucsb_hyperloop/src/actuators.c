@@ -33,6 +33,7 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
 const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};
+//const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// HACK: 1, 0, 2, 3
 
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
@@ -174,7 +175,7 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
 
     // Set a base PWM to start movement
     if (board->pwm[num] == 0){
-        board->pwm[num] = 0.05;
+        board->pwm[num] = MIN_DUTY_CYCLE;
     }
 
     if (destination == -1){
@@ -285,16 +286,16 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
-            if (board->pwm[num] < 0.05){
-                board->pwm[num] = 0.05;
+            if (board->pwm[num] < MIN_DUTY_CYCLE){
+                board->pwm[num] = MIN_DUTY_CYCLE;
             }
         }
         else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
-            if (board->pwm[num] < 0.05){
-                board->pwm[num] = 0.05;
+            if (board->pwm[num] < MIN_DUTY_CYCLE){
+                board->pwm[num] = MIN_DUTY_CYCLE;
             }
         }
         else{
@@ -308,7 +309,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     }
     else{
         // Exponential relation function
-
+#if 0
         // First, determine if we're stalled and need to switch to the other algorithm
         if (board->direction[num] && board->position[num] < board->prev_position[num]){
             board->prev_position[num] = board->position[num];
@@ -323,23 +324,23 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             if (board->stalled_cycles[num] >= STALL_CYCLES_ALG_SWITCH){
                 board->stalled_cycles[num] = 0;
                 board->pwm_algorithm[num] = 0;
+
 #if PRINT_SENSOR_DATA_ACTIVE
                 DEBUGOUT("Switching to variable-PWM algorithm!\n");
 #endif
             }
         }
+#endif
 
         // Otherwise, set the PWM based on the exponential function
         // Percentage of usable stroke length to travel => percentage of duty cycle to use (with minimum at 5%)
         float pct_away = (float)abs(board->position[num] - board->target_pos[num]) / USABLE_STROKE_LEN;
         float cycle = 1;
-        if (pct_away < 1.0){
-            // 5th-power relation between distance to travel and output duty cycle
-            cycle -= pow((1 - pct_away), 3);
+        if (pct_away < 0.5){
+            // 2nd-power relation between distance to travel and output duty cycle
+            cycle = 1 - pow((1 - pct_away*2), 3);
         }
         board->pwm[num] = cycle;
-
-
     }
 
     if (board->pwm[num] < MIN_DUTY_CYCLE){
