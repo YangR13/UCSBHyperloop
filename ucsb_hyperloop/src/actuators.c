@@ -32,8 +32,8 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
-const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};
-//const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// HACK: 1, 0, 2, 3
+//const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};
+const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// HACK: 1, 0, 2, 3
 
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
@@ -338,7 +338,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
         float cycle = 1;
         if (pct_away < 0.5){
             // 2nd-power relation between distance to travel and output duty cycle
-            cycle = 1 - pow((1 - pct_away*2), 3);
+            cycle = 1 - pow((1 - pct_away*2), 2);
         }
         board->pwm[num] = cycle;
     }
