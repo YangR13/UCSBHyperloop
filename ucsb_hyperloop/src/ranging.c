@@ -68,8 +68,11 @@ void convertVoltageShort(uint8_t sensor)
 			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT2[index];
 		if (engine->identity == 3)
 			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT3[index];*/
+		ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT[index];
 	}
 }
+
+
 
 /* Convert voltage */
 void convertVoltageLong(uint8_t sensor)
