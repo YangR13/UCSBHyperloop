@@ -3,6 +3,7 @@
 #include "sensor_data.h"
 #include "math.h"
 
+#if 0
 float arcsin(float x) {
 	static const float step = 2.0/256.0;
 	if(x > 1.0)
@@ -172,7 +173,7 @@ void rangingSensorsInit(void)  {
 	Chip_ADC_SetBurstCmd(_LPC_ADC_ID, ENABLE);
 #endif 	// 0
 }
-
+#endif // 0
 void rangingSensorsCalibrate()
 {
 	int i;
@@ -205,7 +206,7 @@ void rangingSensorsCalibrate()
 		pitch_i*180/PI_CONSTANT, roll_i*180/PI_CONSTANT, yaw_i*180/PI_CONSTANT, y_ci, z_ci);
 #endif
 }
-
+#if 0
 void ADC_IRQHandler(void)
 {
 	/* Interrupt mode: Call the stream interrupt handler */
@@ -224,3 +225,4 @@ void Ranging_Int_Measure() {
 	   at the rate selected by the CLKS field in burst mode automatically */
 	Chip_ADC_SetBurstCmd(_LPC_ADC_ID, ENABLE);
 }
+#endif // 0

@@ -243,4 +243,7 @@ void DAC_write(uint8_t i2c_bus, uint8_t DAC_address, uint16_t output_voltage);
 void IOX_setup(uint8_t i2c_bus, uint8_t IOX_address);
 uint16_t IOX_read(uint8_t i2c_bus, uint8_t IOX_address);
 
+// Conversion function for short-ranging sensors.
+float voltageToDistance(float voltage, int shortRangingIndex);
+
 #endif //I2CPERIPHS_H

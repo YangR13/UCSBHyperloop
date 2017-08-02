@@ -41,8 +41,8 @@ void initializeSensorsAndControls(){
         sensorData.photoelectric = 0.0;
     }
     if(RANGING_SENSORS_ACTIVE){
-        rangingSensorsInit();
-        CALIBRATE_FLAG = 0;
+        //rangingSensorsInit();
+        //CALIBRATE_FLAG = 0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */

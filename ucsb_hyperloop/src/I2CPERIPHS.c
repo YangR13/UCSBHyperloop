@@ -81,18 +81,11 @@ HEMS* initialize_HEMS(uint8_t identity) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
     float voltage = ((float)ShortRangingDataRaw) / 1300;
 
-    if (!((voltage < 0.34) || (voltage > 2.44))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      //engine->short_data[short_counter] = shortRangingDistanceLUT[index];
-      if(engine->identity == 0)
-    	  engine->short_data[short_counter] = shortRangingDistanceLUT0[index];
-      if(engine->identity == 1)
-          	  engine->short_data[short_counter] = shortRangingDistanceLUT1[index];
-      if(engine->identity == 2)
-          	  engine->short_data[short_counter] = shortRangingDistanceLUT2[index];
-      if(engine->identity == 3)
-          	  engine->short_data[short_counter] = shortRangingDistanceLUT3[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
   }
 #endif
 
@@ -123,25 +116,16 @@ uint8_t update_HEMS(HEMS* engine) {
 #ifdef LPC
   // Record short ranging sensor data
   int short_counter;
-  float ShortRangingMovingAverage;
   for (short_counter = 0; short_counter < 2; short_counter++) {
-    ShortRangingMovingAverage = engine->short_data[short_counter];
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
     float voltage = ((float)ShortRangingDataRaw) / 1300;
 
-    if (!((voltage < 0.34) || (voltage > 2.44))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      //engine->short_data[short_counter] = shortRangingDistanceLUT[index];
-      if (engine->identity == 0)
-    	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT0[index];
-      if (engine->identity == 1)
-          	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT1[index];
-      if (engine->identity == 2)
-          	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT2[index];
-      if (engine->identity == 3)
-          	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT3[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
-    engine->short_data[short_counter] = ShortRangingMovingAverage;
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
+
     if ((short_counter == 0) && (engine->identity == 1))
     	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
@@ -192,6 +176,18 @@ uint8_t update_HEMS(HEMS* engine) {
   return engine->alarm;
 }
 
+float voltageToDistance(float voltage, int shortRangingIndex) {
+	float distance = -1;
+    if (!((voltage < 0.34) || (voltage > 2.44))) {
+      float index = (voltage - .34) * 20;
+      uint16_t index_l = (uint16_t) index;
+      uint16_t index_h = index_l + 1;
+      float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
+      float distance_h = shortRangingDistanceLUT[shortRangingIndex][index_h];
+      distance = distance_l + (index - index_l) * (distance_h - distance_l);
+    }
+    return distance;
+}
 
 
 
