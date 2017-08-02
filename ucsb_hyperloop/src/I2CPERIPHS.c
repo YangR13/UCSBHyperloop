@@ -83,15 +83,15 @@ HEMS* initialize_HEMS(uint8_t identity) {
 
     if (!((voltage < 0.34) || (voltage > 2.44))) {
       uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      engine->short_data[short_counter] = shortRangingDistanceLUT[index];
-      /*if(engine->identity == 0)
+      //engine->short_data[short_counter] = shortRangingDistanceLUT[index];
+      if(engine->identity == 0)
     	  engine->short_data[short_counter] = shortRangingDistanceLUT0[index];
       if(engine->identity == 1)
           	  engine->short_data[short_counter] = shortRangingDistanceLUT1[index];
       if(engine->identity == 2)
           	  engine->short_data[short_counter] = shortRangingDistanceLUT2[index];
       if(engine->identity == 3)
-          	  engine->short_data[short_counter] = shortRangingDistanceLUT3[index];*/
+          	  engine->short_data[short_counter] = shortRangingDistanceLUT3[index];
     }
   }
 #endif
@@ -131,19 +131,19 @@ uint8_t update_HEMS(HEMS* engine) {
 
     if (!((voltage < 0.34) || (voltage > 2.44))) {
       uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      engine->short_data[short_counter] = shortRangingDistanceLUT[index];
-      /*if (engine->identity == 0)
+      //engine->short_data[short_counter] = shortRangingDistanceLUT[index];
+      if (engine->identity == 0)
     	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT0[index];
       if (engine->identity == 1)
           	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT1[index];
       if (engine->identity == 2)
           	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT2[index];
       if (engine->identity == 3)
-          	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT3[index];*/
+          	  ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT3[index];
     }
     engine->short_data[short_counter] = ShortRangingMovingAverage;
-    /*if ((short_counter == 0) && (engine->identity == 1))
-    	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);*/
+    if ((short_counter == 0) && (engine->identity == 1))
+    	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 #endif
 

@@ -58,18 +58,18 @@ void convertVoltageShort(uint8_t sensor)
 
 	float voltage = ((float)ShortRangingDataRaw[sensor]) / 1300;
 
-	if (!((voltage < 0.34) || (voltage > 2.44))){
+	/*if (!((voltage < 0.34) || (voltage > 2.44))){
 		index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-		/*if (engine->identity == 0)
+		if (engine->identity == 0)
 			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT0[index];
 		if (engine->identity == 1)
 			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT1[index];
 		if (engine->identity == 2)
 			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT2[index];
 		if (engine->identity == 3)
-			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT3[index];*/
-		ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT[index];
-	}
+			ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT3[index];
+		//ShortRangingMovingAverage[sensor] = ALPHA*ShortRangingMovingAverage[sensor] + BETA*shortRangingDistanceLUT[index];
+	}*/
 }
 
 
