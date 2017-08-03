@@ -22,6 +22,21 @@
 #include "timer.h"
 #endif //LPC
 
+enum ACTUATOR_BOARDS {
+	ACTUATOR_BOARD_BRAKING_0,
+	ACTUATOR_BOARD_BRAKING_1,
+	ACTUATOR_BOARD_PAYLOAD,
+	ACTUATOR_BOARD_SERVICE_PROPULSION
+};
+#define ACTUATOR_BOARD_BRAKING_MIN ACTUATOR_BOARD_BRAKING_0
+#define ACTUATOR_BOARD_BRAKING_MAX ACTUATOR_BOARD_BRAKING_1
+
+// Actuator disengaged starting positions.
+static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
+	{ 3700, 3700 },	// Front.
+	{ 3700, 3700 }	// Back.
+};
+
 // Number of Boards
 #define NUM_ACTUATORS 2 // Per board
 #define NUM_THERMISTORS 4 // Per board
@@ -69,6 +84,15 @@ enum stop_modes{
     STOP_FROM_PWM_STALL
 };
 
+enum calibration_steps_enum {
+	CALIBRATION_DONE,
+	CALIBRATION_INIT,
+	CALIBRATION_MOVE_TO_PWM,
+	CALIBRATION_DEINIT,
+};
+
+int calibration_step;
+
 typedef struct {
   uint8_t identity;
 
@@ -102,8 +126,13 @@ typedef struct {
   float target_pwm[2];          // In target PWM mode, go until position movement stalls at *this* target PWM
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
+  uint16_t calibrated_engaged_pos[2];
 
 } ACTUATORS;
+
+ACTUATORS *braking_boards[2]; // 2 Braking boards.
+ACTUATORS *payload;
+ACTUATORS *service_prop;
 
 ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);
@@ -111,8 +140,11 @@ void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
 void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm);
 void move_to_pos(ACTUATORS * board, int num, int destination);
+void move_to_disengaged_pos(ACTUATORS *board, int num);
 void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm);
 void calculate_actuator_control(ACTUATORS *board, int num);
+void start_actuator_calibration();
+void update_actuator_calibration(ACTUATORS *board);
 
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.
@@ -120,6 +152,5 @@ void PWM_Setup(const void * pwm, uint8_t pin);
 void PWM_Write(const void * pwm, uint8_t pin, float duty);
 
 // See I2CPERIPHS.h for details on I2C ADC addressing
-
 
 #endif //ACTUATORS_H

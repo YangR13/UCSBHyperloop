@@ -97,7 +97,10 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->stop_mode[1] = NO_STOP;
   board->target_pwm[0] = 0.0;
   board->target_pwm[1] = 0.0;
-  board->has_feedback = identity < 1; // TODO: Change this is braking boards aren't board #0 and #1!!!!
+  board->has_feedback = identity >= ACTUATOR_BOARD_BRAKING_MIN && identity <= ACTUATOR_BOARD_BRAKING_MAX;
+
+  board->calibrated_engaged_pos[0] = -3;
+  board->calibrated_engaged_pos[1] = -3;
 
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
@@ -116,6 +119,9 @@ uint8_t update_actuator_board(ACTUATORS* board) {
     // Temperature, current, and H-bridge fault signals.
     // Actuation signals and position feedback are updated in update_actuator_control()
     update_actuator_control(board);
+
+    // Perform actuator calibration (if started).
+    update_actuator_calibration(board);
 
     // Record Temperatures
     int temp_counter;
@@ -154,6 +160,8 @@ uint8_t update_actuator_board(ACTUATORS* board) {
 }
 
 void move_to_pos(ACTUATORS *board, int num, int destination){
+	if (destination <= -3) return;
+
     // Begin the routine for an actuator to move to a target position
 
     // Do an off-cycle update to make sure that the position feedback data is not stale
@@ -206,6 +214,19 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
 
     // Then update to write the calculated control signals to the board
     update_actuator_board(board);
+}
+
+void move_to_disengaged_pos(ACTUATORS *board, int num) {
+	move_to_pos(board, num, BRAKING_DISENGAGED_POSITIONS[board->identity - ACTUATOR_BOARD_BRAKING_MIN][num]);
+}
+
+void disengage_all_brakes() {
+	int i, j;
+	for(i=0; i<2; i++) {
+		for(j=0; j<2; j++) {
+			move_to_disengaged_pos(braking_boards[i], j);
+		}
+	}
 }
 
 void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm){
@@ -426,7 +447,51 @@ void update_actuator_control(ACTUATORS *board){
     }
 }
 
+void start_actuator_calibration() {
+	calibration_step = CALIBRATION_INIT;
+}
 
+void update_actuator_calibration(ACTUATORS *board) {
+	int i;
+	int stopped = (board->enable[0] == 0) && (board->enable[1] == 0);
+
+	switch(calibration_step) {
+	case CALIBRATION_DONE:
+		// Nothing to do here.
+		break;
+	case CALIBRATION_INIT:
+		if(stopped) {
+			DEBUGOUT("CALIBRATION_INIT\n");
+			for(i=0; i<2; i++) {
+				move_to_disengaged_pos(board, i);
+			}
+			calibration_step++;
+		}
+		break;
+	case CALIBRATION_MOVE_TO_PWM:
+		if(stopped) {
+			DEBUGOUT("CALIBRATION_MOVE_TO_PWM\n");
+			for(i=0; i<2; i++) {
+				move_to_pwm(board, i, IN, 0.15);
+			}
+			calibration_step++;
+		}
+		break;
+	case CALIBRATION_DEINIT:
+		if(stopped) {
+			DEBUGOUT("CALIBRATION_DEINIT\n");
+			calibration_step++;
+			for(i=0; i<2; i++) {
+				board->calibrated_engaged_pos[i] = board->position[i];
+			}
+			for(i=0; i<2; i++) {
+				move_to_disengaged_pos(board, i);
+			}
+			calibration_step = CALIBRATION_DONE;
+		}
+		break;
+	}
+}
 
 void PWM_Setup(const void * pwm, uint8_t pin){
 #ifdef ARDUINO
