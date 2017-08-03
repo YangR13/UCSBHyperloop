@@ -68,6 +68,8 @@ HEMS* initialize_HEMS(uint8_t identity) {
     engine->rpm[n] = 0;
   }
 
+  engine->wheel_tach_spokes_counter = 0;
+
   // Initialize thermistor moving averages (with first read)
   int temp_counter;
   for (temp_counter = 0; temp_counter < 4; temp_counter++) {
@@ -79,7 +81,7 @@ HEMS* initialize_HEMS(uint8_t identity) {
   int short_counter;
   for (short_counter = 0; short_counter < 2; short_counter++) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
     float distance = voltageToDistance(voltage, engine->identity);
     if(distance > 0) {
@@ -118,7 +120,7 @@ uint8_t update_HEMS(HEMS* engine) {
   int short_counter;
   for (short_counter = 0; short_counter < 2; short_counter++) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
     float distance = voltageToDistance(voltage, engine->identity);
     if(distance > 0) {
@@ -126,7 +128,7 @@ uint8_t update_HEMS(HEMS* engine) {
     }
     // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
 
-    if ((short_counter == 0) && (engine->identity == 1))
+    if ((short_counter == 0) && (engine->identity == 0))
     	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 #endif
@@ -158,11 +160,12 @@ uint8_t update_HEMS(HEMS* engine) {
       delta_counter = current_tachometer_counter[n] - previous_tachometer_counter[n];
     else  //Account for edge case where the binary counter overflows and resets back to 0.
       delta_counter = current_tachometer_counter[n] + (4096 - previous_tachometer_counter[n]);
-    if (n == 0)
-    	current_rpm[n] = 60.0 / WHEEL_TACH_TICKS * delta_counter / (current_time[n] - engine->timestamp);
-    if (n == 1)
-    	current_rpm[n] = 60.0 / MAGLEV_TACH_TICKS * delta_counter / (current_time[n] - engine->timestamp);
+    current_rpm[n] = 60.0 / ((n == 1) ? MAGLEV_TACH_TICKS : WHEEL_TACH_TICKS) * delta_counter / (current_time[n] - engine->timestamp);
     engine->rpm[n] = (1 - TACHOMETER_AVG_WEIGHT) * current_rpm[n] + TACHOMETER_AVG_WEIGHT * engine->rpm[n];
+
+    if(n == 0) {	// 0 = Wheel tach.
+    	engine->wheel_tach_spokes_counter += delta_counter;
+        }
     engine->tachometer_counter[n] = current_tachometer_counter[n];
   }
   engine->timestamp = runtime();
