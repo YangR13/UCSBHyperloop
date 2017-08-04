@@ -128,8 +128,8 @@ uint8_t update_HEMS(HEMS* engine) {
     }
     // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
 
-    if ((short_counter == 0) && (engine->identity == 0))
-    	DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
+    //if ((short_counter == 0) && (engine->identity == 0))
+    	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 #endif
 
