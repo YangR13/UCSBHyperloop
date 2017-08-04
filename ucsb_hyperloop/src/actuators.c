@@ -238,6 +238,7 @@ void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm){
 
 void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm){
     board->direction[num] = dir;
+    board->pwm[num] = MIN_PWM_MODE_DUTY_CYCLE;
     board->target_pwm[num] = pwm;
     board->enable[num] = 1;
     board->stop_mode[num] = STOP_FROM_PWM_STALL;
@@ -305,17 +306,11 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
-            if (board->pwm[num] < MIN_DUTY_CYCLE){
-                board->pwm[num] = MIN_DUTY_CYCLE;
-            }
         }
         else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
-            if (board->pwm[num] < MIN_DUTY_CYCLE){
-                board->pwm[num] = MIN_DUTY_CYCLE;
-            }
         }
         else{
             board->stalled_cycles[num]++;
@@ -362,9 +357,14 @@ void calculate_actuator_control(ACTUATORS *board, int num){
         board->pwm[num] = cycle;
     }
 
-    if (board->pwm[num] < MIN_DUTY_CYCLE){
-        // Constrain to minimum duty cycle
+    if(board->pwm_algorithm[num] == 0 && board->pwm[num] < MIN_PWM_MODE_DUTY_CYCLE) {
+    	board->pwm[num] = MIN_PWM_MODE_DUTY_CYCLE;
+    }
+    else if (board->pwm_algorithm[num] == 1 && board->direction[num] == 1 && board->pwm[num] < MIN_DUTY_CYCLE) {
         board->pwm[num] = MIN_DUTY_CYCLE;
+    }
+    else if (board->pwm_algorithm[num] == 1 && board->direction[num] == 0 && board->pwm[num] < MIN_BWD_DUTY_CYCLE) {
+        board->pwm[num] = MIN_BWD_DUTY_CYCLE;
     }
     else{
         uint8_t stop = 0;
@@ -407,7 +407,6 @@ void update_actuator_control(ACTUATORS *board){
     // Read position feedback signal from linear potentiometer -> ADC
     // Write direction signal to GPIO pins, set output PWM frequency
 
-
     int i = 0;
     for (i = 0; i < 2; i++){
         // Read and process position feedback if present on the board/actuators.
@@ -420,7 +419,7 @@ void update_actuator_control(ACTUATORS *board){
                 board->position[i] = (POS_MOV_AVG_ALPHA * pos) + ((1 - POS_MOV_AVG_ALPHA) * board->position[i]);
             }
             else{
-                DEBUGOUT("Throwing out a reading! Value: %d\n", pos);
+                DEBUGOUT("Throwing out value [%d] while at position [%d]\n", pos, board->position[i]);
             }
         }
 
@@ -450,8 +449,8 @@ void start_actuator_calibration() {
 }
 
 void update_actuator_calibration(ACTUATORS *board) {
-	int i;
-	int stopped = (board->enable[0] == 0) && (board->enable[1] == 0);
+	int i = 0;
+	int stopped = (board->enable[0] == 0) /*&& (board->enable[1] == 0)*/;
 
 	switch(calibration_step) {
 	case CALIBRATION_DONE:
@@ -460,18 +459,18 @@ void update_actuator_calibration(ACTUATORS *board) {
 	case CALIBRATION_INIT:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_INIT\n");
-			for(i=0; i<2; i++) {
+			//for(i=0; i<2; i++) {
 				move_to_disengaged_pos(board, i);
-			}
+			//}
 			calibration_step++;
 		}
 		break;
 	case CALIBRATION_MOVE_TO_PWM:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_MOVE_TO_PWM\n");
-			for(i=0; i<2; i++) {
-				move_to_pwm(board, i, IN, 0.15);
-			}
+			//for(i=0; i<2; i++) {
+				move_to_pwm(board, i, OUT, 0.15);
+			//}
 			calibration_step++;
 		}
 		break;
@@ -479,12 +478,12 @@ void update_actuator_calibration(ACTUATORS *board) {
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_DEINIT\n");
 			calibration_step++;
-			for(i=0; i<2; i++) {
+			//for(i=0; i<2; i++) {
 				board->calibrated_engaged_pos[i] = board->position[i];
-			}
-			for(i=0; i<2; i++) {
+			//}
+			//for(i=0; i<2; i++) {
 				move_to_disengaged_pos(board, i);
-			}
+			//}
 			calibration_step = CALIBRATION_DONE;
 		}
 		break;

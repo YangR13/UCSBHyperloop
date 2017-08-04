@@ -20,6 +20,7 @@ void tickTimerInit(){
     collectDataFlag = 0;
     logDataFlag = 0;
     printSensorDataFlag = 0;
+    collectBrakingPositionFlag = 0;
 }
 
 uint32_t getRuntime() {
@@ -74,6 +75,9 @@ void TIMER1_IRQHandler(void){
     }
     if (tick % (TICK_TIMER_FREQ * PRINT_SENSOR_DATA_PERIOD) == 0){
         printSensorDataFlag = 1;
+    }
+    if (tick % (TICK_TIMER_FREQ * COLLECT_BRAKING_POSITION_FREQ) == 0) {
+    	collectBrakingPositionFlag = 1;
     }
 
     if (tick >= (TICK_TIMER_FREQ * MAX_PERIOD_MULTIPLIER)){

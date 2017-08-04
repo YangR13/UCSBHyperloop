@@ -11,6 +11,7 @@ void 	collectCalibrationData(I2C_ID_T id);
 void    collectData();
 void    printSensorData();
 void    gatherSensorDataTimerInit(LPC_TIMER_T * timer, uint8_t timerInterrupt, uint32_t tickRate);
+void	collectBrakingPositionData();
 
 HEMS *motors[NUM_HEMS];
 Maglev_BMS *maglev_bmses[NUM_MAGLEV_BMS];

@@ -51,6 +51,8 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 
 // Control
 #define MIN_DUTY_CYCLE 0.14
+#define MIN_PWM_MODE_DUTY_CYCLE 0.10
+#define MIN_BWD_DUTY_CYCLE 0.08
 #define MAX_FWD_DUTY_CYCLE 0.5 // Determined via load force testing 6/13/17
 #define MAX_BWD_DUTY_CYCLE 0.36 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
 
@@ -67,10 +69,10 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 200 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 250 // Readings greater than this delta away from the current moving average are considered erroneous.
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
-#define STALL_CYCLES_PWM_INCREASE 5
+#define STALL_CYCLES_PWM_INCREASE 10
 #define MOVE_CYCLE_PWM_DECREASE 0.01
 
 #define IN 0
@@ -126,7 +128,7 @@ typedef struct {
   float target_pwm[2];          // In target PWM mode, go until position movement stalls at *this* target PWM
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
-  uint16_t calibrated_engaged_pos[2];
+  int16_t calibrated_engaged_pos[2];
 
 } ACTUATORS;
 
