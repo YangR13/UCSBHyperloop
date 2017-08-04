@@ -155,6 +155,7 @@ void collectData(){
 //        for (i = 0; i < 2; i++){
             update_actuator_control(braking_boards[i]);
             update_actuator_board(braking_boards[i]);
+            update_actuator_calibration(braking_boards[i]);
 //        }
     }
 

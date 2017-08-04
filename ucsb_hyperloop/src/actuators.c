@@ -118,11 +118,6 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
 uint8_t update_actuator_board(ACTUATORS* board) {
     // Gathers sensor data from a braking board
     // Temperature, current, and H-bridge fault signals.
-    // Actuation signals and position feedback are updated in update_actuator_control()
-    update_actuator_control(board);
-
-    // Perform actuator calibration (if started).
-    update_actuator_calibration(board);
 
     // Record Temperatures
     int temp_counter;
@@ -251,6 +246,8 @@ void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm){
 }
 
 void calculate_actuator_control(ACTUATORS *board, int num){
+    // Actuation signals and position feedback are updated here.
+
     // Check if actuator is even currently moving
     if (!board->enable[num]){
         // Actuator isn't currently moving so nothing to do here
