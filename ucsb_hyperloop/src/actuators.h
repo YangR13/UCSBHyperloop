@@ -110,6 +110,10 @@ typedef struct {
   uint8_t bridge_fault[2];
   uint8_t alarm[2];
   uint8_t faulted;
+  uint8_t pos_fault[2];
+  uint8_t consecutive_pos_faults[2];
+  uint8_t consecutive_identical_pos_faults[2];
+  uint8_t previous_invalid_pos[2];
 
   // Output control signals
   uint8_t direction[2];         // 0 = backwards, 1 forwards

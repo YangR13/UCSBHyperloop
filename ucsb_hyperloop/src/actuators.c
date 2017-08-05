@@ -57,10 +57,15 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
       board->amps[amps_counter] = 0;
   }
 
-  // Initialize H-bridge fault indicators
+  // Initialize H-bridge / position fault indicators
   int fault_counter;
   for (fault_counter = 0; fault_counter < 2; fault_counter++){
       board->bridge_fault[fault_counter] = 0;
+      board->pos_fault[fault_counter] = 0;
+
+      board->consecutive_pos_faults[fault_counter] = 0;
+      board->consecutive_identical_pos_faults[fault_counter] = 0;
+      board->previous_invalid_pos[fault_counter] = 0;
   }
 
   // Initialize position variables (with first read)
@@ -250,7 +255,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     // Actuation signals and position feedback are updated here.
 
     // Check if actuator is even currently moving
-    if (!board->enable[num]){
+    if (!board->enable[num] || board->pos_fault[num]){
         // Actuator isn't currently moving so nothing to do here
         return;
     }
@@ -417,9 +422,35 @@ void update_actuator_control(ACTUATORS *board){
             if ((abs(board->position[i] - pos) < POS_MAX_DELTA) || (board->stop_mode[i] == STOP_FROM_PWM_STALL)){
                 // Only include values within the tolerance window POS_MAX_DELTA, unless the go-until-stalled-at-X%-pwm control scheme is in use.
                 board->position[i] = (POS_MOV_AVG_ALPHA * pos) + ((1 - POS_MOV_AVG_ALPHA) * board->position[i]);
+            	board->consecutive_pos_faults[i] = 0;
+        	    board->consecutive_identical_pos_faults[i] = 0;
             }
             else{
                 DEBUGOUT("Throwing out value [%d] while at position [%d]\n", pos, board->position[i]);
+            	board->consecutive_pos_faults[i]++;
+            	if(abs(pos - board->previous_invalid_pos[i]) < 25 /*FIXME*/) {
+            	    board->consecutive_identical_pos_faults[i]++;
+            	}
+            	else {
+            	    board->consecutive_identical_pos_faults[i] = 0;
+            	}
+                board->previous_invalid_pos[i] = pos;
+
+                if(board->consecutive_pos_faults[i] > 5) {
+                	// Too many consecutive position faults! Set fault high!
+                	board->pos_fault[i] = 1;
+                }
+                if(board->consecutive_identical_pos_faults[i] > 3) {
+                	// Consecutive identical position faults indicate that stored position is incorrect!
+                	board->pos_fault[i] = 0;
+
+                	// Set position equal to "fault" position.
+                	board->position[i] = pos;
+
+                	// Reset fault counters.
+                	board->consecutive_pos_faults[i] = 0;
+                	board->consecutive_identical_pos_faults[i] = 0;
+                }
             }
         }
 
@@ -435,7 +466,7 @@ void update_actuator_control(ACTUATORS *board){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
         // PMW enable/speed signal
-        if (board->enable[output_counter]){
+        if (board->enable[output_counter] && !board->pos_fault[output_counter]){
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
         }
         else{
