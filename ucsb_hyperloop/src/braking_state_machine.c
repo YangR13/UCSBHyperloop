@@ -15,8 +15,10 @@ static QState Initial(Braking_HSM_t *me);
 static QState Tube(Braking_HSM_t *me);
 static QState Tube_timingBlocks(Braking_HSM_t *me);
 static QState Tube_timingAllows(Braking_HSM_t *me);
+#if !SIMPLE_SM
 static QState Tube_timingAllows_distanceBlocks(Braking_HSM_t *me);
 static QState Tube_timingAllows_distanceAllows(Braking_HSM_t *me);
+#endif // !SIMPLE_SM
 static QState Tube_noFeedback(Braking_HSM_t *me);
 static QState Tube_done(Braking_HSM_t *me);
 static QState Test(Braking_HSM_t *me);
@@ -95,7 +97,11 @@ static QState Tube_timingAllows(Braking_HSM_t *me) {
     		BSP_display("Tube_timingAllows-INIT\n");
             Braking_HSM.engage = 0;
             Braking_HSM.timer_lockout = 1;
+#if !SIMPLE_SM
             return Q_TRAN(&Tube_timingAllows_distanceBlocks);
+#else
+            return  Q_HANDLED();
+#endif // !SIMPLE_SM
     	}
         case Q_ENTRY_SIG: {
             BSP_display("Tube_timingAllows-ENTRY\n");
@@ -117,7 +123,7 @@ static QState Tube_timingAllows(Braking_HSM_t *me) {
     return Q_SUPER(&Tube);
 }
 /*..........................................................................*/
-
+#if !SIMPLE_SM
 static QState Tube_timingAllows_distanceBlocks(Braking_HSM_t *me) {
     switch (Q_SIG(me)) {
     	case Q_INIT_SIG: {
@@ -167,6 +173,7 @@ static QState Tube_timingAllows_distanceAllows(Braking_HSM_t *me) {
     }
     return Q_SUPER(&Tube_timingAllows);
 }
+#endif // !SIMPLE_SM
 /*..........................................................................*/
 
 static QState Tube_noFeedback(Braking_HSM_t *me) {

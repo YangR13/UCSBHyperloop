@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "qepn.h"
 
+#define SIMPLE_SM 0
+
 // Structure of data members to be shared between main and the state machine
 typedef struct Braking_HSM_data {
     QHsm super;
