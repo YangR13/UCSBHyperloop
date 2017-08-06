@@ -82,16 +82,17 @@ void initializeSensorsAndControls(){
         Init_PWM(LPC_PWM1);
         int i;
         for (i = 0; i < 2; i++){
-            braking_boards[i] = initialize_actuator_board(i);
+            braking_boards[i] = initialize_actuator_board(ACTUATOR_BOARD_BRAKING_MIN + i);
         }
+        calibration_step = CALIBRATION_DONE;
     }
 
     if (PAYLOAD_ACTUATORS_ACTIVE){
-        payload = initialize_actuator_board(3);
+        payload = initialize_actuator_board(ACTUATOR_BOARD_PAYLOAD);
     }
 
     if (SERVICE_PROPULSION_ACTIVE){
-        service_prop = initialize_actuator_board(4);
+        service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
     }
 }
 
