@@ -81,6 +81,58 @@ void collectData(){
 		//DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
+	if(POSITIONING_ACTIVE){
+		int i;
+		float wheel_tach_combined_sum = 0.0;
+		float wheel_tach_dist_since_last_check[4];
+		float total_dist_since_last_check = 0.0;
+		int numAlive = 0;								//number of non-faulted tachometers
+
+		// Update average wheel tach postition.
+		for(i=0; i<4; i++) {
+			if(sensorData.wheelTachAlive[i]){
+				numAlive++;
+				wheel_tach_combined_sum += sensorData.wheelTachPositionX[i];
+			}
+		}
+		sensorData.positioningError = (numAlive > 2);
+
+		sensorData.positionX = (sensorData.positioningError) ? (wheel_tach_combined_sum / (float) numAlive) : -1;
+
+		if(sensorData.incrementFlag < sensorData.positionX / 25.0){		//Update every 25m
+			sensorData.incrementFlag++;
+
+			//Collect differences in tach values from the last 25m
+			for(i=0; i<4; i++){
+				wheel_tach_dist_since_last_check[i] = sensorData.wheelTachPositionX[i] - sensorData.oldWheelTachPositionX[i];
+				total_dist_since_last_check += wheel_tach_dist_since_last_check[i];
+			}
+			float avg_dist_since_last_check = total_dist_since_last_check / 4.0;	//avg = 20; 15, 15, 20, 30
+			float largest_percent_difference = 0.0;
+
+			int least_accurate_tach = 0;
+			for(i=0; i<4; i++){
+				float percent_difference = fabs(wheel_tach_dist_since_last_check[i] - avg_dist_since_last_check) / avg_dist_since_last_check;
+				if(percent_difference > largest_percent_difference) {
+					largest_percent_difference = percent_difference;
+					least_accurate_tach = i;
+				}
+			}
+			if(largest_percent_difference > .18) {	// TODO: Make this a constant in a header file.
+				sensorData.wheelTachAlive[least_accurate_tach] = 0;
+			}
+
+			// Save wheel tach positions for next 25m check.
+			for(i=0; i<4; i++) {
+				sensorData.oldWheelTachPositionX[i] = sensorData.wheelTachPositionX[i];
+			}
+		}
+		sensorData.velocityX = (numAlive > 2) ? (sensorData.positionX - sensorData.oldPositionX) / (getRuntime()-sensorData.time_prev) : -1;
+
+        sensorData.time_prev = getRuntime();
+        sensorData.oldPositionX = sensorData.positionX;
+	}
+
 	// Photoelectric distance is updated directly in the interrupt handler
 
     if(MAGLEV_BMS_ACTIVE){
@@ -224,10 +276,10 @@ void printSensorData(){
         DEBUGOUT("\n\n");
     }
 
-    if ( RANGING_SENSORS_ACTIVE )
+    if (RANGING_SENSORS_ACTIVE)
     {
-		DEBUGOUT("Short-ranging: %f | %f | %f | %f\n",
-			motors[0]->short_data[0], motors[1]->short_data[0], motors[2]->short_data[0], motors[3]->short_data[0]);
+		DEBUGOUT("Short-ranging: %f | %f | %f | %f | %f | %f\n",
+			motors[0]->short_data[0], motors[1]->short_data[0], motors[2]->short_data[0], motors[3]->short_data[0], motors[0]->short_data[1], motors[1]->short_data[1]);
 
     	DEBUGOUT("Roll: %f | Pitch: %f | Yaw: %f | PositionY: %f | PositionZ: %f\n",
 			sensorData.roll*180/PI_CONSTANT, sensorData.pitch*180/PI_CONSTANT, sensorData.yaw*180/PI_CONSTANT, sensorData.positionY, sensorData.positionZ);

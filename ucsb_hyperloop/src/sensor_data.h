@@ -47,6 +47,8 @@ typedef struct{
   float positionY;
   float positionZ;
 
+  float time_prev;
+
   float roll;
   float pitch;
   float yaw;
@@ -62,6 +64,11 @@ typedef struct{
   float tacho4;
 
   float wheelTachPositionX[4];
+  int wheelTachAlive[4];
+  int incrementFlag;				//determines when to check tachometer values
+  float oldWheelTachPositionX[4];	//Wheel tach position from last check
+  float oldPositionX;
+  int positioningError;
 
   float pressure1;
   float pressure2;
