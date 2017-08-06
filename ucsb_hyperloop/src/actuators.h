@@ -50,8 +50,8 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define MAX12BITVAL 4095.0
 
 // Control
-#define MIN_DUTY_CYCLE 0.14
-#define MIN_PWM_MODE_DUTY_CYCLE 0.10
+#define MIN_DUTY_CYCLE 0.13
+#define MIN_PWM_MODE_DUTY_CYCLE 0.09
 #define MIN_BWD_DUTY_CYCLE 0.08
 #define MAX_FWD_DUTY_CYCLE 0.5 // Determined via load force testing 6/13/17
 #define MAX_BWD_DUTY_CYCLE 0.36 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
@@ -69,7 +69,7 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 250 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 200 // Readings greater than this delta away from the current moving average are considered erroneous.
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
 #define STALL_CYCLES_PWM_INCREASE 10
@@ -89,6 +89,7 @@ enum stop_modes{
 enum calibration_steps_enum {
 	CALIBRATION_DONE,
 	CALIBRATION_INIT,
+	CALIBRATION_APPROACH,
 	CALIBRATION_MOVE_TO_PWM,
 	CALIBRATION_DEINIT,
 };
@@ -113,7 +114,7 @@ typedef struct {
   uint8_t pos_fault[2];
   uint8_t consecutive_pos_faults[2];
   uint8_t consecutive_identical_pos_faults[2];
-  uint8_t previous_invalid_pos[2];
+  uint16_t previous_invalid_pos[2];
 
   // Output control signals
   uint8_t direction[2];         // 0 = backwards, 1 forwards

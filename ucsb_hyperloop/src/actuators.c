@@ -426,22 +426,26 @@ void update_actuator_control(ACTUATORS *board){
         	    board->consecutive_identical_pos_faults[i] = 0;
             }
             else{
-                DEBUGOUT("Throwing out value [%d] while at position [%d]\n", pos, board->position[i]);
+                DEBUGOUT("%d[%d]: Throwing out value [%d] while at position [%d]\n", board->identity, i, pos, board->position[i]);
             	board->consecutive_pos_faults[i]++;
+            	DEBUGOUT("Pos: %d | Prev Pos: %d | ABS: %d\n", pos, board->previous_invalid_pos[i], abs(pos - board->previous_invalid_pos[i]));
             	if(abs(pos - board->previous_invalid_pos[i]) < 25 /*FIXME*/) {
             	    board->consecutive_identical_pos_faults[i]++;
             	}
             	else {
             	    board->consecutive_identical_pos_faults[i] = 0;
             	}
+            	DEBUGOUT("Consecutive pos faults: %d | Consecutive identical pos faults: %d\n",
+            		board->consecutive_pos_faults[i], board->consecutive_identical_pos_faults[i]);
+
                 board->previous_invalid_pos[i] = pos;
 
-                if(board->consecutive_pos_faults[i] > 5) {
-                	// Too many consecutive position faults! Set fault high!
+                if(board->consecutive_pos_faults[i] == 3) {
+                	DEBUGOUT("ERROR: Too many consecutive position faults! Setting pos_fault high!\n");
                 	board->pos_fault[i] = 1;
                 }
-                if(board->consecutive_identical_pos_faults[i] > 3) {
-                	// Consecutive identical position faults indicate that stored position is incorrect!
+                if(board->consecutive_identical_pos_faults[i] == 3) {
+                	DEBUGOUT("NOTICE: Consecutive identical position faults indicate that stored position is incorrect! Setting pos_fault low!\n");
                 	board->pos_fault[i] = 0;
 
                 	// Set position equal to "fault" position.
@@ -496,11 +500,20 @@ void update_actuator_calibration(ACTUATORS *board) {
 			calibration_step++;
 		}
 		break;
+	case CALIBRATION_APPROACH:
+		if(stopped) {
+			DEBUGOUT("CALIBRATION_APPROACH\n");
+			//for(i=0; i<2; i++) {
+				move_to_pos(board, i, board->position[i] - 400);
+			//}
+			calibration_step++;
+		}
+		break;
 	case CALIBRATION_MOVE_TO_PWM:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_MOVE_TO_PWM\n");
 			//for(i=0; i<2; i++) {
-				move_to_pwm(board, i, OUT, 0.15);
+				move_to_pwm(board, i, OUT, MIN_DUTY_CYCLE);
 			//}
 			calibration_step++;
 		}
