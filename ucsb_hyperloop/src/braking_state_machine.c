@@ -15,10 +15,8 @@ static QState Initial(Braking_HSM_t *me);
 static QState Tube(Braking_HSM_t *me);
 static QState Tube_timingBlocks(Braking_HSM_t *me);
 static QState Tube_timingAllows(Braking_HSM_t *me);
-static QState Tube_timingAllows_notBraking(Braking_HSM_t *me);
-static QState Tube_timingAllows_notBraking_distanceBlocks(Braking_HSM_t *me);
-static QState Tube_timingAllows_notBraking_distanceAllows(Braking_HSM_t *me);
-static QState Tube_timingAllows_braking(Braking_HSM_t *me);
+static QState Tube_timingAllows_distanceBlocks(Braking_HSM_t *me);
+static QState Tube_timingAllows_distanceAllows(Braking_HSM_t *me);
 static QState Tube_noFeedback(Braking_HSM_t *me);
 static QState Tube_done(Braking_HSM_t *me);
 static QState Test(Braking_HSM_t *me);
@@ -59,7 +57,7 @@ static QState Tube(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_TEST_ENTER: {
-        	BSP_display("Tube - BRAKES_TEST_ENTER\n");
+        	BSP_display("Tube-BRAKES_TEST_ENTER\n");
         	return Q_TRAN(&Test);
         }
     }
@@ -97,7 +95,7 @@ static QState Tube_timingAllows(Braking_HSM_t *me) {
     		BSP_display("Tube_timingAllows-INIT\n");
             Braking_HSM.engage = 0;
             Braking_HSM.timer_lockout = 1;
-            return Q_TRAN(&Tube_timingAllows_notBraking);
+            return Q_TRAN(&Tube_timingAllows_distanceBlocks);
     	}
         case Q_ENTRY_SIG: {
             BSP_display("Tube_timingAllows-ENTRY\n");
@@ -108,107 +106,63 @@ static QState Tube_timingAllows(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_ENGAGE: {
-            return Q_TRAN(&Tube_timingAllows_braking);
+        	BSP_display("Tube_timingAllows-BRAKES_ENGAGE\n");
+            return Q_TRAN(&Tube_noFeedback);
+        }
+        case BRAKES_TIMER_REQUIRE: {
+        	BSP_display("Tube_timingAllows-BRAKES_TIMER_REQUIRE\n");
+        	return Q_TRAN(&Tube_noFeedback);
         }
     }
     return Q_SUPER(&Tube);
 }
 /*..........................................................................*/
 
-static QState Tube_timingAllows_notBraking(Braking_HSM_t *me) {
+static QState Tube_timingAllows_distanceBlocks(Braking_HSM_t *me) {
     switch (Q_SIG(me)) {
     	case Q_INIT_SIG: {
-    		BSP_display("Tube_timingAllows_notBraking-INIT\n");
+    		BSP_display("Tube_timingAllows_distanceBlocks-INIT\n");
             Braking_HSM.engage = 0;
-    		return Q_TRAN(&Tube_timingAllows_notBraking_distanceBlocks);
+    		return Q_HANDLED();
     	}
         case Q_ENTRY_SIG: {
-            BSP_display("Tube_timingAllows_notBraking-ENTRY\n");
+            BSP_display("Tube_timingAllows_distanceBlocks-ENTRY\n");
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
-            BSP_display("Tube_timingAllows_notBraking-EXIT\n");
+            BSP_display("Tube_timingAllows_distanceBlocks-EXIT\n");
+            Braking_HSM.engage = 0;
             return Q_HANDLED();
         }
-        case BRAKES_TIMER_REQUIRE: {
-            return Q_TRAN(&Tube_noFeedback);
+        case BRAKES_DISTANCE_PERMIT: {
+        	BSP_display("Tube_timingAllows_distanceBlocks-BRAKES_DISTANCE_PERMIT\n");
+        	return Q_TRAN(&Tube_timingAllows_distanceAllows);
         }
     }
     return Q_SUPER(&Tube_timingAllows);
 }
 /*..........................................................................*/
 
-static QState Tube_timingAllows_notBraking_distanceBlocks(Braking_HSM_t *me) {
-    switch (Q_SIG(me)) {
-    	case Q_INIT_SIG: {
-    		BSP_display("Tube_timingAllows_notBraking_distanceBlocks-INIT\n");
-            Braking_HSM.engage = 0;
-    		return Q_HANDLED();
-    	}
-        case Q_ENTRY_SIG: {
-            BSP_display("Tube_timingAllows_notBraking_distanceBlocks-ENTRY\n");
-            return Q_HANDLED();
-        }
-        case Q_EXIT_SIG: {
-            BSP_display("Tube_timingAllows_notBraking_distanceBlocks-EXIT\n");
-            Braking_HSM.engage = 0;
-            return Q_HANDLED();
-        }
-        case BRAKES_DISTANCE_PERMIT: {
-        	BSP_display("Tube_timingAllows_notBraking_distanceBlocks - BRAKES_DISTANCE_PERMIT\n");
-        	return Q_TRAN(&Tube_timingAllows_notBraking_distanceAllows);
-        }
-    }
-    return Q_SUPER(&Tube_timingAllows_notBraking);
-}
-/*..........................................................................*/
-
-static QState Tube_timingAllows_notBraking_distanceAllows(Braking_HSM_t *me) {
+static QState Tube_timingAllows_distanceAllows(Braking_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_INIT_SIG: {
-            BSP_display("Tube_timingAllows_notBraking_distanceAllows-INIT\n");
+            BSP_display("Tube_timingAllows_distanceAllows-INIT\n");
             Braking_HSM.engage = 0;
             Braking_HSM.distance_lockout = 0;
             return Q_HANDLED();
         }
         case Q_ENTRY_SIG: {
-            BSP_display("Tube_timingAllows_notBraking_distanceAllows-ENTRY\n");
+            BSP_display("Tube_timingAllows_distanceAllows-ENTRY\n");
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
-            BSP_display("Tube_timingAllows_notBraking_distanceAllows-EXIT\n");
+            BSP_display("Tube_timingAllows_distanceAllows-EXIT\n");
             Braking_HSM.engage = 0;
             return Q_HANDLED();
         }
         case BRAKES_DISTANCE_ENGAGE: {
-            BSP_display("Tube_timingAllows_notBraking_distanceAllows - BRAKES_DISTANCE_ENGAGE\n");
-            return Q_TRAN(&Tube_timingAllows_braking);
-        }
-    }
-    return Q_SUPER(&Tube_timingAllows_notBraking);
-}
-/*..........................................................................*/
-
-static QState Tube_timingAllows_braking(Braking_HSM_t *me) {
-    switch (Q_SIG(me)) {
-        case Q_INIT_SIG: {
-            BSP_display("Tube_timingAllows_braking-INIT\n");
-            Braking_HSM.feedback = 1;
-            Braking_HSM.engage = 1;
-            return Q_HANDLED();
-        }
-        case Q_ENTRY_SIG: {
-            BSP_display("Tube_timingAllows_braking-ENTRY\n");
-            return Q_HANDLED();
-        }
-        case Q_EXIT_SIG: {
-            BSP_display("Tube_timingAllows_braking-EXIT\n");
-            Braking_HSM.engage = 0;
-            return Q_HANDLED();
-        }
-        case BRAKES_DONE: {
-            BSP_display("Tube_timingAllows_braking - BRAKES_DONE\n");
-            return Q_TRAN(&Tube_done);
+            BSP_display("Tube_timingAllows_distanceAllows-BRAKES_DISTANCE_ENGAGE\n");
+            return Q_TRAN(&Tube_noFeedback);
         }
     }
     return Q_SUPER(&Tube_timingAllows);
@@ -233,11 +187,11 @@ static QState Tube_noFeedback(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_DONE: {
-            BSP_display("Tube_timingAllows_braking - BRAKES_DONE\n");
+            BSP_display("Tube_noFeedback-BRAKES_DONE\n");
             return Q_TRAN(&Tube_done);
         }
     }
-    return Q_SUPER(&Tube_timingAllows);
+    return Q_SUPER(&Tube);
 }
 /*..........................................................................*/
 
@@ -261,8 +215,8 @@ static QState Tube_done(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_ENGAGE: {
-            BSP_display("Tube_done - BRAKES_ENGAGE\n");
-            return Q_TRAN(&Tube_done);
+            BSP_display("Tube_done-BRAKES_ENGAGE\n");
+            return Q_TRAN(&Tube_noFeedback);
         }
     }
     return Q_SUPER(&Tube);
@@ -284,7 +238,7 @@ static QState Test(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_TEST_EXIT: {
-        	BSP_display("Test - BRAKES_TEST_EXIT\n");
+        	BSP_display("Test-BRAKES_TEST_EXIT\n");
         	return Q_TRAN(&Tube);
         }
     }
@@ -307,7 +261,7 @@ static QState Test_idle(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_ENGAGE: {
-        	BSP_display("Test_idle - BRAKES_ENGAGE\n");
+        	BSP_display("Test_idle-BRAKES_ENGAGE\n");
         	return Q_TRAN(&Test_activated);
         }
     }
@@ -334,7 +288,7 @@ static QState Test_activated(Braking_HSM_t *me) {
             return Q_HANDLED();
         }
         case BRAKES_DISENGAGE: {
-        	BSP_display("Test_activated - BRAKES_DISENGAGE\n");
+        	BSP_display("Test_activated-BRAKES_DISENGAGE\n");
         	return Q_TRAN(&Test_idle);
         }
     }
