@@ -5,6 +5,8 @@
 //If using this on the Arduino, this should be saved as a .cpp file. Otherwise it should be saved as a .c
 
 #include "I2CPERIPHS.h"
+#include "ranging.h"
+
 
 //POD PIN MAPPING, CALIBRATION
 //Hub Data:
@@ -66,6 +68,8 @@ HEMS* initialize_HEMS(uint8_t identity) {
     engine->rpm[n] = 0;
   }
 
+  engine->wheel_tach_spokes_counter = 0;
+
   // Initialize thermistor moving averages (with first read)
   int temp_counter;
   for (temp_counter = 0; temp_counter < 4; temp_counter++) {
@@ -77,12 +81,13 @@ HEMS* initialize_HEMS(uint8_t identity) {
   int short_counter;
   for (short_counter = 0; short_counter < 2; short_counter++) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
-    if (!((voltage < 0.34) || (voltage > 2.43))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      engine->short_data[short_counter] = shortRangingDistanceLUT[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
   }
 #endif
 
@@ -113,17 +118,18 @@ uint8_t update_HEMS(HEMS* engine) {
 #ifdef LPC
   // Record short ranging sensor data
   int short_counter;
-  float ShortRangingMovingAverage;
   for (short_counter = 0; short_counter < 2; short_counter++) {
-    ShortRangingMovingAverage = engine->short_data[short_counter];
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
-    if (!((voltage < 0.34) || (voltage > 2.43))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
-    engine->short_data[short_counter] = ShortRangingMovingAverage;
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
+
+    //if ((short_counter == 0) && (engine->identity == 0))
+    	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 #endif
 
@@ -154,9 +160,12 @@ uint8_t update_HEMS(HEMS* engine) {
       delta_counter = current_tachometer_counter[n] - previous_tachometer_counter[n];
     else  //Account for edge case where the binary counter overflows and resets back to 0.
       delta_counter = current_tachometer_counter[n] + (4096 - previous_tachometer_counter[n]);
-
-    current_rpm[n] = 60.0 / TACHOMETER_TICKS * delta_counter / (current_time[n] - engine->timestamp);
+    current_rpm[n] = 60.0 / ((n == 1) ? MAGLEV_TACH_TICKS : WHEEL_TACH_TICKS) * delta_counter / (current_time[n] - engine->timestamp);
     engine->rpm[n] = (1 - TACHOMETER_AVG_WEIGHT) * current_rpm[n] + TACHOMETER_AVG_WEIGHT * engine->rpm[n];
+
+    if(n == 0) {	// 0 = Wheel tach.
+    	engine->wheel_tach_spokes_counter += delta_counter;
+        }
     engine->tachometer_counter[n] = current_tachometer_counter[n];
   }
   engine->timestamp = runtime();
@@ -170,6 +179,18 @@ uint8_t update_HEMS(HEMS* engine) {
   return engine->alarm;
 }
 
+float voltageToDistance(float voltage, int shortRangingIndex) {
+	float distance = -1;
+    if (!((voltage < 0.34) || (voltage > 2.44))) {
+      float index = (voltage - .34) * 20;
+      uint16_t index_l = (uint16_t) index;
+      uint16_t index_h = index_l + 1;
+      float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
+      float distance_h = shortRangingDistanceLUT[shortRangingIndex][index_h];
+      distance = distance_l + (index - index_l) * (distance_h - distance_l);
+    }
+    return distance;
+}
 
 
 

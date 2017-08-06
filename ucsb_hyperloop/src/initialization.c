@@ -41,12 +41,19 @@ void initializeSensorsAndControls(){
         sensorData.photoelectric = 0.0;
     }
     if(RANGING_SENSORS_ACTIVE){
-        rangingSensorsInit();
-        CALIBRATE_FLAG = 0;
+        //rangingSensorsInit();
+        //CALIBRATE_FLAG = 0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */
         GPIO_Interrupt_Enable();
+    }
+
+    if(POSITIONING_ACTIVE) {
+    	int i;
+    	for(i=0; i<4; i++) {
+        	sensorData.wheelTachPositionX[i] = 0;
+    	}
     }
 
     if(MOTOR_BOARD_I2C_ACTIVE) {
