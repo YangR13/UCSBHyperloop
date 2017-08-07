@@ -85,8 +85,22 @@ void TIMER1_IRQHandler(void){
         tick = 0;
     }
 
-
     // Clear the interrupt
     Chip_TIMER_ClearMatch( LPC_TIMER1, 1 );
 }
+
+void startTimingProfile() {
+	// Record current time
+	timing_profile_start_time = getRuntime();
+}
+
+int timingProfileCanBrake() {
+	return (getRuntime() - timing_profile_start_time  > timing_profile_t_min);
+}
+
+int timingProfileMustBrake() {
+	return (getRuntime() - timing_profile_start_time > timing_profile_t_max);
+}
+
+
 

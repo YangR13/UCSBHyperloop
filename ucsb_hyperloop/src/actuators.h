@@ -153,6 +153,9 @@ void calculate_actuator_control(ACTUATORS *board, int num);
 void start_actuator_calibration();
 void update_actuator_calibration(ACTUATORS *board);
 
+void engage_braking_actuator_pair(ACTUATORS *board);
+void disengage_braking_actuator_pair(ACTUATORS *board);
+
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.
 void PWM_Setup(const void * pwm, uint8_t pin);

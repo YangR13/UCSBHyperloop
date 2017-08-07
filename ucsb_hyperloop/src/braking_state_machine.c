@@ -207,7 +207,6 @@ static QState Tube_done(Braking_HSM_t *me) {
         case Q_INIT_SIG: {
             BSP_display("Tube_done-INIT\n");
             Braking_HSM.feedback = 0;
-            Braking_HSM.engage = 0;
             Braking_HSM.stopped = 1;
             return Q_HANDLED();
         }
@@ -217,7 +216,6 @@ static QState Tube_done(Braking_HSM_t *me) {
         }
         case Q_EXIT_SIG: {
             BSP_display("Tube_done-EXIT\n");
-            Braking_HSM.engage = 0;
             Braking_HSM.stopped = 0;
             return Q_HANDLED();
         }

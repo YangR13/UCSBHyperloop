@@ -43,6 +43,11 @@ void collectData(){
         sensorData.positionX = position.x;
         sensorData.positionY = position.y;
         sensorData.positionZ = position.z;
+
+        // Start timing profile if acceleration is > 2 m/s^2 <-- TODO: Decide on a better value.
+        if(timing_profile_start_time == 0 && sensorData.accelX > 2) {
+        	startTimingProfile();
+        }
     }
 
     if(MOTOR_BOARD_I2C_ACTIVE) {

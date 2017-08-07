@@ -84,6 +84,8 @@ int main(void)
             // ** DETERMINE STATE MACHINE TRANSITIONS**
             generate_signals_from_sensor_data(); // See subsystems.c
 
+            generate_faults_from_sensor_data();
+
             // ** DO ACTUATIONS FROM STATE MACHINE FLAGS **
             performActuation(); // See actuation.c
         }

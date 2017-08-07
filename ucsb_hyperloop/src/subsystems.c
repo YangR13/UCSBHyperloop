@@ -7,6 +7,7 @@
 #include "initialization.h"
 #include "sensor_data.h"
 #include "logging.h"
+#include "timer.h"
 
 #define ISSUE_SIG(hsm, sig) do {\
 	Q_SIG((QHsm *)&hsm) = (QSignal)(sig);\
@@ -147,38 +148,38 @@ void braking_service_state_machine(){
 		 */
 	}
 
-    /*
     // TODO - use data for these. MAKE SURE THEY ONLY ISSUE ONCE!
 
-    if (Braking_HSM.timer_lockout && TIMER PASSES FIRST THRESHOLD){
+    if (Braking_HSM.timer_lockout && timingProfileCanBrake()){
         // Timing profile window started - allow braking now
-        ISSUE_SIG(Braking_HSM, BRAKES_TIMER_PERMIT)
+        ISSUE_SIG(Braking_HSM, BRAKES_TIMER_PERMIT);
     }
-    if (!Braking_HSM.engage && TIMER PASSES SECOND THRESHOLD){
+    if (!Braking_HSM.engage && timingProfileMustBrake()){
         // Timing profile window ended - force braking now.
         ISSUE_SIG(Braking_HSM, BRAKES_TIMER_REQUIRE);
-    {
+    }
 
     if (!Braking_HSM.timer_lockout){
-        if (Braking_HSM.distance_lockout && DISTANCE PASSES FIRST THRESHOLD){
+        if (Braking_HSM.distance_lockout && sensorData.positionX > 488){	// TODO: Make 488 m into a constant in the header file!
             // Distance lockout threshold reached - allow braking requests now
             ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_PERMIT);
         }
-        else if (!Braking_HSM.distance_lockout && DISTANCE PASSES SECOND THRESHOLD){
+        else if (!Braking_HSM.distance_lockout && sensorData.positionX > 600 && sensorData.contact_sensor_pushed){	// TODO: Make 600 m into a constant in the header file, and replace with REAL value!
             // Distance threshold reached - request braking now
             ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_ENGAGE);
         }
-
-    if (!Braking_HSM.stopped && POD STOPPED){
-        // Pod came to a stop - stop braking now
-        ISSUE_SIG(Braking_HSM, BRAKES_DONE);
-    }
-    else if (Braking_HSM.stopped && POD MOVES AGAIN AND SERVICE PROP ISN'T ON){
-        // Pod started moving again? Need to brake again because we shouldn't have stopped yet.
-        ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
     }
 
-	*/
+    if(!sensorData.positionError) {
+        if (!Braking_HSM.stopped && sensorData.velocityX < 0.5)	{	// TODO: replace with constant in header file!
+            // Pod came to a stop - stop braking now
+            ISSUE_SIG(Braking_HSM, BRAKES_DONE);
+        }
+        else if (Braking_HSM.stopped && sensorData.velocityX >= 0.5 && !Service_Propulsion_HSM.actuator_lowered){
+            // Pod started moving again? Need to brake again because we shouldn't have stopped yet.
+            ISSUE_SIG(Braking_HSM, BRAKES_ENGAGE);
+        }
+    }
 }
 
 void maglev_service_state_machine(){
@@ -333,11 +334,16 @@ void generate_faults_from_sensor_data(){
 }
 
 void braking_fault_from_sensors(){
-	// TODO: Implement this stub.
+	int i;
+	for (i = 0; i < 2; i++) {
+		if(braking_boards[i]->bridge_fault[0] || braking_boards[i]->bridge_fault[1] ||
+			braking_boards[i]->pos_fault[0] || braking_boards[i]->pos_fault[1]) {
+			braking_boards[i]->faulted |= 0b01;
+		}
+	}
 
 #if BMS_18V5_ACTIVE
     // Handle faults from the 18V5 BMS
-    int i;
     for (i = 0; i < 2; i++){
         if (bms_18v5->alarm[i]){
             // DISABLE BRAKING PAIR i

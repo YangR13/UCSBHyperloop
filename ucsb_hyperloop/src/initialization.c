@@ -15,6 +15,8 @@ void initializeTimers(){
     tickTimerInit();    // Timer 1 - 'tick' timer for periodic tasks
     // Timer 2 - formerly used for 'sendDataFlag', now open
     // Timer 3 - formerly used for photoelectric sensor timing, now open
+
+    timing_profile_start_time = 0;
 }
 
 // Initialize all sensor and control systems that are enabled via #-defines in initialization.h!
@@ -50,6 +52,7 @@ void initializeSensorsAndControls(){
     }
 
     if(POSITIONING_ACTIVE) {
+    	sensorData.positionError = 0;
     	int i;
     	for(i=0; i<4; i++) {
         	sensorData.wheelTachPositionX[i] = 0;

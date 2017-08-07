@@ -6,7 +6,6 @@
 #include "initialization.h"
 #include "I2CPERIPHS.h"
 #include "sensor_data.h"
-#include "actuation.h"
 
 int prototypeRunStartTime = 0;
 
@@ -45,6 +44,8 @@ void actuate_brakes(){
         if (num_rec_faults % 2 == 0 && num_unrec_faults % 2 == 0){
             // Both boards have the same fault status, may as well actuate both.
             // TODO: Actuate both pairs of brakes.
+        	engage_braking_actuator_pair(braking_boards[0]);
+        	engage_braking_actuator_pair(braking_boards[1]);
         }
         else if (num_rec_faults % 2 == 1 && num_unrec_faults % 2 == 0){
             // One board has a recoverable fault, just actuate the other
@@ -52,6 +53,7 @@ void actuate_brakes(){
                 if (!(braking_boards[i]->faulted & 0b01)){
                     // This board does not have the fault
                     // TODO: ACTUATE THIS BOARD braking_boards[i] ONLY
+                	engage_braking_actuator_pair(braking_boards[i]);
                 }
             }
         }
@@ -61,22 +63,16 @@ void actuate_brakes(){
                 if (!(braking_boards[i]->faulted & 0b10)){
                     // This board does not have the fault
                     // TODO: ACTUATE THIS BOARD braking_boards[i] ONLY
+                	engage_braking_actuator_pair(braking_boards[i]);
                 }
             }
         }
 
-        /*
-	    if (Braking_HSM.feedback){
-	        // Engage with feedback
-	    }
-	    else{
-	        // Engage without feedback
-	    }
-	    */
+        Braking_HSM.engage = 0;
 	}
-	else{
-	    // Call a routine to *stop* the brakes here?
-	}
+
+	// Note: No code is added here for disengaging the brakes to prevent the case where the
+	// SM erroneously disengages the brakes due to faulty velocity data.
 }
 
 void actuate_maglev(){

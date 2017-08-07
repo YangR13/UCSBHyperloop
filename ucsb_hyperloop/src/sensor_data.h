@@ -47,6 +47,8 @@ typedef struct{
   float positionY;
   float positionZ;
 
+  int positionError;
+
   float roll;
   float pitch;
   float yaw;

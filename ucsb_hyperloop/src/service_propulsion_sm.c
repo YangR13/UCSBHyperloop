@@ -71,6 +71,7 @@ QState Nominal_lowered(Service_Propulsion_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_lowered-ENTRY;\n");
+            Service_Propulsion_HSM.actuator_lowered = 1;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -174,6 +175,7 @@ QState Nominal_raised(Service_Propulsion_HSM_t *me) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_raised-ENTRY;\n");
             Service_Propulsion_HSM.motor_enable = 0;
+            Service_Propulsion_HSM.actuator_lowered = 0;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {

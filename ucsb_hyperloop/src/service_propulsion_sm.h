@@ -8,6 +8,7 @@ typedef struct Service_Propulsion_HSM_data {
     QHsm super;
     uint8_t actuator_direction;
     uint8_t actuator_enable;
+    uint8_t actuator_lowered;
     uint8_t motor_direction;
     uint8_t motor_enable;
     uint8_t fault;

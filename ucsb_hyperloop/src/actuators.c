@@ -534,6 +534,13 @@ void update_actuator_calibration(ACTUATORS *board) {
 	}
 }
 
+void engage_braking_actuator_pair(ACTUATORS *board) {
+	// TODO: Write me :D
+}
+void disengage_braking_actuator_pair(ACTUATORS *board) {
+	// TODO: Write me :D
+}
+
 void PWM_Setup(const void * pwm, uint8_t pin){
 #ifdef ARDUINO
     pinMode(pin, OUTPUT);
