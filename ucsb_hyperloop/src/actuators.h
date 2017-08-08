@@ -134,6 +134,8 @@ typedef struct {
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
   int16_t calibrated_engaged_pos[2];
+  uint8_t sync_actuators;
+  uint8_t paused[2];
 
 } ACTUATORS;
 
@@ -152,6 +154,9 @@ void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm);
 void calculate_actuator_control(ACTUATORS *board, int num);
 void start_actuator_calibration();
 void update_actuator_calibration(ACTUATORS *board);
+void update_actuator_sync(ACTUATORS *board);
+void engage_actuator_pair(ACTUATORS *board);
+void disengage_actuator_pair(ACTUATORS *board);
 
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.

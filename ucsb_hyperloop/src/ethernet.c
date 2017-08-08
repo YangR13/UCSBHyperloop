@@ -235,6 +235,7 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
 		printf("CALIBRATE_SIG RECEIVED\n");
+		braking_boards[0]->sync_actuators = 0;
 		start_actuator_calibration();
 		//CALIBRATE_FLAG = 1;
 	}
@@ -252,14 +253,14 @@ void recvDataPacket() {
 		//move_to_pos(braking_boards[0], 0, -1);
         //move_to_pwm(braking_boards[0], 0, 1, braking_boards[0]->pwm[0] + 0.01);
 		//move_to_pwm(braking_boards[0], 0, 1, 0.15);
-		move_to_pos(braking_boards[0], 0, braking_boards[0]->calibrated_engaged_pos[0]);
+		engage_actuator_pair(braking_boards[0]);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
 		//move_to_pos(braking_boards[0], 0, -2);
 		//move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 100);
-		move_to_disengaged_pos(braking_boards[0], 0);
+		disengage_actuator_pair(braking_boards[0]);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
