@@ -127,10 +127,10 @@ uint8_t update_HEMS(HEMS* engine) {
     	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
     // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
+}
+//if ((short_counter == 0) && (engine->identity == 4))
+      	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
 
-    //if ((short_counter == 0) && (engine->identity == 0))
-    	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
-  }
 #endif
 
   //Record Motor Controller Current
@@ -182,12 +182,12 @@ uint8_t update_HEMS(HEMS* engine) {
 float voltageToDistance(float voltage, int shortRangingIndex) {
 	float distance = -1;
     if (!((voltage < 0.34) || (voltage > 2.44))) {
-      float index = (voltage - .34) * 20;
-      uint16_t index_l = (uint16_t) index;
-      uint16_t index_h = index_l + 1;
-      float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
-      float distance_h = shortRangingDistanceLUT[shortRangingIndex][index_h];
-      distance = distance_l + (index - index_l) * (distance_h - distance_l);
+    	float index = (voltage - .34) * 20;
+    	uint16_t index_l = (uint16_t) index;
+    	uint16_t index_h = index_l + 1;
+    	float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
+    	float distance_h = shortRangingDistanceLUT[shortRangingIndex][index_h];
+    	distance = distance_l + (index - index_l) * (distance_h - distance_l);
     }
     return distance;
 }

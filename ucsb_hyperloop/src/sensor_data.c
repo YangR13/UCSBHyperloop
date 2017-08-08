@@ -95,22 +95,23 @@ void collectData(){
 				wheel_tach_combined_sum += sensorData.wheelTachPositionX[i];
 			}
 		}
-		sensorData.positioningError = (numAlive > 2);
+		sensorData.validPosition = (numAlive > 2);
 
-		sensorData.positionX = (sensorData.positioningError) ? (wheel_tach_combined_sum / (float) numAlive) : -1;
+		sensorData.positionX = (sensorData.validPosition) ? (wheel_tach_combined_sum / (float) numAlive) : -1;
 
 		if(sensorData.incrementFlag < sensorData.positionX / 25.0){		//Update every 25m
 			sensorData.incrementFlag++;
 
-			//Collect differences in tach values from the last 25m
 			for(i=0; i<4; i++){
-				wheel_tach_dist_since_last_check[i] = sensorData.wheelTachPositionX[i] - sensorData.oldWheelTachPositionX[i];
+				wheel_tach_dist_since_last_check[i] =sensorData.wheelTachPositionX[i] - sensorData.oldWheelTachPositionX[i];
 				total_dist_since_last_check += wheel_tach_dist_since_last_check[i];
 			}
-			float avg_dist_since_last_check = total_dist_since_last_check / 4.0;	//avg = 20; 15, 15, 20, 30
-			float largest_percent_difference = 0.0;
 
+			float avg_dist_since_last_check = total_dist_since_last_check / 4.0;
+			float largest_percent_difference = 0.0;
 			int least_accurate_tach = 0;
+
+			//Collect differences in tach values from the last 25m
 			for(i=0; i<4; i++){
 				float percent_difference = fabs(wheel_tach_dist_since_last_check[i] - avg_dist_since_last_check) / avg_dist_since_last_check;
 				if(percent_difference > largest_percent_difference) {
@@ -127,7 +128,7 @@ void collectData(){
 				sensorData.oldWheelTachPositionX[i] = sensorData.wheelTachPositionX[i];
 			}
 		}
-		sensorData.velocityX = (numAlive > 2) ? (sensorData.positionX - sensorData.oldPositionX) / (getRuntime()-sensorData.time_prev) : -1;
+		sensorData.velocityX = (sensorData.validPosition) ? (sensorData.positionX - sensorData.oldPositionX) / (getRuntime()-sensorData.time_prev) : -1;
 
         sensorData.time_prev = getRuntime();
         sensorData.oldPositionX = sensorData.positionX;
@@ -281,7 +282,7 @@ void printSensorData(){
 		DEBUGOUT("Short-ranging: %f | %f | %f | %f | %f | %f\n",
 			motors[0]->short_data[0], motors[1]->short_data[0], motors[2]->short_data[0], motors[3]->short_data[0], motors[0]->short_data[1], motors[1]->short_data[1]);
 
-    	DEBUGOUT("Roll: %f | Pitch: %f | Yaw: %f | PositionY: %f | PositionZ: %f\n",
-			sensorData.roll*180/PI_CONSTANT, sensorData.pitch*180/PI_CONSTANT, sensorData.yaw*180/PI_CONSTANT, sensorData.positionY, sensorData.positionZ);
+    	DEBUGOUT("Roll: %f | Pitch: %f | Yaw: %f | PositionX: %f | PositionY: %f | PositionZ: %f\n",
+			sensorData.roll*180/PI_CONSTANT, sensorData.pitch*180/PI_CONSTANT, sensorData.yaw*180/PI_CONSTANT, sensorData.positionX, sensorData.positionY, sensorData.positionZ);
     }
 }

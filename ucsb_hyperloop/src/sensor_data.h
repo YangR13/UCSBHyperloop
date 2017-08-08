@@ -68,7 +68,7 @@ typedef struct{
   int incrementFlag;				//determines when to check tachometer values
   float oldWheelTachPositionX[4];	//Wheel tach position from last check
   float oldPositionX;
-  int positioningError;
+  int validPosition;
 
   float pressure1;
   float pressure2;
