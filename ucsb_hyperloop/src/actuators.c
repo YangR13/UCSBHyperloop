@@ -108,10 +108,6 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->calibrated_engaged_pos[0] = -3;
   board->calibrated_engaged_pos[1] = -3;
 
-  board->sync_actuators = 1;
-  board->paused[0] = 0;
-  board->paused[1] = 0;
-
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
   for (output_counter = 0; output_counter < 2; output_counter++){
@@ -259,7 +255,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     // Actuation signals and position feedback are updated here.
 
     // Check if actuator is even currently moving
-    if (!board->enable[num] || board->pos_fault[num] || (board->sync_actuators && board->paused[num])){
+    if (!board->enable[num] || board->pos_fault[num]){
         // Actuator isn't currently moving so nothing to do here
         return;
     }
@@ -473,8 +469,8 @@ void update_actuator_control(ACTUATORS *board){
     for (output_counter = 0; output_counter < 2; output_counter++){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
-        // PWM enable/speed signal
-        if (board->enable[output_counter] && !board->pos_fault[output_counter] && (!board->sync_actuators || !board->paused[output_counter])){
+        // PMW enable/speed signal
+        if (board->enable[output_counter] && !board->pos_fault[output_counter]){
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
         }
         else{
@@ -536,35 +532,6 @@ void update_actuator_calibration(ACTUATORS *board) {
 		}
 		break;
 	}
-}
-
-void update_actuator_sync(ACTUATORS *board) {
-	int16_t positionDifference = (board->position[0] - board->calibrated_engaged_pos[0]) -
-		(board->position[1] - board->calibrated_engaged_pos[0]);	// FIXME!
-	if(abs(positionDifference) > 25) {
-		if(positionDifference > 0) {
-			board->paused[0] = 0;
-			board->paused[1] = 1;
-		} else {
-			board->paused[0] = 1;
-			board->paused[1] = 0;
-		}
-	} else {
-		board->paused[0] = 0;
-		board->paused[1] = 0;
-	}
-}
-
-void engage_actuator_pair(ACTUATORS *board) {
-	board->sync_actuators = 1;
-	move_to_pos(board, 0, board->calibrated_engaged_pos[0]);
-	move_to_pos(board, 1, board->calibrated_engaged_pos[0 /*1*/]);	// FIXME! D:
-}
-
-void disengage_actuator_pair(ACTUATORS *board) {
-	board->sync_actuators = 0;
-	move_to_disengaged_pos(board, 0);
-	move_to_disengaged_pos(board, 1);
 }
 
 void PWM_Setup(const void * pwm, uint8_t pin){
