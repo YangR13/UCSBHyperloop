@@ -291,6 +291,32 @@ void recvDataPacket() {
 		set_motor_throttle(2, dacValue);
 		set_motor_throttle(3, dacValue);
 	}
+
+	if(strstr((char *)Net_Rx_Data, SETTIMINGPROFILE) != NULL) {	// Set the DAC
+		DEBUGOUT("TIMING PROFILE INPUTS RECEIVED\n");
+		char tokenstring[strlen((char *)Net_Rx_Data)-17];
+		memcpy( tokenstring, &Net_Rx_Data[17], strlen((char *)Net_Rx_Data)-17 );
+		subbuff[strlen((char *)Net_Rx_Data)-18] = '\0';
+		char seps[] = ",";
+		char* token;
+		int var;
+		int input[4];
+		int i = 0;
+		token = strtok (tokenstring, seps);
+		while (token != NULL)
+		{
+		    sscanf (token, "%d", &var);
+		    input[i++] = var;
+
+		    token = strtok (NULL, seps);
+		}
+		DEBUGOUT("TopSpeed recieved: %s\n", token[0]);
+		DEBUGOUT("MaxAccel recieved: %s\n", token[1]);
+		DEBUGOUT("MinTime recieved: %s\n", token[2]);
+		DEBUGOUT("MaxTime recieved: %s\n", token[3]);
+		//DEBUGOUT("dacValue = %f\n", dacValue);
+	}
+
 	if(strstr((char *)Net_Rx_Data, INITTIME) != NULL) {	// Initialize Time
 		DEBUGOUT("Initialize Time!\n");
 		DEBUGOUT("Time recieved: %s\n", Net_Rx_Data);

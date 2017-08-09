@@ -113,6 +113,7 @@
 #define SERSTP			"SERSTP"	// Service Propulsion Stop
 #define INITTIME		"INITTIME"	// Initialize Timer
 #define SETDAC			"SETDAC"	// Set the DAC value
+#define SETTIMINGPROFILE "SETTIMINGPROFILE"
 /* Web Application Level Acknowledgments */
 #define WAK				"WAK"		// Service Propulsion Acknowledgment
 #define BAK				"BAK"		// Emergency Brake Acknowledgment
