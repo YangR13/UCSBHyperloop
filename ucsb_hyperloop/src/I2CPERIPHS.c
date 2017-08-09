@@ -180,9 +180,9 @@ uint8_t update_HEMS(HEMS* engine) {
 }
 
 float voltageToDistance(float voltage, int shortRangingIndex) {
-	float distance = -1;
+	float distance = -1.0;
     if (!((voltage < 0.34) || (voltage > 2.44))) {
-    	float index = (voltage - .34) * 20;
+    	float index = (voltage - .34) * 20.0;
     	uint16_t index_l = (uint16_t) index;
     	uint16_t index_h = index_l + 1;
     	float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
