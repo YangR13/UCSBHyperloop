@@ -48,7 +48,11 @@
 #define AMMETER_150A_SENSITIVITY 8.8		//[mV/A] for the 150amp version of the sensor
 
 //Tachometer Data
-#define TACHOMETER_TICKS 1	// Number of reflective strips on the motor.
+#define MAGLEV_TACH_TICKS 1	// Number of reflective strips on the motor.
+#define WHEEL_TACH_TICKS 10	// Number of reflective spokes on the wheel.
+
+//Short Ranging Data
+#define SHORT_RANGING_VOLTAGE_OFFSET 0.2	// Voltage offset.
 
 //Safety:
 #define HEMS_MAX_TEMP 60      //Too hot
@@ -91,6 +95,8 @@ typedef struct {
   //Helper Data
   float timestamp;
   uint16_t tachometer_counter[2];
+
+  int wheel_tach_spokes_counter;
 
   //Control
   float throttle_voltage;
@@ -236,5 +242,8 @@ void DAC_write(uint8_t i2c_bus, uint8_t DAC_address, uint16_t output_voltage);
 //IOX Associated Functions:
 void IOX_setup(uint8_t i2c_bus, uint8_t IOX_address);
 uint16_t IOX_read(uint8_t i2c_bus, uint8_t IOX_address);
+
+// Conversion function for short-ranging sensors.
+float voltageToDistance(float voltage, int shortRangingIndex);
 
 #endif //I2CPERIPHS_H

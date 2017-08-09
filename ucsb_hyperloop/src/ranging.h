@@ -3,6 +3,27 @@
 
 #include "board.h"
 
+// New Short-Ranging Code
+// Distances of down-ward facing short ranging sensors from the pod's center.
+#define d_F		125.0	// cm
+#define d_R		24.0
+#define d_B		125.0
+#define d_L		24.0
+
+// Distances of I-beam facing short ranging sensors from the pod's center.
+#define I_BEAM_RANGNG_FRONT	104.0		// TODO
+#define I_BEAM_RANGNG_BACK	96.0		// TODO
+
+#define PI_CONSTANT		3.14159262
+
+float pitch_i;
+float roll_i;
+float z_ci;
+
+float yaw_i;
+float y_ci;
+
+// Old Short-Ranging Code (DELETE LATER!)
 #define SHORT_FRONT_DIST		8.5f
 #define SHORT_BACK_DIST			8.5f
 #define SHORT_FRONT_HEIGHT		5.4f
@@ -102,7 +123,7 @@ static const float arcSinLUT[] =
 	73.90, 75.61, 77.55, 79.84, 82.82, 90.00 };
 
 /* Starts at 0.34V, goes to 2.43V, increments in intervals of 0.01V */
-static const float shortRangingDistanceLUT[] =
+/*static const float shortRangingDistanceLUT[] =
 {    17.664, 17.139, 16.641, 16.169, 15.719, 15.292, 14.885, 14.499, 14.130, 13.780,
      13.445, 13.126, 12.822, 12.532, 12.254, 11.989, 11.735, 11.492, 11.260, 11.037,
      10.823, 10.618, 10.421, 10.232, 10.050, 9.876, 9.707, 9.545, 9.389, 9.238,
@@ -123,10 +144,39 @@ static const float shortRangingDistanceLUT[] =
      2.165, 2.144, 2.125, 2.105, 2.085, 2.066, 2.047, 2.028, 2.009, 1.990,
      1.972, 1.954, 1.935, 1.917, 1.900, 1.882, 1.865, 1.847, 1.830, 1.813,
      1.796, 1.780, 1.763, 1.747, 1.731, 1.715, 1.699, 1.683, 1.667, 1.652,
-     1.636, 1.621, 1.606, 1.591, 1.577, 1.562, 1.547, 1.533, 1.519, 1.505 };
+     1.636, 1.621, 1.606, 1.591, 1.577, 1.562, 1.547, 1.533, 1.519, 1.505 };*/
+
+//Previous LUT ended at 2.43V and had .01V increments
+/* Starts at 0.34V, goes to 2.44V, increments in intervals of 0.05V for SR0 */
+static const float shortRangingDistanceLUT[6][43] = {
+	// LUT 0
+	{	28.0, 24.0, 19.9, 16.7, 14.4, 13.6, 13.0, 11.9, 10.8, 9.6, 8.8, 8.0, 7.6,
+		6.8, 6.4, 5.9, 5.5, 5.1, 4.9, 4.75, 4.6, 4.4, 4.1, 3.9, 3.6, 3.4, 3.2, 3.1,
+		3.0, 2.8, 2.6, 2.5, 2.35, 2.3, 2.2, 2.1, 2.05, 2.0, 1.95, 1.9, 1.8, 1.65, 1.5 },
+	// LUT 1
+	{	23.5, 19.8, 18.5, 14.9, 13.6, 13.3, 12.8, 10.4, 10.0, 8.95, 8.4, 7.8, 6.9, 6.5,
+		5.85, 5.5, 5.3, 4.85, 4.5, 4.4, 4.15, 3.9, 3.75, 3.5, 3.4, 3.3, 3.25, 2.95, 2.6,
+		2.55, 2.5, 2.35, 2.15, 2.1, 2.05, 2.0, 1.95, 1.9, 1.85, 1.8, 1.7, 1.65, 1.55 },
+	// LUT 2
+	{	28.0, 25.6, 19.5, 16.6, 14.2, 13.5, 13.0, 11.8, 9.9, 9.2, 8.5, 7.8, 7.2, 6.4,
+		6.2, 5.8, 5.5, 5.2, 4.9, 4.6, 4.3, 4.1, 4.0, 3.7, 3.55, 3.3, 3.1, 2.9, 2.75,
+		2.65, 2.55, 2.5, 2.45, 2.35, 2.3, 2.2, 2.1, 2.05, 1.95, 1.9, 1.8, 1.7, 1.6 },
+	// LUT 3
+	{	24.0, 22.3, 18.5, 14.6, 13.8, 13.4, 12.0, 10.9, 9.8, 8.9, 7.9, 7.0, 6.7, 6.1,
+		5.8, 5.6, 5.4, 5.1, 4.4, 4.0, 3.8, 3.65, 3.4, 3.3, 3.2, 3.0, 2.95, 2.9, 2.6,
+		2.5, 2.4, 2.35, 2.3, 2.25, 2.2, 2.1, 2.05, 2.0, 1.9, 1.85, 1.8, 1.775, 1.75 },
+	// LUT 4 Front IBeam
+	{	24.2, 23.4, 20.3, 19.2, 15.9, 15.1, 13.6, 11.6, 10.5, 9.8, 9.0, 8.3, 7.5, 7.0,
+		6.3, 5.8, 5.1, 4.6, 4.0, 3.7, 3.5, 3.3, 3.1, 2.8, 2.7, 2.6, 2.5, 2.4, 2.2, 2.1,
+		1.9, 1.8, 1.75, 1.7, 1.6, 1.55, 1.5, 1.4, 1.3, 1.25, 1.2, 1.15, 1.1 },
+	// LUT 5 Back Ibeam
+	{	25.0, 22.5, 18.8, 17.8, 15.3, 14.3, 12.6, 11.8, 9.9, 8.8, 7.6, 7.0, 6.5, 6.1,
+		5.4, 5.3, 5.1, 4.8, 4.4, 4.1, 3.9, 3.7, 3.5, 3.2, 3.1, 3.0, 2.9, 2.8, 2.7, 2.6,
+		2.5, 2.4, 2.3, 2.2, 2.0, 1.8, 1.6, 1.4, 1.3, 1.25, 1.2, 1.15, 1.1 }
+};
 
 /* Starts at 0.49V, goes to 2.73V, increments in intervals of 0.01V. */
-static const float longRangingDistanceLUT[] =
+/*static const float longRangingDistanceLUT[] =
 {    136.944, 134.068, 131.290, 128.606, 126.013, 123.507, 121.085, 118.743, 116.479, 114.289,
      112.171, 110.121, 108.138, 106.218, 104.359, 102.559, 100.815, 99.126, 97.489, 95.903,
      94.364, 92.872, 91.425, 90.021, 88.659, 87.336, 86.051, 84.804, 83.592, 82.414,
@@ -149,7 +199,7 @@ static const float longRangingDistanceLUT[] =
      22.259, 22.111, 21.965, 21.819, 21.675, 21.531, 21.389, 21.247, 21.106, 20.967,
      20.828, 20.690, 20.553, 20.417, 20.282, 20.148, 20.015, 19.882, 19.751, 19.620,
      19.491, 19.362, 19.234, 19.107, 18.981, 18.855, 18.731, 18.607, 18.484, 18.362,
-     18.241, 18.120, 18.000, 17.882, 17.764 };
+     18.241, 18.120, 18.000, 17.882, 17.764 };*/
 
 
 float arcsin(float x);
@@ -159,6 +209,7 @@ void convertVoltage(uint16_t data, uint8_t sensor);
 rangingData getShortDistance();
 void ADC_IRQHandler();
 void rangingSensorsInit();
+void rangingSensorsCalibrate();
 void convertVoltageShort(uint8_t sensor);
 void convertVoltageLong(uint8_t sensor);
 void Ranging_Int_Measure();
