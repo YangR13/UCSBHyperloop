@@ -108,6 +108,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
   board->calibrated_engaged_pos[0] = -3;
   board->calibrated_engaged_pos[1] = -3;
 
+  board->engage_step = ENGAGE_DONE;
+
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
   for (output_counter = 0; output_counter < 2; output_counter++){
@@ -255,7 +257,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     // Actuation signals and position feedback are updated here.
 
     // Check if actuator is even currently moving
-    if (!board->enable[num] || board->pos_fault[num]){
+    if (!board->enable[num] || board->pos_fault[0] || board->pos_fault[1]){
         // Actuator isn't currently moving so nothing to do here
         return;
     }
@@ -311,19 +313,22 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
         else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
         else{
             board->stalled_cycles[num]++;
-            if (board->stalled_cycles[num] >= STALL_CYCLES_PWM_INCREASE){
+            uint16_t required_stall_cycles = ((board->target_pwm[num] - board->pwm[num]) < 0.015 ) ? STALL_CYCLES_PWM_INCREASE * STALL_CYCLES_LAST_PWM_MULTIPLIER : STALL_CYCLES_PWM_INCREASE;
+            if (board->stalled_cycles[num] >= required_stall_cycles){
                 board->pwm[num] += 0.01;
                 board->stalled_cycles[num] = 0;
-
             }
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
     }
     else{
@@ -401,7 +406,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     }
 
 #if PRINT_SENSOR_DATA_ACTIVE
-    DEBUGOUT("Output duty cycle is %f \n", board->pwm[num]);
+    //DEBUGOUT("Output duty cycle is %f \n", board->pwm[num]);
 #endif
 
 }
@@ -470,7 +475,7 @@ void update_actuator_control(ACTUATORS *board){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
         // PMW enable/speed signal
-        if (board->enable[output_counter] && !board->pos_fault[output_counter]){
+        if (board->enable[output_counter] && !(board->pos_fault[0] || board->pos_fault[1])){
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
         }
         else{
@@ -494,9 +499,7 @@ void update_actuator_calibration(ACTUATORS *board) {
 	case CALIBRATION_INIT:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_INIT\n");
-			//for(i=0; i<2; i++) {
-				move_to_disengaged_pos(board, i);
-			//}
+			start_actuator_disengage(board);
 			calibration_step++;
 		}
 		break;
@@ -504,7 +507,7 @@ void update_actuator_calibration(ACTUATORS *board) {
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_APPROACH\n");
 			//for(i=0; i<2; i++) {
-				move_to_pos(board, i, board->position[i] - 400);
+				move_to_pos(board, i, board->position[i] - 600);
 			//}
 			calibration_step++;
 		}
@@ -525,12 +528,71 @@ void update_actuator_calibration(ACTUATORS *board) {
 			//for(i=0; i<2; i++) {
 				board->calibrated_engaged_pos[i] = board->position[i];
 			//}
-			//for(i=0; i<2; i++) {
-				move_to_disengaged_pos(board, i);
-			//}
+			start_actuator_ready(board);
 			calibration_step = CALIBRATION_DONE;
 		}
 		break;
+	}
+}
+
+void start_actuator_engage(ACTUATORS *board) {
+	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+		return;
+	}
+
+#if 1
+	board->engage_step = ENGAGE_MOVE_TO_CHECKPOINT;
+#else
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+	}
+#endif
+}
+
+void update_actuator_engage(ACTUATORS *board) {
+	int i = 0;
+	int stopped = (board->enable[0] == 0) && (board->enable[1] == 0);
+
+	switch(board->engage_step) {
+	case ENGAGE_DONE:
+		// Nothing to do here.
+		break;
+	case ENGAGE_MOVE_TO_CHECKPOINT:
+		if(stopped) {
+			DEBUGOUT("ENGAGE_MOVE_TO_CHECKPOINT\n");
+			for(i=0; i<2; i++) {
+				start_actuator_ready(board);
+			}
+			board->engage_step++;
+		}
+		break;
+	case ENGAGE_MOVE_TO_TARGET:
+		if(stopped) {
+			DEBUGOUT("ENGAGE_MOVE_TO_TARGET\n");
+			for(i=0; i<2; i++) {
+				move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+			}
+			board->engage_step = ENGAGE_DONE;
+		}
+		break;
+	}
+}
+
+void start_actuator_ready(ACTUATORS *board) {
+	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+		return;
+	}
+
+	int i=0;
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */] + 250);
+	}
+}
+
+void start_actuator_disengage(ACTUATORS *board) {
+	int i=0;
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, BRAKING_DISENGAGED_POSITIONS[board->identity][i]);
 	}
 }
 

@@ -51,10 +51,10 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 
 // Control
 #define MIN_DUTY_CYCLE 0.13
-#define MIN_PWM_MODE_DUTY_CYCLE 0.09
+#define MIN_PWM_MODE_DUTY_CYCLE (MIN_DUTY_CYCLE - 0.01)
 #define MIN_BWD_DUTY_CYCLE 0.08
-#define MAX_FWD_DUTY_CYCLE 0.5 // Determined via load force testing 6/13/17
-#define MAX_BWD_DUTY_CYCLE 0.36 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
+#define MAX_FWD_DUTY_CYCLE 0.4
+#define MAX_BWD_DUTY_CYCLE 0.4
 
 #define USABLE_STROKE_LEN 2000.0 // TODO: Change the usable stroke length to a realistic value!
 
@@ -69,10 +69,11 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 200 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 350 // Readings greater than this delta away from the current moving average are considered erroneous.
 
 #define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
 #define STALL_CYCLES_PWM_INCREASE 10
+#define STALL_CYCLES_LAST_PWM_MULTIPLIER 10
 #define MOVE_CYCLE_PWM_DECREASE 0.01
 
 #define IN 0
@@ -92,6 +93,12 @@ enum calibration_steps_enum {
 	CALIBRATION_APPROACH,
 	CALIBRATION_MOVE_TO_PWM,
 	CALIBRATION_DEINIT,
+};
+
+enum engage_steps_enum {
+	ENGAGE_DONE,
+	ENGAGE_MOVE_TO_CHECKPOINT,
+	ENGAGE_MOVE_TO_TARGET,
 };
 
 int calibration_step;
@@ -134,6 +141,7 @@ typedef struct {
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
   int16_t calibrated_engaged_pos[2];
+  int engage_step;
 
 } ACTUATORS;
 
@@ -152,7 +160,10 @@ void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm);
 void calculate_actuator_control(ACTUATORS *board, int num);
 void start_actuator_calibration();
 void update_actuator_calibration(ACTUATORS *board);
-
+void start_actuator_engage(ACTUATORS *board);
+void update_actuator_engage(ACTUATORS *board);
+void start_actuator_ready(ACTUATORS *board);
+void start_actuator_disengage(ACTUATORS *board);
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.
 void PWM_Setup(const void * pwm, uint8_t pin);
