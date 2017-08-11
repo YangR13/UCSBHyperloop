@@ -69,9 +69,9 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define SERVICE_PROP_RAISE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 350 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 300 // Readings greater than this delta away from the current moving average are considered erroneous.
 
-#define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
+#define STALL_CYCLES_STOP 100 // Number of update cycles where actuator feedback hasn't changed before stopping actuator.
 #define STALL_CYCLES_PWM_INCREASE 10
 #define STALL_CYCLES_LAST_PWM_MULTIPLIER 10
 #define MOVE_CYCLE_PWM_DECREASE 0.01

@@ -322,7 +322,13 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
         else{
-            board->stalled_cycles[num]++;
+        	if(!(board->pos_fault[0] || board->pos_fault[1])) {
+        		board->stalled_cycles[num]++;
+        	}
+        	else {
+        		board->stalled_cycles[0] = 0;
+        		board->stalled_cycles[1] = 0;
+        	}
             uint16_t required_stall_cycles = ((board->target_pwm[num] - board->pwm[num]) < 0.015 ) ? STALL_CYCLES_PWM_INCREASE * STALL_CYCLES_LAST_PWM_MULTIPLIER : STALL_CYCLES_PWM_INCREASE;
             if (board->stalled_cycles[num] >= required_stall_cycles){
                 board->pwm[num] += 0.01;
@@ -333,8 +339,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     }
     else{
         // Exponential relation function
-#if 0
-        // First, determine if we're stalled and need to switch to the other algorithm
+        // First, determine if we're stalled and need to stop the actuator.
         if (board->direction[num] && board->position[num] < board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
@@ -344,17 +349,21 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->stalled_cycles[num] = 0;
         }
         else{
-            board->stalled_cycles[num]++;
-            if (board->stalled_cycles[num] >= STALL_CYCLES_ALG_SWITCH){
+        	if(!(board->pos_fault[0] || board->pos_fault[1])) {
+        		board->stalled_cycles[num]++;
+        	}
+        	else {
+        		board->stalled_cycles[0] = 0;
+        		board->stalled_cycles[1] = 0;
+        	}
+            if (board->stalled_cycles[num] >= STALL_CYCLES_STOP){
+            	DEBUGOUT("Actuator %d[%d] stalled while moving to position! Disabling actuator pair!\n", board->identity, num);
                 board->stalled_cycles[num] = 0;
-                board->pwm_algorithm[num] = 0;
-
-#if PRINT_SENSOR_DATA_ACTIVE
-                DEBUGOUT("Switching to variable-PWM algorithm!\n");
-#endif
+                board->enable[0] = 0;
+                board->enable[1] = 0;
+                return;
             }
         }
-#endif
 
         // Otherwise, set the PWM based on the exponential function
         // Percentage of usable stroke length to travel => percentage of duty cycle to use (with minimum at 5%)
