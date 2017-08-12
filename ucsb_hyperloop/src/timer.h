@@ -17,6 +17,8 @@ uint8_t collectDataFlag;
 uint8_t logDataFlag;
 #define PRINT_SENSOR_DATA_PERIOD 3 // sec
 uint8_t printSensorDataFlag;
+#define COLLECT_BRAKING_POSITION_FREQ 1000 // Hz
+uint8_t collectBrakingPositionFlag;
 
 void runtimeTimerInit();
 void tickTimerInit();

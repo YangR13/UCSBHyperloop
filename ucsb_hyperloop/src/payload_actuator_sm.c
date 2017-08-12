@@ -32,12 +32,8 @@ int i;
 /*..........................................................................*/
 void initializePayloadActuatorStateMachine(void) {
     QHsm_ctor(&Payload_Actuator_HSM.super, (QStateHandler)&Initial);
-    int i;
-    for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++)
-    {
-        Payload_Actuator_HSM.actuator_direction[i] = 0;
-        Payload_Actuator_HSM.actuator_enable[i] = 0;
-    }
+    Payload_Actuator_HSM.actuator_direction = 0;
+    Payload_Actuator_HSM.actuator_enable = 0;
     Payload_Actuator_HSM.fault = 0;
     QHsm_init((QHsm *)&Payload_Actuator_HSM);
 }
@@ -96,10 +92,9 @@ QState Nominal_lowered_disengaged(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_lowered_disengaged-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 0;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 0;
+
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -126,10 +121,8 @@ QState Nominal_lowered_advancing(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_lowered_advancing-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 1;
-                Payload_Actuator_HSM.actuator_enable[i] = 1;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 1;
+            Payload_Actuator_HSM.actuator_enable = 1;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -160,10 +153,8 @@ QState Nominal_lowered_retracting(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Lowered and retracting-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 1;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 1;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -238,10 +229,8 @@ QState Nominal_raised_supporting_engaged(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_raised_supporting_engaged-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 0;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 0;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -328,10 +317,8 @@ QState Nominal_raised_not_supporting_advancing(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_raised_not_supporting_advancing-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 1;
-                Payload_Actuator_HSM.actuator_enable[i] = 1;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 1;
+            Payload_Actuator_HSM.actuator_enable = 1;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -366,10 +353,8 @@ QState Nominal_raised_not_supporting_retracting(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_raised_not_supporting_retracting-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 1;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 1;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -404,10 +389,8 @@ QState Nominal_raised_not_supporting_disengaged(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Nominal_raised_not_supporting_disengaged-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 0;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 0;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {
@@ -438,10 +421,8 @@ QState Fault(Payload_Actuator_HSM_t *me) {
     switch (Q_SIG(me)) {
         case Q_ENTRY_SIG: {
             BSP_display("Fault-ENTRY;\n");
-            for(i = 0; i < NUM_PAYLOAD_ACTUATORS; i++){
-                Payload_Actuator_HSM.actuator_direction[i] = 0;
-                Payload_Actuator_HSM.actuator_enable[i] = 0;
-    	    }
+            Payload_Actuator_HSM.actuator_direction = 0;
+            Payload_Actuator_HSM.actuator_enable = 0;
             return Q_HANDLED();
         }
         case Q_EXIT_SIG: {

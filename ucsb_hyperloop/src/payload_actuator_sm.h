@@ -7,8 +7,8 @@
 // Structure of data members to be passed between main and the state machine
 typedef struct Payload_Actuator_HSM_data {
     QHsm super;
-    uint8_t actuator_direction[NUM_PAYLOAD_ACTUATORS];
-    uint8_t actuator_enable[NUM_PAYLOAD_ACTUATORS];
+    uint8_t actuator_direction;
+    uint8_t actuator_enable;
     uint8_t fault;
 } Payload_Actuator_HSM_t;
 

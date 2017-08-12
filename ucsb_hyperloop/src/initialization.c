@@ -41,12 +41,19 @@ void initializeSensorsAndControls(){
         sensorData.photoelectric = 0.0;
     }
     if(RANGING_SENSORS_ACTIVE){
-        rangingSensorsInit();
-        CALIBRATE_FLAG = 0;
+        //rangingSensorsInit();
+        //CALIBRATE_FLAG = 0;
     }
     if(GPIO_INT_ACTIVE){
         /* Enable GPIO Interrupts */
         GPIO_Interrupt_Enable();
+    }
+
+    if(POSITIONING_ACTIVE) {
+    	int i;
+    	for(i=0; i<4; i++) {
+        	sensorData.wheelTachPositionX[i] = 0;
+    	}
     }
 
     if(MOTOR_BOARD_I2C_ACTIVE) {
@@ -66,6 +73,14 @@ void initializeSensorsAndControls(){
     	}
     }
 
+    if (BMS_18V5_ACTIVE){
+        bms_18v5 = initialize_BMS_18V5(0);
+    }
+
+    if (PWR_DST_BMS_ACTIVE){
+        pwr_dst_bms = initialize_PWR_DST_BMS(0);
+    }
+
     if (CONTACT_SENSOR_ACTIVE){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
@@ -74,8 +89,17 @@ void initializeSensorsAndControls(){
         Init_PWM(LPC_PWM1);
         int i;
         for (i = 0; i < 2; i++){
-            braking_boards[i] = initialize_actuator_board(i);
+            braking_boards[i] = initialize_actuator_board(ACTUATOR_BOARD_BRAKING_MIN + i);
         }
+        calibration_step = CALIBRATION_DONE;
+    }
+
+    if (PAYLOAD_ACTUATORS_ACTIVE){
+        payload = initialize_actuator_board(ACTUATOR_BOARD_PAYLOAD);
+    }
+
+    if (SERVICE_PROPULSION_ACTIVE){
+        service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
     }
 }
 

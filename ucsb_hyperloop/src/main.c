@@ -37,6 +37,8 @@ int main(void)
     initializeSensorsAndControls();
     initializeSubsystemStateMachines();
 
+    rangingSensorsCalibrate();
+
     DEBUGOUT("_______________________________________\n");
     DEBUGOUT("UCSB Hyperloop Controller Initialized\n");
     DEBUGOUT("_______________________________________\n");
@@ -65,13 +67,11 @@ int main(void)
             performActuation(); // See actuation.c
 		}
 
-		/*
 		// If braking is active, poll feedback signal as fast as possible to determine when set point reached
-		if (Braking_HSM.engage){
+		if (BRAKING_ACTIVE /*&& collectBrakingPositionFlag == 1*/){
+			collectBrakingPositionFlag = 0;
 		    update_actuator_control(braking_boards[0]);
-		    update_actuator_control(braking_boards[1]);
 		}
-		*/
 
 		// ** PERIODIC TASKS **
         if(GATHER_DATA_ACTIVE && collectDataFlag){

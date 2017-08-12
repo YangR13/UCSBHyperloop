@@ -36,9 +36,6 @@
 #define NUM_HUBS 3
 #define NUM_HUB_PORTS 8
 #define NUM_HEMS 4
-#define NUM_MAGLEV_BMS 2
-#define NUM_ELECTRONICS_BMS 1
-#define NUM_18V5_BMS 2
 
 //Thermistor Data
 #define REFERENCE_RESISTANCE 5100 //[ohms]
@@ -51,15 +48,16 @@
 #define AMMETER_150A_SENSITIVITY 8.8		//[mV/A] for the 150amp version of the sensor
 
 //Tachometer Data
-#define TACHOMETER_TICKS 1	// Number of reflective strips on the motor.
+#define MAGLEV_TACH_TICKS 1	// Number of reflective strips on the motor.
+#define WHEEL_TACH_TICKS 10	// Number of reflective spokes on the wheel.
+
+//Short Ranging Data
+#define SHORT_RANGING_VOLTAGE_OFFSET 0.2	// Voltage offset.
 
 //Safety:
 #define HEMS_MAX_TEMP 60      //Too hot
 #define HEMS_MIN_TEMP 5       //More to detect disconnects than for "too cold"
 #define HEMS_MAX_CURRENT 50   //
-
-#define BATT_MAX_TEMP 60      //Too hot
-#define BATT_MIN_TEMP 5
 
 //Averaging:
 #define TACHOMETER_AVG_WEIGHT 0.2 //Out of 1 (value = (old_value * AVG_WEIGHT + (1 - AVG_WEIGHT) * new_value) Set to 0 if you don't want exponential averaging.
@@ -73,6 +71,10 @@ void GPIO_Setup(uint8_t port, uint8_t pin, uint8_t dir);
 void GPIO_Write(uint8_t port, uint8_t pin, uint8_t setting);
 uint8_t GPIO_Read(uint8_t port, uint8_t pin);
 
+// I2C Hub/network info (to be shared with other I2C - bms, etc.)
+extern const uint8_t HUB_I2C_BUS[NUM_HUBS];
+extern const uint8_t HUB_AUX_GPIO_REGISTER[NUM_HUBS];
+extern const uint8_t HUB_AUX_PINS[NUM_HUBS][NUM_HUB_PORTS];
 
 typedef struct {
   uint8_t identity;
@@ -93,6 +95,8 @@ typedef struct {
   //Helper Data
   float timestamp;
   uint16_t tachometer_counter[2];
+
+  int wheel_tach_spokes_counter;
 
   //Control
   float throttle_voltage;
@@ -120,27 +124,7 @@ float runtime();
 */
 
 
-typedef struct{   //Designed for 3x 6S batteries; 
-  uint8_t identity;
 
-  //I2C Parameters
-  uint8_t bus;                //Only one allowed per bus, since addresses are hard-wired.
-  
-  //Data Storage
-  float battery_voltage[3];   //From left to right on the board.
-  float cell_voltages[3][6];
-  int temperatures[3][2];
-  uint8_t amps;               //No onboard ammeter; relies on data from HEMS or other.
-
-  //Controls
-  uint8_t relay_active_low;       //Active Low
-
-  float timestamp;
-  uint8_t alarm;
-} Maglev_BMS;
-
-Maglev_BMS* initialize_Maglev_BMS(uint8_t identity);
-uint8_t update_Maglev_BMS(Maglev_BMS* bms);
 
 /*ADC LTC2309
    Max I2C Clock Frequency: 400kHz
@@ -169,6 +153,18 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms);
 #define LTC2309_CHN_5	0xE0
 #define LTC2309_CHN_6	0xB0
 #define LTC2309_CHN_7	0xF0
+
+// ADC addresses - read as AS1 / AS0
+// #define LTC2309_I2C_ADDRESS 0x08    //  LOW       LOW
+// #define LTC2309_I2C_ADDRESS 0x09    //  LOW       Float
+// #define LTC2309_I2C_ADDRESS 0x0A    //  LOW       HIGH
+// #define LTC2309_I2C_ADDRESS 0x0B    //  Float     HIGH
+// #define LTC2309_I2C_ADDRESS 0x18    //  Float     Float
+// #define LTC2309_I2C_ADDRESS 0x19    //  Float     LOW
+// #define LTC2309_I2C_ADDRESS 0x1A    //  HIGH      LOW
+// #define LTC2309_I2C_ADDRESS 0x1B    //  HIGH      Float
+// #define LTC2309_I2C_ADDRESS 0x28    //  High      HIGH
+
 
 //ADC Associated Functions:
 uint16_t ADC_read(uint8_t i2c_bus, uint8_t ADC_address, uint8_t ADC_channel);
@@ -246,5 +242,8 @@ void DAC_write(uint8_t i2c_bus, uint8_t DAC_address, uint16_t output_voltage);
 //IOX Associated Functions:
 void IOX_setup(uint8_t i2c_bus, uint8_t IOX_address);
 uint16_t IOX_read(uint8_t i2c_bus, uint8_t IOX_address);
+
+// Conversion function for short-ranging sensors.
+float voltageToDistance(float voltage, int shortRangingIndex);
 
 #endif //I2CPERIPHS_H

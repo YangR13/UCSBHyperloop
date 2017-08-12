@@ -5,6 +5,8 @@
 //If using this on the Arduino, this should be saved as a .cpp file. Otherwise it should be saved as a .c
 
 #include "I2CPERIPHS.h"
+#include "ranging.h"
+
 
 //POD PIN MAPPING, CALIBRATION
 //Hub Data:
@@ -23,34 +25,9 @@ const uint8_t HEMS_HUB_PORT[NUM_HEMS][2] = {    //Max 2 per I2C bus or Hub
   {2, 2},
   {1, 3}
 };
-const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {0,  255,  0,  255};
+const uint8_t HEMS_I2C_DIP[NUM_HEMS] = {255,  255,  0,  0};
 const float HEMS_CAL_5V0REF[NUM_HEMS] = {5.08,  5.08, 5.08, 5.08};
 const float HEMS_CAL_3V3REF[NUM_HEMS] = {3.28,  3.28, 3.28, 3.30};
-
-//Maglev_BMS Data:
-const uint8_t MAGLEV_BMS_HUB_PORT[NUM_MAGLEV_BMS][2] = {   //Max 1 per I2C bus or Hub
-  {1, 0},   //{Hub, Port};
-  {2, 0}
-};
-const float MAGLEV_BMS_CAL_CONVERSIONS[NUM_MAGLEV_BMS][3][6] = {
-  { //BMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99}    //SubBMS2
-  },
-  { //BMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS0
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99},   //SubBMS1
-    {2.0, 2.0, 3.0, 4.0, 5.02, 5.99}    //SubBMS2
-  }
-};
-
-
-
-
-
-
-
 
 // Global variables.
 const uint8_t ADC_Address_Select[4] = {0x8, 0xA, 0x1A, 0x28};
@@ -91,6 +68,8 @@ HEMS* initialize_HEMS(uint8_t identity) {
     engine->rpm[n] = 0;
   }
 
+  engine->wheel_tach_spokes_counter = 0;
+
   // Initialize thermistor moving averages (with first read)
   int temp_counter;
   for (temp_counter = 0; temp_counter < 4; temp_counter++) {
@@ -102,12 +81,13 @@ HEMS* initialize_HEMS(uint8_t identity) {
   int short_counter;
   for (short_counter = 0; short_counter < 2; short_counter++) {
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
-    if (!((voltage < 0.34) || (voltage > 2.43))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      engine->short_data[short_counter] = shortRangingDistanceLUT[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
   }
 #endif
 
@@ -138,17 +118,18 @@ uint8_t update_HEMS(HEMS* engine) {
 #ifdef LPC
   // Record short ranging sensor data
   int short_counter;
-  float ShortRangingMovingAverage;
   for (short_counter = 0; short_counter < 2; short_counter++) {
-    ShortRangingMovingAverage = engine->short_data[short_counter];
     float ShortRangingDataRaw = ADC_read(engine->bus, engine->ADC_device_address[0], short_counter + 5);
-    float voltage = ((float)ShortRangingDataRaw) / 1300;
+    float voltage = ((float)ShortRangingDataRaw * 5 / MAX12BITVAL) + SHORT_RANGING_VOLTAGE_OFFSET;
 
-    if (!((voltage < 0.34) || (voltage > 2.43))) {
-      uint16_t index = (uint16_t)(voltage * 100.0 + 0.5) - 34;
-      ShortRangingMovingAverage = ALPHA * ShortRangingMovingAverage + BETA * shortRangingDistanceLUT[index];
+    float distance = voltageToDistance(voltage, engine->identity);
+    if(distance > 0) {
+    	engine->short_data[short_counter] = ALPHA * engine->short_data[short_counter] + BETA * distance;
     }
-    engine->short_data[short_counter] = ShortRangingMovingAverage;
+    // TODO: Create an 'else' block -> Set a flag indicating that the short-ranging sensor data is invalid!
+
+    //if ((short_counter == 0) && (engine->identity == 0))
+    	//DEBUGOUT("Voltage[%d] = %fV\n", engine->identity, voltage);
   }
 #endif
 
@@ -179,9 +160,12 @@ uint8_t update_HEMS(HEMS* engine) {
       delta_counter = current_tachometer_counter[n] - previous_tachometer_counter[n];
     else  //Account for edge case where the binary counter overflows and resets back to 0.
       delta_counter = current_tachometer_counter[n] + (4096 - previous_tachometer_counter[n]);
-
-    current_rpm[n] = 60.0 / TACHOMETER_TICKS * delta_counter / (current_time[n] - engine->timestamp);
+    current_rpm[n] = 60.0 / ((n == 1) ? MAGLEV_TACH_TICKS : WHEEL_TACH_TICKS) * delta_counter / (current_time[n] - engine->timestamp);
     engine->rpm[n] = (1 - TACHOMETER_AVG_WEIGHT) * current_rpm[n] + TACHOMETER_AVG_WEIGHT * engine->rpm[n];
+
+    if(n == 0) {	// 0 = Wheel tach.
+    	engine->wheel_tach_spokes_counter += delta_counter;
+        }
     engine->tachometer_counter[n] = current_tachometer_counter[n];
   }
   engine->timestamp = runtime();
@@ -195,79 +179,25 @@ uint8_t update_HEMS(HEMS* engine) {
   return engine->alarm;
 }
 
-
-
-
-
-
-
-const uint8_t I2C_ADC_Maglev_subBMS_Addresses[3] = {0x19, 0x0B, 0x18};
-Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
-  Maglev_BMS* bms = malloc(sizeof(Maglev_BMS));
-  bms->identity = identity;
-  bms->bus = MAGLEV_BMS_HUB_PORT[bms->identity][0];
-
-
-  GPIO_Setup(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], OUT);
-  GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], 1);
-  bms->relay_active_low = 1;
-
-  int batt;
-  for (batt = 0; batt < 3; batt++) {
-    // Initialize battery voltages to a default value
-    bms->battery_voltage[batt] = 23.0; // TODO: Is this a good starting value? 23V?
-
-    // Initialize cell voltages to a default value
-    int i = 0;
-    for (i = 0; i < 6; i++) {
-      bms->cell_voltages[batt][i] = 2.833; // TODO: Is this a good starting value? 23V / 6 cells?
+float voltageToDistance(float voltage, int shortRangingIndex) {
+	float distance = -1;
+    if (!((voltage < 0.34) || (voltage > 2.44))) {
+      float index = (voltage - .34) * 20;
+      uint16_t index_l = (uint16_t) index;
+      uint16_t index_h = index_l + 1;
+      float distance_l = shortRangingDistanceLUT[shortRangingIndex][index_l];
+      float distance_h = shortRangingDistanceLUT[shortRangingIndex][index_h];
+      distance = distance_l + (index - index_l) * (distance_h - distance_l);
     }
-
-    // Initialize thermistor moving averages (with first read)
-    int temp_counter = 0;
-    for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      bms->temperatures[batt][temp_counter] = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
-    }
-  }
-
-  bms->amps = 0;
-  bms->timestamp = 0;
-  bms->alarm = 0;
-  return bms;
+    return distance;
 }
 
-uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
-  int batt, i;
-  float prev_voltage;
 
-  //0x19 FLOAT LOW
-  //0x0B FLOAT HIGH
-  //0x18 FLOAT FLOAT
-  for (batt = 0; batt < 3; batt++) {
-    prev_voltage = 0;
-    for (i = 0; i < 6; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
-      bms->cell_voltages[batt][i] = voltage - prev_voltage;
-      prev_voltage = voltage;
-    }
-    bms->battery_voltage[batt] = prev_voltage;
 
-    //Record Temperatures
-    int temp_counter = 0;
-    for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
-      new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
-      bms->temperatures[batt][temp_counter] = new_temperature;
-      if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-        bms->alarm |= 0b00000001;
-      }
-    }
-  }
 
-  GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], bms->relay_active_low);
 
-  return bms->alarm;
-}
+
+
 
 
 
