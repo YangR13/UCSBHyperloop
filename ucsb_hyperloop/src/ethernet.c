@@ -321,10 +321,12 @@ void recvDataPacket() {
 
 		    token = strtok (NULL, seps);
 		}
-		DEBUGOUT("TopSpeed recieved: %s\n", token[0]);
-		DEBUGOUT("MaxAccel recieved: %s\n", token[1]);
-		DEBUGOUT("MinTime recieved: %s\n", token[2]);
-		DEBUGOUT("MaxTime recieved: %s\n", token[3]);
+		DEBUGOUT("TopSpeed received: %s\n", token[0]);
+		DEBUGOUT("MaxAccel received: %s\n", token[1]);
+		DEBUGOUT("MinTime received: %s\n", token[2]);
+		DEBUGOUT("MaxTime received: %s\n", token[3]);
+		timing_profile_t_min = atoi(token[2]);
+		timing_profile_t_max = atoi(token[3]);
 		//DEBUGOUT("dacValue = %f\n", dacValue);
 	}
 

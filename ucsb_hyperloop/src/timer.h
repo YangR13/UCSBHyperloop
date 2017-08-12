@@ -7,6 +7,11 @@
 #define TICK_TIMER_FREQ 100 // Hz
 uint32_t tick;
 
+// Timing Profile
+uint32_t timing_profile_start_time;    // ms?
+uint32_t timing_profile_t_min;    // ms?
+uint32_t timing_profile_t_max;    // ms?
+
 // Multiplier allows frequencies below 1 Hz (i.e. periods > 1 sec)
 #define MAX_PERIOD_MULTIPLIER 10 // Max period length (sec)
 
