@@ -219,6 +219,15 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
     update_actuator_board(board);
 }
 
+void move_in_dir(ACTUATORS *board, int num, int dir, float pwm) {
+	if(!(dir == 0 || dir == 1)) return;
+	board->enable[num] = 1;
+	board->direction[num] = dir;
+    board->stop_mode[num] = NO_STOP;        // Run continuously - don't stop automatically
+    board->pwm[num] = pwm;
+    board->pwm_algorithm[num] = 0;
+}
+
 void move_to_disengaged_pos(ACTUATORS *board, int num) {
 	move_to_pos(board, num, BRAKING_DISENGAGED_POSITIONS[board->identity - ACTUATOR_BOARD_BRAKING_MIN][num]);
 }
@@ -493,6 +502,16 @@ void update_actuator_control(ACTUATORS *board){
     }
 }
 
+void actuator_pair_stop(ACTUATORS *board) {
+	actuator_single_stop(board, 0);
+	actuator_single_stop(board, 1);
+}
+
+void actuator_single_stop(ACTUATORS *board, int num) {
+	board->target_pos[num] = board->position[num];
+	board->enable[num] = 0;
+}
+
 void start_actuator_calibration() {
 	calibration_step = CALIBRATION_INIT;
 }
@@ -603,6 +622,36 @@ void start_actuator_disengage(ACTUATORS *board) {
 	for(i=0; i<2; i++) {
 		move_to_pos(board, i, BRAKING_DISENGAGED_POSITIONS[board->identity][i]);
 	}
+}
+
+void servprop_raise(ACTUATORS *board) {
+	move_time(board, 0, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+}
+
+void servprop_lower(ACTUATORS *board) {
+	move_time(board, 0, IN, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
+}
+
+void servprop_drive_forwards(ACTUATORS *board) {
+	move_in_dir(board, 1, OUT, SERVICE_PROP_DRIVE_PWM);
+}
+
+void servprop_drive_backwards(ACTUATORS *board) {
+	move_in_dir(board, 1, IN, SERVICE_PROP_DRIVE_PWM);
+}
+
+void servprop_drive_stop(ACTUATORS *board) {
+	actuator_single_stop(board, 1);
+}
+
+void payload_raise(ACTUATORS *board) {
+	move_time(board, 0, OUT, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_TIME);
+	move_time(board, 1, OUT, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_TIME);
+}
+
+void payload_lower(ACTUATORS *board) {
+	move_time(board, 0, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
+	move_time(board, 1, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
 }
 
 void PWM_Setup(const void * pwm, uint8_t pin){

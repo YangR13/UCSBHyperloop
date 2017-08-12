@@ -241,10 +241,7 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, "STOP_BRAKES_SIG\0") == 0){
 		printf("STOP_BRAKES_SIG RECEIVED\n");
-		braking_boards[0]->target_pos[0] = braking_boards[0]->position[0];
-		braking_boards[0]->target_pos[1] = braking_boards[0]->position[1];
-        braking_boards[0]->enable[0] = 0;
-        braking_boards[0]->enable[1] = 0;
+        actuator_pair_stop(braking_boards[0]);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
