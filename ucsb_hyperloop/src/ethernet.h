@@ -7,6 +7,10 @@
 #define WIZNET_INT_PORT					0
 #define WIZNET_INT_PIN					4
 
+// J7[16]
+#define ETHERNET_RESET_PORT				4
+#define ETHERNET_RESET_PIN				31
+
 /* SSP Constants */
 #define LPC_SSP           				LPC_SSP1
 #define SSP_IRQ           				SSP1_IRQn
@@ -187,6 +191,7 @@ void Wiz_UDP_Close(uint8_t n);
 void Wiz_Clear_Buffer(uint8_t n);
 int ethernetInit(uint8_t protocol, uint8_t socket);
 int ethernetRepairConnection(uint8_t protocol, uint8_t socket);
+void ethernetModuleHardwareReset();
 void Wiz_Deinit(uint8_t protocol, uint8_t socket);
 void spi_Send_Blocking(uint16_t address, uint16_t length);
 void spi_Recv_Blocking(uint16_t address, uint16_t length);

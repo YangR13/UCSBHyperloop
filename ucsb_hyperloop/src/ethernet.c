@@ -915,20 +915,37 @@ int ethernetInit(uint8_t protocol, uint8_t socket) {
 }
 
 int ethernetRepairConnection(uint8_t protocol, uint8_t socket) {
-	if(connectionOpen || !socket) return 1;
-	int success = 1;
-	success = Wiz_TCP_Connect(socket);
-	if(!success) Wiz_TCP_Close(socket);
+	if(connectionOpen || !socket) {
+		return 1;
+	}
+	int success = Wiz_TCP_Connect(socket);
+	if(!success) {
+		Wiz_TCP_Close(socket);
+	}
 	DEBUGOUT("Repairing connection... %s\n", (success) ? "Successful!" : "Unsuccessful.");
 	return success;
 }
 
+void ethernetModuleHardwareReset() {
+	uint32_t startTime = getRuntime();
+	Chip_GPIO_SetPinState(LPC_GPIO, ETHERNET_RESET_PORT, ETHERNET_RESET_PIN, 0);
+
+	// Wait 1ms (2 us required).
+	while(getRuntime() < startTime + 1);
+
+	Chip_GPIO_SetPinState(LPC_GPIO, ETHERNET_RESET_PORT, ETHERNET_RESET_PIN, 1);
+
+	// Wait 150ms.
+	while(getRuntime() < startTime + 1 + 150);
+}
+
 void Wiz_Deinit(uint8_t protocol, uint8_t socket) {
 	/* Disconnect and close socket */
-	if(protocol)
+	if(protocol) {
 		Wiz_TCP_Close(socket);
-	else
+	} else {
 		Wiz_UDP_Close(socket);
+	}
 
 	/* DeInitialize SSP peripheral */
 	Chip_SSP_DeInit(LPC_SSP1);

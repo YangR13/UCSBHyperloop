@@ -105,6 +105,9 @@ void initializeSensorsAndControls(){
 
 void initializeCommunications(){
     if(ETHERNET_ACTIVE){
+        GPIO_Output_Init(ETHERNET_RESET_PORT, ETHERNET_RESET_PIN);
+        ethernetHardwareReset();
+
     	int success = 0;
         while(!success) {
         	success = ethernetInit(PROTO_TCP, 0);
