@@ -309,11 +309,11 @@ void recvDataPacket() {
 		DEBUGOUT("TIMING PROFILE INPUTS RECEIVED\n");
 		char tokenstring[strlen((char *)Net_Rx_Data)-17];
 		memcpy( tokenstring, &Net_Rx_Data[17], strlen((char *)Net_Rx_Data)-17 );
-		subbuff[strlen((char *)Net_Rx_Data)-18] = '\0';
+		tokenstring[strlen((char *)Net_Rx_Data)-18] = '\0';
 		char seps[] = ",";
 		char* token;
 		int var;
-		int input[4];
+		char input[4];
 		int i = 0;
 		token = strtok (tokenstring, seps);
 		while (token != NULL)

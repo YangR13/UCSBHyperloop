@@ -74,11 +74,11 @@ int main(void)
             collectDataFlag = 0;
             collectData(); 		// See sensor_data.c
 
-            // ** DATA LOGGING **
-//            if (COMMUNICATION_ACTIVE && logDataFlag){
-//                logDataFlag = 0;
-//                logAllData();          // See logging.c
-//            }
+             // ** DATA LOGGING **
+            if (COMMUNICATION_ACTIVE && logDataFlag){
+                logDataFlag = 0;
+                logAllData();          // See logging.c
+            }
 
             // Service high-level command routines ('go', 'all stop', 'emergency stop')
             // ** DETERMINE STATE MACHINE TRANSITIONS**
