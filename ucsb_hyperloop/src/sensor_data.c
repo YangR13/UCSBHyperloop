@@ -120,6 +120,7 @@ void collectData(){
 //        for (i = 0; i < 2; i++){
             update_actuator_board(braking_boards[i]);
             update_actuator_calibration(braking_boards[i]);
+            update_actuator_engage(braking_boards[i]);
 //        }
     }
 
@@ -220,7 +221,8 @@ void printSensorData(){
         DEBUGOUT("Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
         DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
         DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-        DEBUGOUT("Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
+        DEBUGOUT("Actuator 0 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
+        DEBUGOUT("Actuator 1 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[1], braking_boards[0]->pwm[1], braking_boards[0]->direction[1], braking_boards[0]->target_pos[1]);
         DEBUGOUT("\n\n");
     }
 
