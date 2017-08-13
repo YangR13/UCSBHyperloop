@@ -148,7 +148,7 @@ void actuate_maglev(){
 			// This part is currently superseded by the throttle signal as set by the web app!
 //                int i;
 //                for(i = 0; i < NUM_MOTORS; i++) {
-//                    set_motor_throttle(i, 4.0);
+//                    set_motor_throttle(i, 3.8);
 //                }
 		}
 	}

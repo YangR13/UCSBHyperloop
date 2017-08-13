@@ -37,6 +37,8 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 	{ 3700, 3700 }	// Back.
 };
 
+#define READY_OFFET_FROM_ENGAGED	250
+
 // Number of Boards
 #define NUM_ACTUATORS 2 // Per board
 #define NUM_THERMISTORS 4 // Per board
@@ -146,8 +148,8 @@ typedef struct {
 } ACTUATORS;
 
 ACTUATORS *braking_boards[2]; // 2 Braking boards.
-ACTUATORS *payload;
 ACTUATORS *service_prop;
+ACTUATORS *payload;
 
 ACTUATORS* initialize_actuator_board(uint8_t identity);
 uint8_t update_actuator_board(ACTUATORS* board);

@@ -594,7 +594,7 @@ void start_actuator_ready(ACTUATORS *board) {
 
 	int i=0;
 	for(i=0; i<2; i++) {
-		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */] + 250);
+		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */] + READY_OFFET_FROM_ENGAGED);
 	}
 }
 

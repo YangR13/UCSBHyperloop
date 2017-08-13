@@ -249,18 +249,11 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
-		//move_to_pos(braking_boards[0], 0, -1);
-        //move_to_pwm(braking_boards[0], 0, 1, braking_boards[0]->pwm[0] + 0.01);
-		//move_to_pwm(braking_boards[0], 0, 1, 0.15);
-		//move_to_pos(braking_boards[0], 0, braking_boards[0]->calibrated_engaged_pos[0]);
 		start_actuator_engage(braking_boards[0]);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
-		//move_to_pos(braking_boards[0], 0, -2);
-		//move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 100);
-		//move_to_disengaged_pos(braking_boards[0], 0);
 		start_actuator_ready(braking_boards[0]);
 	}
 
@@ -421,6 +414,31 @@ void recvDataPacket() {
 		theTime.sec = (BYTE)secVal;
 		rtc_settime(&theTime);
 		send_data_ack_helper(TAK, &pos);
+	}
+
+	// Prepare Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "PREP_SP\0") == 0){
+		printf("ETHERNET: Prepare Service Propulsion\n");
+	}
+
+	// Service Propulsion Drive Forwards.
+	if(strcmp((char *)Net_Rx_Data, "DRI_FOR\0") == 0){
+		printf("ETHERNET: Service Propulsion Drive Forwards\n");
+	}
+
+	// Service Propulsion Drive Backwards.
+	if(strcmp((char *)Net_Rx_Data, "DRI_BAC\0") == 0){
+		printf("ETHERNET: Service Propulsion Drive Backwards\n");
+	}
+
+	// Stop Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "STOP_SP\0") == 0){
+		printf("ETHERNET: Stop Service Propulsion\n");
+	}
+
+	// Finish Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "FIN_SP\0") == 0){
+		printf("ETHERNET: Finish Service Propulsion\n");
 	}
 
 	if(pos != 0) {

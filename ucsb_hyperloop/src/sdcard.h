@@ -6,6 +6,7 @@
 #include "chip.h"
 #include "rtc.h"
 #include "initialization.h"
+#include "logging.h"
 
 // If this import fails:
 // Go into project settings => C/C++ Settings => Settings => MCU C Compiler => Includes
@@ -17,21 +18,6 @@
 
 #define TYPE_TXT "txt"
 #define TYPE_CSV "csv"
-
-typedef enum {
-	LOG_POSITION,
-	LOG_HEMS,
-	LOG_MAGLEV_BMS,
-	LOG_BRAKING,
-	NUM_LOGS
-} LOG_TYPE;
-
-static const char LOG_TYPE_STRINGS[NUM_LOGS][8] = {
-	"pos",
-	"hems",
-	"ml-bat",
-	"brake"
-};
 
 long LOG_POSITIONS[NUM_LOGS][4];
 

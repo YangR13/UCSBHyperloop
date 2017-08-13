@@ -123,6 +123,7 @@
 #define SOCKET_ID 		0
 
 /* Prototype methods */
+#if 0
 // Positional
 #define SR				"SR"		// Short Ranging
 #define PH				"PH"		// Photoelectric
@@ -134,7 +135,7 @@
 // BMS Boards
 #define BMSV			"BMSV"		// BMS Voltage
 #define BMST			"BMST"		// BMS Temperature
-
+#endif // 1|0
 
 /* Web App control for intializing the positioning */
 #define CALIBRATE_SIG	"CALIBRATE_SIG\0"
