@@ -165,6 +165,9 @@ uint8_t update_HEMS(HEMS* engine) {
 
     if(n == 0) {	// 0 = Wheel tach.
     	engine->wheel_tach_spokes_counter += delta_counter;
+    /*	if(engine->identity == 2) {
+    		DEBUGOUT("%d\n", delta_counter);
+    	}*/
     }
     engine->tachometer_counter[n] = current_tachometer_counter[n];
   }

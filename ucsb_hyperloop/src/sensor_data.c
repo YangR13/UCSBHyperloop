@@ -210,7 +210,7 @@ void printSensorData(){
     }
 
     if (MOTOR_BOARD_I2C_ACTIVE){
-#if 0
+#if 1
 
         float sum = 0.0; // used to sum up four tachometer distances
         float avg; // average of four tachometer differences
