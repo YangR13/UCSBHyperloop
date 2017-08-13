@@ -309,26 +309,20 @@ void recvDataPacket() {
 		DEBUGOUT("TIMING PROFILE INPUTS RECEIVED\n");
 		char tokenstring[strlen((char *)Net_Rx_Data)-17];
 		memcpy( tokenstring, &Net_Rx_Data[17], strlen((char *)Net_Rx_Data)-17 );
-		tokenstring[strlen((char *)Net_Rx_Data)-18] = '\0';
-		char seps[] = ",";
-		char* token;
-		int var;
-		char input[4];
-		int i = 0;
-		token = strtok (tokenstring, seps);
-		while (token != NULL)
-		{
-		    sscanf (token, "%d", &var);
-		    input[i++] = var;
-
-		    token = strtok (NULL, seps);
-		}
-		DEBUGOUT("TopSpeed received: %s\n", token[0]);
-		DEBUGOUT("MaxAccel received: %s\n", token[1]);
-		DEBUGOUT("MinTime received: %s\n", token[2]);
-		DEBUGOUT("MaxTime received: %s\n", token[3]);
-		timing_profile_t_min = atoi(token[2]);
-		timing_profile_t_max = atoi(token[3]);
+	    char *pt;
+	    int token[2];
+	    int ind = 0;
+	    pt = strtok (tokenstring,",");
+	    while (pt != NULL) {
+	        int a = atoi(pt);
+	        token[ind]=a;
+	        pt = strtok (NULL, ",");
+	        ind++;
+	    }
+		DEBUGOUT("MinTime received: %s\n", token[0]);
+		DEBUGOUT("MaxTime received: %s\n", token[1]);
+		timing_profile_t_min = atoi(token[0]);
+		timing_profile_t_max = atoi(token[1]);
 		//DEBUGOUT("dacValue = %f\n", dacValue);
 	}
 
