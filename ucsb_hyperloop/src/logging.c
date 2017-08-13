@@ -19,6 +19,9 @@ void logAllData(){
 	if(MOTOR_BOARD_I2C_ACTIVE || MAGLEV_BMS_ACTIVE) {
 		logData(LOG_MAGLEV);
 	}
+	if(PWR_DST_BMS_ACTIVE) {
+		logData(LOG_POWER_DISTRIBUTION);
+	}
 
 	if(BRAKING_ACTIVE) {
 		logData(LOG_BRAKING);
