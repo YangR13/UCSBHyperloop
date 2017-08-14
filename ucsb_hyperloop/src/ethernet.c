@@ -398,6 +398,36 @@ void recvDataPacket() {
 		send_data_ack_helper(TAK, &pos);
 	}
 
+	// Prepare Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "PREP_SP\0") == 0){
+		printf("ETHERNET: Prepare Service Propulsion\n");
+		servprop_lower(service_prop);
+	}
+
+	// Service Propulsion Drive Forwards.
+	if(strcmp((char *)Net_Rx_Data, "DRI_FOR\0") == 0){
+		printf("ETHERNET: Service Propulsion Drive Forwards\n");
+		servprop_drive_forwards(service_prop);
+	}
+
+	// Service Propulsion Drive Backwards.
+	if(strcmp((char *)Net_Rx_Data, "DRI_BAC\0") == 0){
+		printf("ETHERNET: Service Propulsion Drive Backwards\n");
+		servprop_drive_backwards(service_prop);
+	}
+
+	// Stop Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "STOP_SP\0") == 0){
+		printf("ETHERNET: Stop Service Propulsion\n");
+		actuator_single_stop(service_prop, 1);
+	}
+
+	// Finish Service Propulsion.
+	if(strcmp((char *)Net_Rx_Data, "FIN_SP\0") == 0){
+		printf("ETHERNET: Finish Service Propulsion\n");
+		servprop_raise(service_prop);
+	}
+
 	if(pos != 0) {
 		Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
 	}

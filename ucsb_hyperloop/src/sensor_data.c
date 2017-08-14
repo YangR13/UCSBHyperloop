@@ -159,6 +159,10 @@ void collectData(){
 //        }
     }
 
+    if(SERVICE_PROPULSION_ACTIVE) {
+    	update_actuator_board(service_prop);
+    }
+
     if (PRINT_SENSOR_DATA_ACTIVE){
         if (printSensorDataFlag){
             printSensorData();

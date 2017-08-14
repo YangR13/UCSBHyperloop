@@ -88,10 +88,12 @@ void initializeSensorsAndControls(){
     }
 
     if (PAYLOAD_ACTUATORS_ACTIVE){
+    	Init_PWM(LPC_PWM0);
         payload = initialize_actuator_board(ACTUATOR_BOARD_PAYLOAD);
     }
 
     if (SERVICE_PROPULSION_ACTIVE){
+    	Init_PWM(LPC_PWM0);
         service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
     }
 }
