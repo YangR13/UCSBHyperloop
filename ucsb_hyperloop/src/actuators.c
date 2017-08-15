@@ -32,10 +32,10 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
-//const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
+const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
 //const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// Board 1. HACK: 1, 0, 2, 3
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x1A, 0x8, 0xA, 0x28};		// Board 2
-const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
+//const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
@@ -625,23 +625,23 @@ void start_actuator_disengage(ACTUATORS *board) {
 }
 
 void servprop_raise(ACTUATORS *board) {
-	move_time(board, 0, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+	move_time(board, 1, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
 }
 
 void servprop_lower(ACTUATORS *board) {
-	move_time(board, 0, IN, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
+	move_time(board, 1, IN, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
 }
 
 void servprop_drive_forwards(ACTUATORS *board) {
-	move_in_dir(board, 1, OUT, SERVICE_PROP_DRIVE_PWM);
+	move_in_dir(board, 0, OUT, SERVICE_PROP_DRIVE_PWM);
 }
 
 void servprop_drive_backwards(ACTUATORS *board) {
-	move_in_dir(board, 1, IN, SERVICE_PROP_DRIVE_PWM);
+	move_in_dir(board, 0, IN, SERVICE_PROP_DRIVE_PWM);
 }
 
 void servprop_drive_stop(ACTUATORS *board) {
-	actuator_single_stop(board, 1);
+	actuator_single_stop(board, 0);
 }
 
 void payload_raise(ACTUATORS *board) {

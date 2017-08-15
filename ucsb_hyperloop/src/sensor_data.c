@@ -163,6 +163,14 @@ void collectData(){
     	update_actuator_board(service_prop);
     }
 
+    if(0 && ACTUATORS_ACTIVE) {
+    	// Debuggin'.
+    	update_actuator_board(braking_boards[0]);
+    	update_actuator_board(braking_boards[1]);
+    	update_actuator_board(service_prop);
+    	update_actuator_board(payload);
+    }
+
     if (PRINT_SENSOR_DATA_ACTIVE){
         if (printSensorDataFlag){
             printSensorData();
@@ -244,6 +252,14 @@ void printSensorData(){
         DEBUGOUT("contact_sensor_pushed: %d\n", sensorData.contact_sensor_pushed);
     }
 
+    if (SERVICE_PROPULSION_ACTIVE){
+    	DEBUGOUT("Service propulsion board sensor data:\n");
+        DEBUGOUT("Thermistors: %d | %d | %d | %d\n", service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3]);
+        DEBUGOUT("Bridge fault flag: %d | %d \n", service_prop->bridge_fault[0], service_prop->bridge_fault[1]);
+        DEBUGOUT("Motor -> Enable: %d | PWM: %f | Direction: %d\n", service_prop->enable[0], service_prop->pwm[0], service_prop->direction[0]);
+        DEBUGOUT("Actuator -> Enable: %d | PWM: %f | Direction: %d\n", service_prop->enable[1], service_prop->pwm[1], service_prop->direction[1]);
+    }
+
     if (BRAKING_ACTIVE){
         DEBUGOUT("Braking board 0 sensor data:\n");
         DEBUGOUT("Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
@@ -253,5 +269,13 @@ void printSensorData(){
         DEBUGOUT("Actuator 0 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
         DEBUGOUT("Actuator 1 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[1], braking_boards[0]->pwm[1], braking_boards[0]->direction[1], braking_boards[0]->target_pos[1]);
         DEBUGOUT("\n\n");
+    }
+
+    if(0 && ACTUATORS_ACTIVE) {
+    	// Debuggin' purposes! :D
+        DEBUGOUT("Braking[0] Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+        DEBUGOUT("Braking[1] Thermistors: %d | %d | %d | %d\n", braking_boards[1]->temperatures[0], braking_boards[1]->temperatures[1], braking_boards[1]->temperatures[2], braking_boards[1]->temperatures[3]);
+        DEBUGOUT("Service_Prop Thermistors: %d | %d | %d | %d\n", service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3]);
+        DEBUGOUT("Payload Thermistors: %d | %d | %d | %d\n", payload->temperatures[0], payload->temperatures[1], payload->temperatures[2], payload->temperatures[3]);
     }
 }
