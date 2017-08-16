@@ -61,12 +61,14 @@ Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
   int batt;
   for (batt = 0; batt < 3; batt++) {
     // Initialize battery voltages to a default value
-    bms->battery_voltage[batt] = 23.0; // TODO: Is this a good starting value? 23V?
+    bms->battery_voltage[batt] = -1.0; // TODO: Is this a good starting value? 23V?
+    bms->charge_percent[batt] = -1.0;
+    bms->charge_coulomb[batt] = -1.0;
 
     // Initialize cell voltages to a default value
     int i = 0;
     for (i = 0; i < 6; i++) {
-      bms->cell_voltages[batt][i] = 3.833; // TODO: Is this a good starting value? 23V / 6 cells?
+      bms->cell_voltages[batt][i] = -1.0; // TODO: Is this a good starting value? 23V / 6 cells?
     }
 
     // Initialize thermistor moving averages (with first read)
@@ -102,6 +104,8 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
+    bms->charge_coulomb[batt] = voltageToCharge22(prev_voltage);
+    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
@@ -157,12 +161,14 @@ BMS_18V5* initialize_BMS_18V5(uint8_t identity) {
   int batt;
   for (batt = 0; batt < 4; batt++) {
     // Initialize battery voltages to a default value
-    bms->battery_voltage[batt] = 18.5; // TODO: Is this a good starting value? 18.5V?
+    bms->battery_voltage[batt] = -1.0; // TODO: Is this a good starting value? 18.5V?
+    bms->charge_percent[batt] = -1.0;
+    bms->charge_coulomb[batt] = -1.0;
 
     // Initialize cell voltages to a default value
     int i = 0;
     for (i = 0; i < 5; i++) {
-      bms->cell_voltages[batt][i] = 3.7; // TODO: Is this a good starting value? 18.5V / 5 cells?
+      bms->cell_voltages[batt][i] = -1.0; // TODO: Is this a good starting value? 18.5V / 5 cells?
     }
 
     // Initialize thermistor moving averages (with first read)
@@ -209,6 +215,8 @@ void update_BMS_18V5(BMS_18V5* bms) {
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
+    bms->charge_coulomb[batt] = voltageToCharge18_5(prev_voltage);
+    bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
@@ -300,12 +308,14 @@ PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
   int batt = 0;
   for (batt = 0; batt < 2; batt++) {
     // Initialize battery voltages to a default value
-    bms->battery_voltage[batt] = 18.5; // TODO: Is this a good starting value? 18.5V?
+    bms->battery_voltage[batt] = -1.0; // TODO: Is this a good starting value? 18.5V?
+    bms->charge_percent[batt] = -1.0;
+    bms->charge_coulomb[batt] = -1.0;
 
     // Initialize cell voltages to a default value
     int i = 0;
     for (i = 0; i < 5; i++) {
-      bms->cell_voltages[batt][i] = 3.7; // TODO: Is this a good starting value? 18.5V / 5 cells?
+      bms->cell_voltages[batt][i] = -1.0; // TODO: Is this a good starting value? 18.5V / 5 cells?
     }
 
     // Initialize thermistor moving averages (with first read)
@@ -337,6 +347,8 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
       prev_voltage = voltage;
     }
     bms->battery_voltage[batt] = prev_voltage;
+    bms->charge_coulomb[batt] = voltageToCharge18_5(prev_voltage);
+    bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
     if (bms->battery_voltage[batt] < 1.0){
         // Total battery voltage < 1V? Probably disconnected. Clear alarm.
         new_alarms &= 0b01;
@@ -382,4 +394,39 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
   }
 
   return bms->alarm;
+
+}
+
+float voltageToCharge18_5(float voltage){
+	float charge = -1.0;
+	if (!((voltage < 16.3) || (voltage > 19.8))){
+		float index = (voltage - 16.3) * 10.0;
+		uint16_t index_l = (uint16_t) index;
+		uint16_t index_h = index_l + 1;
+		float charge_l = voltageToCharge18_5LUT[index_l];
+		float charge_h = voltageToCharge18_5LUT[index_h];
+		charge = charge_l + (index - index_l) * (charge_h - charge_l);
+	}
+	return charge;
+}
+
+float percentCharge18_5(float charge){
+	return (charge - 13791.3) / 13910.9;
+}
+
+float voltageToCharge22(float voltage){
+	float charge = -1.0;
+	if (!((voltage < 20.0) || (voltage > 23.7))){
+		float index = (voltage - 20.0) * 10.0;
+		uint16_t index_l = (uint16_t) index;
+		uint16_t index_h = index_l + 1;
+		float charge_l = voltageToCharge22LUT[index_l];
+		float charge_h = voltageToCharge22LUT[index_h];
+		charge = charge_l + (index - index_l) * (charge_h - charge_l);
+	}
+	return charge;
+}
+
+float percentCharge22(float charge){
+	return (charge - 28566.235) / 33751.15;
 }
