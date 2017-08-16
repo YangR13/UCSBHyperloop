@@ -97,6 +97,8 @@ void initializeSensorsAndControls(){
 
     if (SERVICE_PROPULSION_ACTIVE){
 		service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
+		//servprop_drive_forwards(service_prop);	// DEBUG.
+		//move_in_dir(service_prop, 1, OUT, 0.3);
     }
 }
 

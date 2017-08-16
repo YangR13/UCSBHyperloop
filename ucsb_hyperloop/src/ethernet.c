@@ -419,7 +419,7 @@ void recvDataPacket() {
 	// Stop Service Propulsion.
 	if(strcmp((char *)Net_Rx_Data, "STOP_SP\0") == 0){
 		printf("ETHERNET: Stop Service Propulsion\n");
-		actuator_single_stop(service_prop, 1);
+		actuator_single_stop(service_prop, 0);
 	}
 
 	// Finish Service Propulsion.
