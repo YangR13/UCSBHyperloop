@@ -60,14 +60,14 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 
 // TODO: SET THESE TO REALISTIC VALUES
 #define PAYLOAD_RAISE_TIME 1000 // ms
-#define PAYLOAD_RAISE_PWM 0.35
+#define PAYLOAD_RAISE_PWM 0.25
 #define PAYLOAD_LOWER_TIME 1000 // ms
 #define PAYLOAD_LOWER_PWM 0.25
-#define SERVICE_PROP_LOWER_TIME 1000 // ms
+#define SERVICE_PROP_LOWER_TIME 20000 // ms
 #define SERVICE_PROP_LOWER_PWM 0.25
-#define SERVICE_PROP_RAISE_TIME 1000 // ms
+#define SERVICE_PROP_RAISE_TIME 20000 // ms
 #define SERVICE_PROP_RAISE_PWM 0.25
-#define SERVICE_PROP_DRIVE_PWM 0.50
+#define SERVICE_PROP_DRIVE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
 #define POS_MAX_DELTA 300 // Readings greater than this delta away from the current moving average are considered erroneous.

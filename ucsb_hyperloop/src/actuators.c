@@ -625,11 +625,11 @@ void start_actuator_disengage(ACTUATORS *board) {
 }
 
 void servprop_raise(ACTUATORS *board) {
-	move_time(board, 1, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+	move_time(board, 1, IN, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_PWM);
 }
 
 void servprop_lower(ACTUATORS *board) {
-	move_time(board, 1, IN, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
+	move_time(board, 1, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
 }
 
 void servprop_drive_forwards(ACTUATORS *board) {
@@ -645,13 +645,13 @@ void servprop_drive_stop(ACTUATORS *board) {
 }
 
 void payload_raise(ACTUATORS *board) {
-	move_time(board, 0, OUT, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_TIME);
-	move_time(board, 1, OUT, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_TIME);
+	move_time(board, 0, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+	move_time(board, 1, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
 }
 
 void payload_lower(ACTUATORS *board) {
-	move_time(board, 0, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
-	move_time(board, 1, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
+	move_time(board, 0, OUT, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
+	move_time(board, 1, OUT, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
 }
 
 void PWM_Setup(const void * pwm, uint8_t pin){
