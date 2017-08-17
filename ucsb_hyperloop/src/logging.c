@@ -85,8 +85,8 @@ void logData(LOG_TYPE log_type) {
 
 		// Power Distribution BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
 		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			pwr_dst_bms->battery_charge_coulomb[0], pwr_dst_bms->battery_charge_percent[0],
-			pwr_dst_bms->battery_charge_coulomb[1], pwr_dst_bms->battery_charge_percent[1]);
+			pwr_dst_bms->charge_coulomb[0], pwr_dst_bms->charge_percent[0],
+			pwr_dst_bms->charge_coulomb[1], pwr_dst_bms->charge_percent[1]);
 		ethernet_add_data_to_packet(PD_BMS_CHG, -1, -1, data);
 
 		// Power Distribution BMS Battery0 Temperature (High), Battery1 Temperature (High).
@@ -155,16 +155,16 @@ void logData(LOG_TYPE log_type) {
 
 		// Maglev BMS Front Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent), Battery2 Charge (Coulomb, Percent).
 		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
-			maglev_bmses[0]->battery_charge_coulomb[0], maglev_bmses[0]->battery_charge_percent[0],
-			maglev_bmses[0]->battery_charge_coulomb[1], maglev_bmses[0]->battery_charge_percent[1],
-			maglev_bmses[0]->battery_charge_coulomb[2], maglev_bmses[0]->battery_charge_percent[2]);
+			maglev_bmses[0]->charge_coulomb[0], maglev_bmses[0]->charge_percent[0],
+			maglev_bmses[0]->charge_coulomb[1], maglev_bmses[0]->charge_percent[1],
+			maglev_bmses[0]->charge_coulomb[2], maglev_bmses[0]->charge_percent[2]);
 		ethernet_add_data_to_packet(M_BMS_F_CHG, -1, -1, data);
 
 		// Maglev BMS Back Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent), Battery2 Charge (Coulomb, Percent).
 		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
-			maglev_bmses[1]->battery_charge_coulomb[0], maglev_bmses[1]->battery_charge_percent[0],
-			maglev_bmses[1]->battery_charge_coulomb[1], maglev_bmses[1]->battery_charge_percent[1],
-			maglev_bmses[1]->battery_charge_coulomb[2], maglev_bmses[1]->battery_charge_percent[2]);
+			maglev_bmses[1]->charge_coulomb[0], maglev_bmses[1]->charge_percent[0],
+			maglev_bmses[1]->charge_coulomb[1], maglev_bmses[1]->charge_percent[1],
+			maglev_bmses[1]->charge_coulomb[2], maglev_bmses[1]->charge_percent[2]);
 		ethernet_add_data_to_packet(M_BMS_B_CHG, -1, -1, data);
 
 		// Maglev BMS Front Battery0 Temperature (High), Battery1 Temperature (High), Battery2 Temperature (High).
@@ -241,8 +241,8 @@ void logData(LOG_TYPE log_type) {
 
 		// Braking BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
 		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			bms_18v5->battery_charge_coulomb[0], bms_18v5->battery_charge_percent[0],
-			bms_18v5->battery_charge_coulomb[1], bms_18v5->battery_charge_percent[1]);
+			bms_18v5->charge_coulomb[0], bms_18v5->charge_percent[0],
+			bms_18v5->charge_coulomb[1], bms_18v5->charge_percent[1]);
 		ethernet_add_data_to_packet(B_BMS_CHG, -1, -1, data);
 
 		// Braking BMS Battery0 Temperature (High), Battery1 Temperature (High).
@@ -287,8 +287,8 @@ void logData(LOG_TYPE log_type) {
 
 		// Serv-Prop / Payload BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
 		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			bms_18v5->battery_charge_coulomb[2], bms_18v5->battery_charge_percent[2],
-			bms_18v5->battery_charge_coulomb[3], bms_18v5->battery_charge_percent[3]);
+			bms_18v5->charge_coulomb[2], bms_18v5->charge_percent[2],
+			bms_18v5->charge_coulomb[3], bms_18v5->charge_percent[3]);
 		ethernet_add_data_to_packet(SP_BMS_CHG, -1, -1, data);
 
 		// Serv-Prop / Payload BMS Battery0 Temperature (High), Battery1 Temperature (High).

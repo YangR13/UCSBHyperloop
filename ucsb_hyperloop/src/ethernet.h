@@ -96,7 +96,7 @@
 #define REMOTE_IP0 		192
 #define REMOTE_IP1 		168
 #define REMOTE_IP2 		1
-#define REMOTE_IP3 		105 // .125 for wireless, .100 for wired.
+#define REMOTE_IP3 		135 // .125 for wireless, .100 for wired.
 #define REMOTE_PORT0 	0xA1 // 41234
 #define REMOTE_PORT1 	0x12
 
