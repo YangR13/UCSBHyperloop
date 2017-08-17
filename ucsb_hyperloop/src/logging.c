@@ -16,9 +16,11 @@ void logAllData(){
 	if(POSITIONING_ACTIVE) {
 		logData(LOG_POSITIONING_NAVIGATION);
 	}
+
 	if(MOTOR_BOARD_I2C_ACTIVE || MAGLEV_BMS_ACTIVE) {
 		logData(LOG_MAGLEV);
 	}
+
 	if(PWR_DST_BMS_ACTIVE) {
 		logData(LOG_POWER_DISTRIBUTION);
 	}
@@ -43,22 +45,22 @@ void logData(LOG_TYPE log_type) {
 	switch(log_type) {
 	case LOG_POSITIONING_NAVIGATION:
 		// Position X, Position Y, Position Z.
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f",
 			sensorData.positionX, sensorData.positionY, sensorData.positionZ);
 		ethernet_add_data_to_packet(POS, -1, -1, data);
 
 		// Velocity X, Velocity Y, Velocity Z.
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f",
 			sensorData.velocityX, sensorData.velocityY, sensorData.velocityZ);
 		ethernet_add_data_to_packet(VEL, -1, -1, data);
 
 		// Acceleration X, Acceleration Y, Acceleration Z.
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f",
 			sensorData.accelX, sensorData.accelY, sensorData.accelZ);
 		ethernet_add_data_to_packet(ACL, -1, -1, data);
 
 		// Roll, Pitch, Yaw.
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f",
 			sensorData.roll, sensorData.pitch, sensorData.yaw);
 		ethernet_add_data_to_packet(RPY, -1, -1, data);
 
@@ -77,12 +79,12 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			v_high[0], v_low[0], v_high[1], v_low[1]);
 		ethernet_add_data_to_packet(PD_BMS_VHL, -1, -1, data);
 
 		// Power Distribution BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			pwr_dst_bms->battery_charge_coulomb[0], pwr_dst_bms->battery_charge_percent[0],
 			pwr_dst_bms->battery_charge_coulomb[1], pwr_dst_bms->battery_charge_percent[1]);
 		ethernet_add_data_to_packet(PD_BMS_CHG, -1, -1, data);
@@ -93,7 +95,7 @@ void logData(LOG_TYPE log_type) {
 			int t1 = pwr_dst_bms->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d, %d",
+		snprintf(data, 128, "%d,%d",
 			t_high[0], t_high[1]);
 		ethernet_add_data_to_packet(PD_BMS_TH, -1, -1, data);
 
@@ -101,18 +103,18 @@ void logData(LOG_TYPE log_type) {
 
 	case LOG_MAGLEV:
 		// Maglev0 RPM, Maglev1 RPM, Maglev2 RPM, Maglev3 RPM.
-		snprintf(data, 128, "%d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d",
 			motors[0]->rpm[1], motors[1]->rpm[1], motors[2]->rpm[1], motors[3]->rpm[1]);
 		ethernet_add_data_to_packet(M_RPM, -1, -1, data);
 
 		// Maglev0 Current, Maglev1 Current, Maglev2 Current, Maglev3 Current.
-		snprintf(data, 128, "%d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d",
 			motors[0]->amps, motors[1]->amps, motors[2]->amps, motors[3]->amps);
 		ethernet_add_data_to_packet(M_CUR, -1, -1, data);
 
 		// Maglev0 Temperature (0, 1, 2, 3), Maglev1 Temperature (0, 1, 2, 3)
 		// Maglev2 Temperature (0, 1, 2, 3), Maglev3 Temperature (0, 1, 2, 3).
-		snprintf(data, 128, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 			motors[0]->temperatures[0], motors[0]->temperatures[1], motors[0]->temperatures[2], motors[0]->temperatures[3],
 			motors[1]->temperatures[0], motors[1]->temperatures[1], motors[1]->temperatures[2], motors[1]->temperatures[3],
 			motors[2]->temperatures[0], motors[2]->temperatures[1], motors[2]->temperatures[2], motors[2]->temperatures[3],
@@ -131,7 +133,7 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
 			v_high[0], v_low[0], v_high[1], v_low[1], v_high[2], v_low[2]);
 		ethernet_add_data_to_packet(M_BMS_F_VHL, -1, -1, data);
 
@@ -147,19 +149,19 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
 			v_high[0], v_low[0], v_high[1], v_low[1], v_high[2], v_low[2]);
 		ethernet_add_data_to_packet(M_BMS_B_VHL, -1, -1, data);
 
 		// Maglev BMS Front Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent), Battery2 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
 			maglev_bmses[0]->battery_charge_coulomb[0], maglev_bmses[0]->battery_charge_percent[0],
 			maglev_bmses[0]->battery_charge_coulomb[1], maglev_bmses[0]->battery_charge_percent[1],
 			maglev_bmses[0]->battery_charge_coulomb[2], maglev_bmses[0]->battery_charge_percent[2]);
 		ethernet_add_data_to_packet(M_BMS_F_CHG, -1, -1, data);
 
 		// Maglev BMS Back Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent), Battery2 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%06.2f,%06.2f",
 			maglev_bmses[1]->battery_charge_coulomb[0], maglev_bmses[1]->battery_charge_percent[0],
 			maglev_bmses[1]->battery_charge_coulomb[1], maglev_bmses[1]->battery_charge_percent[1],
 			maglev_bmses[1]->battery_charge_coulomb[2], maglev_bmses[1]->battery_charge_percent[2]);
@@ -171,7 +173,7 @@ void logData(LOG_TYPE log_type) {
 			int t1 = maglev_bmses[0]->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d",
 			t_high[0], t_high[1], t_high[2]);
 		ethernet_add_data_to_packet(M_BMS_F_TH, -1, -1, data);
 
@@ -181,7 +183,7 @@ void logData(LOG_TYPE log_type) {
 			int t1 = maglev_bmses[1]->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d",
 			t_high[0], t_high[1], t_high[2]);
 		ethernet_add_data_to_packet(M_BMS_B_TH, -1, -1, data);
 
@@ -190,34 +192,34 @@ void logData(LOG_TYPE log_type) {
 	case LOG_BRAKING:
 
 		// Braking Front Actuator0 Position, Actuator1 Position.
-		snprintf(data, 128, "%d, %d",
+		snprintf(data, 128, "%d,%d",
 			braking_boards[0]->position[0], braking_boards[0]->position[1]);
 		ethernet_add_data_to_packet(B_F_POS, -1, -1, data);
 
 		// Braking Back Actuator0 Position, Actuator1 Position.
-		snprintf(data, 128, "%d, %d",
+		snprintf(data, 128, "%d,%d",
 			braking_boards[1]->position[0], braking_boards[1]->position[1]);
 		ethernet_add_data_to_packet(B_B_POS, -1, -1, data);
 
 		// Braking Front Actuator0 Calibration (Disengaged, Ready, Engaged), Actuator1 Calibration (Disengaged, Ready, Engaged).
-		snprintf(data, 128, "%d, %d, %d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d,%d,%d",
 			BRAKING_DISENGAGED_POSITIONS[0][0], braking_boards[0]->calibrated_engaged_pos[0] + READY_OFFET_FROM_ENGAGED, braking_boards[0]->calibrated_engaged_pos[0],
 			BRAKING_DISENGAGED_POSITIONS[0][1], braking_boards[0]->calibrated_engaged_pos[1] + READY_OFFET_FROM_ENGAGED, braking_boards[0]->calibrated_engaged_pos[1]);
 		ethernet_add_data_to_packet(B_F_POS, -1, -1, data);
 
 		// Braking Back Actuator0 Calibration (Disengaged, Ready, Engaged), Actuator1 Calibration (Disengaged, Ready, Engaged).
-		snprintf(data, 128, "%d, %d, %d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d,%d,%d",
 			BRAKING_DISENGAGED_POSITIONS[1][0], braking_boards[1]->calibrated_engaged_pos[0] + READY_OFFET_FROM_ENGAGED, braking_boards[1]->calibrated_engaged_pos[0],
 			BRAKING_DISENGAGED_POSITIONS[1][1], braking_boards[1]->calibrated_engaged_pos[1] + READY_OFFET_FROM_ENGAGED, braking_boards[1]->calibrated_engaged_pos[1]);
 		ethernet_add_data_to_packet(B_B_POS, -1, -1, data);
 
 		// Braking Front Actuator0 Temperature (0, 1), Actuator1 Temperature (0, 1).
-		snprintf(data, 128, "%d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d",
 			braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
 		ethernet_add_data_to_packet(B_F_T, -1, -1, data);
 
 		// Braking Back Actuator0 Temperature (0, 1), Actuator1 Temperature (0, 1).
-		snprintf(data, 128, "%d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d",
 			braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
 		ethernet_add_data_to_packet(B_B_T, -1, -1, data);
 
@@ -233,12 +235,12 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			v_high[0], v_low[0], v_high[1], v_low[1]);
 		ethernet_add_data_to_packet(B_BMS_VHL, -1, -1, data);
 
 		// Braking BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			bms_18v5->battery_charge_coulomb[0], bms_18v5->battery_charge_percent[0],
 			bms_18v5->battery_charge_coulomb[1], bms_18v5->battery_charge_percent[1]);
 		ethernet_add_data_to_packet(B_BMS_CHG, -1, -1, data);
@@ -249,7 +251,7 @@ void logData(LOG_TYPE log_type) {
 			int t1 = bms_18v5->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d, %d",
+		snprintf(data, 128, "%d,%d",
 			t_high[0], t_high[1]);
 		ethernet_add_data_to_packet(B_BMS_TH, -1, -1, data);
 
@@ -257,12 +259,12 @@ void logData(LOG_TYPE log_type) {
 
 	case LOG_SERV_PROP_PAYLOAD:
 		// Serv-Prop Actuator State (ENUM: 0-UNKNOWN, 1-LOWERED, 2-LOWERING, 3-RAISING, 4-RAISED), Payload Actuator State (ENUM: 0-UNKNOWN, 1-LOWERED, 2-LOWERING, 3-RAISING, 4-RAISED), Payload Motor State (ENUM: 0-UNKNOWN, 1-STATIONARY, 2-BACKWARDS, 3-FORWARDS).
-		snprintf(data, 128, "%d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d",
 			0, 0, 0);
 		ethernet_add_data_to_packet(SP_S, -1, -1, data);
 
 		// Serv-Prop Actuator0 Temperature (0, 1), Serv-Prop Actuator1 Temperature (0, 1), Payload Actuator Temperature (0, 1), Payload Motor Temperature (0, 1).
-		snprintf(data, 128, "%d, %d, %d, %d, %d, %d, %d, %d",
+		snprintf(data, 128, "%d,%d,%d,%d,%d,%d,%d,%d",
 				service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3],
 				payload->temperatures[0], payload->temperatures[1], payload->temperatures[2], payload->temperatures[3]);
 		ethernet_add_data_to_packet(SP_T, -1, -1, data);
@@ -279,12 +281,12 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			v_high[0], v_low[0], v_high[1], v_low[1]);
 		ethernet_add_data_to_packet(SP_BMS_VHL, -1, -1, data);
 
 		// Serv-Prop / Payload BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f, %06.2f, %06.2f, %06.2f",
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
 			bms_18v5->battery_charge_coulomb[2], bms_18v5->battery_charge_percent[2],
 			bms_18v5->battery_charge_coulomb[3], bms_18v5->battery_charge_percent[3]);
 		ethernet_add_data_to_packet(SP_BMS_CHG, -1, -1, data);
@@ -295,7 +297,7 @@ void logData(LOG_TYPE log_type) {
 			int t1 = bms_18v5->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d, %d",
+		snprintf(data, 128, "%d,%d",
 			t_high[0], t_high[1]);
 		ethernet_add_data_to_packet(SP_BMS_TH, -1, -1, data);
 

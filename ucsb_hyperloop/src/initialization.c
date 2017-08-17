@@ -25,11 +25,6 @@ void initializeSensorsAndControls(){
     	i2cInit(I2C1, SPEED_100KHZ);
     	i2cInit(I2C2, SPEED_100KHZ);
     }
-	if(PWM_ACTIVE){
-        Init_PWM(LPC_PWM1);
-        Init_Channel(LPC_PWM1, 1);
-        Set_Channel_PWM(LPC_PWM1, 1, 0.5);
-    }
     if(ACCEL_ACTIVE){
     	Init_Accel(I2C1);
     	Init_Accel(I2C2);
