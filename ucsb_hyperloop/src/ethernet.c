@@ -246,18 +246,11 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_TIGHTEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_TIGHTEN_BRAKES_SIG RECEIVED\n");
-		//move_to_pos(braking_boards[0], 0, -1);
-        //move_to_pwm(braking_boards[0], 0, 1, braking_boards[0]->pwm[0] + 0.01);
-		//move_to_pwm(braking_boards[0], 0, 1, 0.15);
-		//move_to_pos(braking_boards[0], 0, braking_boards[0]->calibrated_engaged_pos[0]);
 		start_actuator_engage(braking_boards[0]);
 	}
 
 	if(strcmp((char *)Net_Rx_Data, CONTINUOUSLY_LOOSEN_BRAKES_SIG) == 0){
 		printf("CONTINUOUSLY_LOOSEN_BRAKES_SIG RECEIVED\n");
-		//move_to_pos(braking_boards[0], 0, -2);
-		//move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 100);
-		//move_to_disengaged_pos(braking_boards[0], 0);
 		start_actuator_ready(braking_boards[0]);
 	}
 
@@ -301,6 +294,28 @@ void recvDataPacket() {
 		set_motor_throttle(2, dacValue);
 		set_motor_throttle(3, dacValue);
 	}
+
+	if(strstr((char *)Net_Rx_Data, SETTIMINGPROFILE) != NULL) {	// Set the DAC
+		DEBUGOUT("TIMING PROFILE INPUTS RECEIVED\n");
+		char tokenstring[strlen((char *)Net_Rx_Data)-17];
+		memcpy( tokenstring, &Net_Rx_Data[17], strlen((char *)Net_Rx_Data)-17 );
+	    char *pt;
+	    int token[2];
+	    int ind = 0;
+	    pt = strtok (tokenstring,",");
+	    while (pt != NULL) {
+	        int a = atoi(pt);
+	        token[ind]=a;
+	        pt = strtok (NULL, ",");
+	        ind++;
+	    }
+		DEBUGOUT("MinTime received: %s\n", token[0]);
+		DEBUGOUT("MaxTime received: %s\n", token[1]);
+		timing_profile_t_min = atoi(token[0]);
+		timing_profile_t_max = atoi(token[1]);
+		//DEBUGOUT("dacValue = %f\n", dacValue);
+	}
+
 	if(strstr((char *)Net_Rx_Data, INITTIME) != NULL) {	// Initialize Time
 		DEBUGOUT("Initialize Time!\n");
 		DEBUGOUT("Time recieved: %s\n", Net_Rx_Data);

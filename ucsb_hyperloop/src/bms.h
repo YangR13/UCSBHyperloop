@@ -55,6 +55,8 @@ typedef struct{   //Designed for 3x 6S batteries;
 
   //Data Storage
   float battery_voltage[3];   //From left to right on the board.
+  float battery_charge_coulomb[3];
+  float battery_charge_percent[3];
   float cell_voltages[3][6];
   float charge_percent[3];
   float charge_coulomb[3];
@@ -81,6 +83,8 @@ typedef struct{   // Designed for 4x 5S batteries;
 
   //Data Storage
   float battery_voltage[4];   // From left to right on the board.
+  float battery_charge_coulomb[4];
+  float battery_charge_percent[4];
   float cell_voltages[4][5];
   float charge_percent[4];
   float charge_coulomb[4];
@@ -104,6 +108,8 @@ typedef struct{   // Designed for 4x 5S batteries;
 
   //Data Storage
   float battery_voltage[2];   // From left to right on the board.
+  float battery_charge_coulomb[2];
+  float battery_charge_percent[2];
   float cell_voltages[2][5];
   float charge_percent[2];
   float charge_coulomb[2];

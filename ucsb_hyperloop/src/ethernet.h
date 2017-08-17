@@ -113,6 +113,7 @@
 #define SERSTP			"SERSTP"	// Service Propulsion Stop
 #define INITTIME		"INITTIME"	// Initialize Timer
 #define SETDAC			"SETDAC"	// Set the DAC value
+#define SETTIMINGPROFILE "SETTIMINGPROFILE"
 /* Web Application Level Acknowledgments */
 #define WAK				"WAK"		// Service Propulsion Acknowledgment
 #define BAK				"BAK"		// Emergency Brake Acknowledgment
@@ -122,6 +123,7 @@
 #define SOCKET_ID 		0
 
 /* Prototype methods */
+#if 0
 // Positional
 #define SR				"SR"		// Short Ranging
 #define PH				"PH"		// Photoelectric
@@ -133,7 +135,7 @@
 // BMS Boards
 #define BMSV			"BMSV"		// BMS Voltage
 #define BMST			"BMST"		// BMS Temperature
-
+#endif // 1|0
 
 /* Web App control for intializing the positioning */
 #define CALIBRATE_SIG	"CALIBRATE_SIG\0"

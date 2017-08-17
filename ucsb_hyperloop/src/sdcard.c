@@ -1,4 +1,5 @@
 #include "sdcard.h"
+#include "logging.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -179,6 +180,7 @@ void init_csv_files() {
 	}
 
 	// Create new files and add headers.
+#if 0
 	create_csv(g_log_directory, LOG_POSITION, 0);
 
 	for(i=0; i<4; i++) {
@@ -187,10 +189,12 @@ void init_csv_files() {
 	for(i=0; i<6; i++) {
 		create_csv(g_log_directory, LOG_MAGLEV_BMS, i);
 	}
+#endif // 0
 }
 
 void create_csv(char* dir, LOG_TYPE log_type, int index)
 {
+#if 0
 	if(!SDCARD_ACTIVE) return;
 	FRESULT rc = 0;
 	UINT bw;
@@ -222,6 +226,7 @@ void create_csv(char* dir, LOG_TYPE log_type, int index)
 
 	if(rc != 0) DEBUGOUT("ERROR: %s f_write rc=%d\n", LOG_TYPE_STRINGS[log_type], rc);
 	f_close_();
+#endif // 0
 }
 
 FRESULT f_open_log (LOG_TYPE log_type, int index, BYTE mode)
