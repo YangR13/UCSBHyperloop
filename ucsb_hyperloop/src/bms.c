@@ -39,7 +39,7 @@ const uint8_t I2C_ADC_18V5_subBMS_Addresses[4] = {0x1A, 0x1B, 0x09, 0x0A};
 
 // (Electronics) Power Distribution Board BMS Data:
 const uint8_t PWR_DST_BMS_HUB_PORT[1][2] = {   // Only 1
-  {0, 3},   // {Hub, Port};
+  {1, 3},   // {Hub, Port};
 };
 // TODO: Calibrated conversions reference voltage table for Power Distribution Board BMS?
 
@@ -191,16 +191,19 @@ BMS_18V5* initialize_BMS_18V5(uint8_t identity) {
 
 void update_BMS_18V5(BMS_18V5* bms) {
   int batt, i;
+  float battery_voltage;
   float prev_voltage;
   // New alarms set this update cycle: 0 and 1 are braking pairs, 2 is service propulsion + payload actuators
 
   int new_alarms[3] = {0,0,0};
 
   for (batt = 0; batt < 4; batt++) {
+	  battery_voltage = 0;
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
-      bms->cell_voltages[batt][i] = voltage - prev_voltage;
+      float voltage = ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0/* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
+      if(i == 0) voltage *= 2;
+      bms->cell_voltages[batt][i] = voltage/* - prev_voltage*/;
       if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
           // Set an alarm if any cell is below minimum safe voltage
           if (batt == 0 || batt == 3){
@@ -212,10 +215,11 @@ void update_BMS_18V5(BMS_18V5* bms) {
           }
 
       }
-      prev_voltage = voltage;
+      battery_voltage += voltage;
+      //prev_voltage = voltage;
     }
-    bms->battery_voltage[batt] = prev_voltage;
-    bms->charge_coulomb[batt] = voltageToCharge18_5(prev_voltage);
+    bms->battery_voltage[batt] = battery_voltage;
+    bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
@@ -331,23 +335,28 @@ PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity) {
 }
 
 uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
-  int batt, i;
+  int batt = 0;
+  int i;
+  float battery_voltage;
   float prev_voltage;
   int new_alarms = 0b00;
 
-  for (batt = 0; batt < 2; batt++) {
+  //for (batt = 0; batt < 2; batt++) {
+	  battery_voltage = 0;
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
-      bms->cell_voltages[batt][i] = voltage - prev_voltage;
+      float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0/* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
+      if(i == 0) voltage *= 2;
+      bms->cell_voltages[batt][i] = voltage/* - prev_voltage*/;
       if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
           // Set an alarm if any cell is below minimum safe voltage
           new_alarms |= 0b10;
       }
-      prev_voltage = voltage;
+      battery_voltage += voltage;
+      //prev_voltage = voltage;
     }
-    bms->battery_voltage[batt] = prev_voltage;
-    bms->charge_coulomb[batt] = voltageToCharge18_5(prev_voltage);
+    bms->battery_voltage[batt] = battery_voltage;
+    bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
     if (bms->battery_voltage[batt] < 1.0){
         // Total battery voltage < 1V? Probably disconnected. Clear alarm.
@@ -378,7 +387,7 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
       if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
         new_alarms |= 0b01;
       }
-    }
+    //}
   }
 
   // Update alarm flags in the power distribution BMS struct
