@@ -22,6 +22,29 @@
 // Recoverable faults are saved to that variable as '1' - excessive temperature or current draw, etc.
 // Unrecoverable faults are saved to that variable as '2' - excessive cell voltage imblanaces, etc.
 
+//LUT for 18.5V batteries
+//Battery voltage -> Battery Charge (16.3V to 19.8V, .1V increments)
+
+static const float voltageToCharge18_5LUT[] =
+{
+	13791.3, 13822.7, 13859.65, 13905.25, 13943.2, 13984, 14034.65, 14087.75, 14146.05,
+	14211.9, 14277.75, 14348.65, 14424.6, 14510.7, 14601.85, 14698.1, 14814.55, 14936.1,
+	15072.85, 15295.65, 16146.45, 16987.15, 18000, 19266.05, 20430.8, 21610.75, 22699.55,
+	23671.85, 24547.9, 25256.9, 25849.35, 26381.05, 26811.5, 27226.75, 27576.15, 27702.2
+};
+
+//LUT for 22V batteries
+//Battery voltage -> Battery Charge (20.0V to 23.7V, .1V increments)
+
+static const float voltageToCharge22LUT[] =
+{
+	28566.235, 28632.175, 28692.625, 28769.065, 28843.62, 28924.33, 29018.13, 29120.54,
+	29220.36, 29335.37, 29458.64, 29584.5, 29726.04, 29881.44, 30047.27, 30215.62,
+	30412.74, 30629.74, 30863.26, 31187.08, 31999.64, 34539.8, 36000, 37905.4, 40436.6,
+	43561.61, 46687.46, 49542.935, 52385.575, 54462.195, 56028.445, 57444.055, 58527.445,
+	59417.915, 60400.435, 61432.025, 62240.345, 62317.385
+};
+
 // MAGLEV BMS
 
 typedef struct{   //Designed for 3x 6S batteries;
@@ -33,6 +56,8 @@ typedef struct{   //Designed for 3x 6S batteries;
   //Data Storage
   float battery_voltage[3];   //From left to right on the board.
   float cell_voltages[3][6];
+  float charge_percent[3];
+  float charge_coulomb[3];
   int temperatures[3][2];
   uint8_t amps;               //No onboard ammeter; relies on data from HEMS or other.
 
@@ -57,6 +82,8 @@ typedef struct{   // Designed for 4x 5S batteries;
   //Data Storage
   float battery_voltage[4];   // From left to right on the board.
   float cell_voltages[4][5];
+  float charge_percent[4];
+  float charge_coulomb[4];
   int temperatures[4][2];
   uint8_t amps[4];            // 4 current sensor ports, #1 and #2 currently unused.
 
@@ -78,6 +105,8 @@ typedef struct{   // Designed for 4x 5S batteries;
   //Data Storage
   float battery_voltage[2];   // From left to right on the board.
   float cell_voltages[2][5];
+  float charge_percent[2];
+  float charge_coulomb[2];
   int temperatures[2][2];
 
   float timestamp;
@@ -86,5 +115,9 @@ typedef struct{   // Designed for 4x 5S batteries;
 
 PWR_DST_BMS* initialize_PWR_DST_BMS(uint8_t identity);
 uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms);
+float voltageToCharge18_5(float voltage);
+float percentCharge18_5(float charge);
+float voltageToCharge22(float voltage);
+float percentCharge22(float charge);
 
 #endif

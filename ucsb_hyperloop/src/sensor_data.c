@@ -81,6 +81,59 @@ void collectData(){
 		//DEBUGOUT("Roll: %f Pitch: %f Yaw: n/a\n", roll, pitch);
 	}
 
+	if(POSITIONING_ACTIVE){
+		int i;
+		float wheel_tach_combined_sum = 0.0;
+		float wheel_tach_dist_since_last_check[4];
+		float total_dist_since_last_check = 0.0;
+		int numAlive = 0;								//number of non-faulted tachometers
+
+		// Update average wheel tach postition.
+		for(i=0; i<4; i++) {
+			if(sensorData.wheelTachAlive[i]){
+				numAlive++;
+				wheel_tach_combined_sum += sensorData.wheelTachPositionX[i];
+			}
+		}
+		sensorData.validPosition = (numAlive > 2);
+
+		sensorData.positionX = (sensorData.validPosition) ? (wheel_tach_combined_sum / (float) numAlive) : -1;
+
+		if(sensorData.incrementFlag < sensorData.positionX / 25.0){		//Update every 25m
+			sensorData.incrementFlag++;
+
+			for(i=0; i<4; i++){
+				wheel_tach_dist_since_last_check[i] =sensorData.wheelTachPositionX[i] - sensorData.oldWheelTachPositionX[i];
+				total_dist_since_last_check += wheel_tach_dist_since_last_check[i];
+			}
+
+			float avg_dist_since_last_check = total_dist_since_last_check / 4.0;
+			float largest_percent_difference = 0.0;
+			int least_accurate_tach = 0;
+
+			//Collect differences in tach values from the last 25m
+			for(i=0; i<4; i++){
+				float percent_difference = fabs(wheel_tach_dist_since_last_check[i] - avg_dist_since_last_check) / avg_dist_since_last_check;
+				if(percent_difference > largest_percent_difference) {
+					largest_percent_difference = percent_difference;
+					least_accurate_tach = i;
+				}
+			}
+			if(largest_percent_difference > .18) {	// TODO: Make this a constant in a header file.
+				sensorData.wheelTachAlive[least_accurate_tach] = 0;
+			}
+
+			// Save wheel tach positions for next 25m check.
+			for(i=0; i<4; i++) {
+				sensorData.oldWheelTachPositionX[i] = sensorData.wheelTachPositionX[i];
+			}
+		}
+		sensorData.velocityX = (sensorData.validPosition) ? (sensorData.positionX - sensorData.oldPositionX) / (getRuntime()-sensorData.time_prev) : -1;
+
+        sensorData.time_prev = getRuntime();
+        sensorData.oldPositionX = sensorData.positionX;
+	}
+
 	// Photoelectric distance is updated directly in the interrupt handler
 
     if(MAGLEV_BMS_ACTIVE){
@@ -157,7 +210,7 @@ void printSensorData(){
     }
 
     if (MOTOR_BOARD_I2C_ACTIVE){
-#if 0
+#if 1
 
         float sum = 0.0; // used to sum up four tachometer distances
         float avg; // average of four tachometer differences
@@ -185,7 +238,8 @@ void printSensorData(){
             DEBUGOUT("BMS %d sensors: \n", i);
             int j = 0;
             for (j = 0; j < 3; j++){
-                DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
+                DEBUGOUT("Batt %d: %fC (%f\%)\t %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, maglev_bmses[i]->charge_coulomb[j], maglev_bmses[i]->charge_percent[j], maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
+
             }
         }
         DEBUGOUT("\n");
@@ -195,7 +249,7 @@ void printSensorData(){
         DEBUGOUT("18V5 BMS sensors: \n");
         int j = 0;
         for (j = 0; j < 4; j++){
-            DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, bms_18v5->battery_voltage[j], bms_18v5->cell_voltages[j][0], bms_18v5->cell_voltages[j][1], bms_18v5->cell_voltages[j][2], bms_18v5->cell_voltages[j][3], bms_18v5->cell_voltages[j][4], bms_18v5->temperatures[j][0], bms_18v5->temperatures[j][1]);
+            DEBUGOUT("Batt %d: %.2fC (%.2f%%)\t %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, bms_18v5->charge_coulomb[j], bms_18v5->charge_percent[j] * 100, bms_18v5->battery_voltage[j], bms_18v5->cell_voltages[j][0], bms_18v5->cell_voltages[j][1], bms_18v5->cell_voltages[j][2], bms_18v5->cell_voltages[j][3], bms_18v5->cell_voltages[j][4], bms_18v5->temperatures[j][0], bms_18v5->temperatures[j][1]);
             DEBUGOUT("Current sensor %d: %f \n", j, bms_18v5->amps);
         }
         DEBUGOUT("\n");
@@ -205,7 +259,7 @@ void printSensorData(){
         DEBUGOUT("Power Distribution BMS sensors: \n");
         int j = 0;
         //for (j = 0; j < 2; j++){
-            DEBUGOUT("Batt %d: %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
+            DEBUGOUT("Batt %d: %.2fC (%.2f%%)\t %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->charge_coulomb[j], pwr_dst_bms->charge_percent[j] * 100, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
         //}
         DEBUGOUT("\n");
     }
@@ -224,12 +278,12 @@ void printSensorData(){
         DEBUGOUT("\n\n");
     }
 
-    if ( RANGING_SENSORS_ACTIVE )
+    if (RANGING_SENSORS_ACTIVE)
     {
-		DEBUGOUT("Short-ranging: %f | %f | %f | %f\n",
-			motors[0]->short_data[0], motors[1]->short_data[0], motors[2]->short_data[0], motors[3]->short_data[0]);
+		DEBUGOUT("Short-ranging: %f | %f | %f | %f | %f | %f\n",
+			motors[0]->short_data[0], motors[1]->short_data[0], motors[2]->short_data[0], motors[3]->short_data[0], motors[0]->short_data[1], motors[1]->short_data[1]);
 
-    	DEBUGOUT("Roll: %f | Pitch: %f | Yaw: %f | PositionY: %f | PositionZ: %f\n",
-			sensorData.roll*180/PI_CONSTANT, sensorData.pitch*180/PI_CONSTANT, sensorData.yaw*180/PI_CONSTANT, sensorData.positionY, sensorData.positionZ);
+    	DEBUGOUT("Roll: %f | Pitch: %f | Yaw: %f | PositionX: %f | PositionY: %f | PositionZ: %f\n",
+			sensorData.roll*180/PI_CONSTANT, sensorData.pitch*180/PI_CONSTANT, sensorData.yaw*180/PI_CONSTANT, sensorData.positionX, sensorData.positionY, sensorData.positionZ);
     }
 }
