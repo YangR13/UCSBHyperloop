@@ -91,8 +91,12 @@ void initializeSensorsAndControls(){
     	GPIO_Input_Init(GPIO_CONTACT_SENSOR_PORT, GPIO_CONTACT_SENSOR_PIN);
     }
 
+    if(ACTUATORS_ACTIVE) {
+    	Init_PWM(LPC_PWM0);
+    	Init_PWM(LPC_PWM1);
+    }
+
     if (BRAKING_ACTIVE){
-        Init_PWM(LPC_PWM1);
         int i;
         for (i = 0; i < 2; i++){
             braking_boards[i] = initialize_actuator_board(ACTUATOR_BOARD_BRAKING_MIN + i);
@@ -105,7 +109,9 @@ void initializeSensorsAndControls(){
     }
 
     if (SERVICE_PROPULSION_ACTIVE){
-        service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
+		service_prop = initialize_actuator_board(ACTUATOR_BOARD_SERVICE_PROPULSION);
+		//servprop_drive_forwards(service_prop);	// DEBUG.
+		//move_in_dir(service_prop, 1, OUT, 0.3);
     }
 }
 

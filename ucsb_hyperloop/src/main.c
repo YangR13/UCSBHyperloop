@@ -63,9 +63,15 @@ int main(void)
 		}
 
 		// If braking is active, poll feedback signal as fast as possible to determine when set point reached
-		if (BRAKING_ACTIVE /*&& collectBrakingPositionFlag == 1*/){
+		if (ACTUATORS_ACTIVE && collectBrakingPositionFlag){
 			collectBrakingPositionFlag = 0;
-		    update_actuator_control(braking_boards[0]);
+			if(BRAKING_ACTIVE) {
+			    update_actuator_control(braking_boards[0]);
+			}
+
+		    if(SERVICE_PROPULSION_ACTIVE) {
+		    	update_actuator_control(service_prop);
+		    }
 		}
 
 		// ** PERIODIC TASKS **

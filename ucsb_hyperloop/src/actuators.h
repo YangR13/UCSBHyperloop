@@ -26,7 +26,7 @@ enum ACTUATOR_BOARDS {
 	ACTUATOR_BOARD_BRAKING_0,
 	ACTUATOR_BOARD_BRAKING_1,
 	ACTUATOR_BOARD_PAYLOAD,
-	ACTUATOR_BOARD_SERVICE_PROPULSION
+	ACTUATOR_BOARD_SERVICE_PROPULSION,
 };
 #define ACTUATOR_BOARD_BRAKING_MIN ACTUATOR_BOARD_BRAKING_0
 #define ACTUATOR_BOARD_BRAKING_MAX ACTUATOR_BOARD_BRAKING_1
@@ -51,28 +51,30 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 
 // Control
 #define MIN_DUTY_CYCLE 0.13
-#define MIN_PWM_MODE_DUTY_CYCLE 0.09
+#define MIN_PWM_MODE_DUTY_CYCLE (MIN_DUTY_CYCLE - 0.01)
 #define MIN_BWD_DUTY_CYCLE 0.08
-#define MAX_FWD_DUTY_CYCLE 0.5 // Determined via load force testing 6/13/17
-#define MAX_BWD_DUTY_CYCLE 0.36 // Determined to be 2x max FWD duty cycle, via load force testing, 6/13/17
+#define MAX_FWD_DUTY_CYCLE 0.4
+#define MAX_BWD_DUTY_CYCLE 0.4
 
 #define USABLE_STROKE_LEN 2000.0 // TODO: Change the usable stroke length to a realistic value!
 
 // TODO: SET THESE TO REALISTIC VALUES
-#define PAYLOAD_RAISE_TIME 1000 // milliseconds? This needs to match the units of getRuntime()
-#define PAYLOAD_RAISE_PWM 0.35
-#define PAYLOAD_LOWER_TIME 1000 // milliseonds?
+#define PAYLOAD_RAISE_TIME 1000 // ms
+#define PAYLOAD_RAISE_PWM 0.25
+#define PAYLOAD_LOWER_TIME 1000 // ms
 #define PAYLOAD_LOWER_PWM 0.25
-#define SERVICE_PROP_LOWER_TIME 1000 // milliseconds?
+#define SERVICE_PROP_LOWER_TIME 20000 // ms
 #define SERVICE_PROP_LOWER_PWM 0.25
-#define SERVICE_PROP_RAISE_TIME 1000 // milliseconds?
+#define SERVICE_PROP_RAISE_TIME 20000 // ms
 #define SERVICE_PROP_RAISE_PWM 0.25
+#define SERVICE_PROP_DRIVE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
-#define POS_MAX_DELTA 200 // Readings greater than this delta away from the current moving average are considered erroneous.
+#define POS_MAX_DELTA 300 // Readings greater than this delta away from the current moving average are considered erroneous.
 
-#define STALL_CYCLES_ALG_SWITCH 10 // Number of update cycles where actuator feedback hasn't changed before starting to increase PWM
+#define STALL_CYCLES_STOP 100 // Number of update cycles where actuator feedback hasn't changed before stopping actuator.
 #define STALL_CYCLES_PWM_INCREASE 10
+#define STALL_CYCLES_LAST_PWM_MULTIPLIER 10
 #define MOVE_CYCLE_PWM_DECREASE 0.01
 
 #define IN 0
@@ -92,6 +94,12 @@ enum calibration_steps_enum {
 	CALIBRATION_APPROACH,
 	CALIBRATION_MOVE_TO_PWM,
 	CALIBRATION_DEINIT,
+};
+
+enum engage_steps_enum {
+	ENGAGE_DONE,
+	ENGAGE_MOVE_TO_CHECKPOINT,
+	ENGAGE_MOVE_TO_TARGET,
 };
 
 int calibration_step;
@@ -134,6 +142,7 @@ typedef struct {
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
   int16_t calibrated_engaged_pos[2];
+  int engage_step;
 
 } ACTUATORS;
 
@@ -146,12 +155,33 @@ uint8_t update_actuator_board(ACTUATORS* board);
 void update_actuator_control(ACTUATORS *board);
 int calculate_temperature(uint16_t therm_adc_val);
 void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm);
-void move_to_pos(ACTUATORS * board, int num, int destination);
+void move_to_pos(ACTUATORS *board, int num, int destination);
+void move_in_dir(ACTUATORS *board, int num, int dir, float pwm);
 void move_to_disengaged_pos(ACTUATORS *board, int num);
 void move_to_pwm(ACTUATORS *board, int num, int dir, float pwm);
 void calculate_actuator_control(ACTUATORS *board, int num);
+
+// Functions for all actuators.
+void actuator_pair_stop(ACTUATORS *board);
+void actuator_single_stop(ACTUATORS *board, int num);
+
+// Braking actuator specific functions.
 void start_actuator_calibration();
 void update_actuator_calibration(ACTUATORS *board);
+void start_actuator_engage(ACTUATORS *board);
+void update_actuator_engage(ACTUATORS *board);
+void start_actuator_ready(ACTUATORS *board);
+void start_actuator_disengage(ACTUATORS *board);
+
+// Service propulsion specific functions.
+void servprop_raise(ACTUATORS *board);
+void servprop_lower(ACTUATORS *board);
+void servprop_drive_forwards(ACTUATORS *board);
+void servprop_drive_backwards(ACTUATORS *board);
+
+// Payload specific functions.
+void payload_raise(ACTUATORS *board);
+void payload_lower(ACTUATORS *board);
 
 
 // The PWM channels are defined in a const array so the parameters are const accordingly.

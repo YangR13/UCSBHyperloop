@@ -32,10 +32,10 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
-//const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
+const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
 //const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// Board 1. HACK: 1, 0, 2, 3
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x1A, 0x8, 0xA, 0x28};		// Board 2
-const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
+//const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
@@ -107,6 +107,8 @@ ACTUATORS* initialize_actuator_board(uint8_t identity) {
 
   board->calibrated_engaged_pos[0] = -3;
   board->calibrated_engaged_pos[1] = -3;
+
+  board->engage_step = ENGAGE_DONE;
 
   // Write default values to GPIO/PWM pins
   int output_counter = 0;
@@ -217,6 +219,15 @@ void move_to_pos(ACTUATORS *board, int num, int destination){
     update_actuator_board(board);
 }
 
+void move_in_dir(ACTUATORS *board, int num, int dir, float pwm) {
+	if(!(dir == 0 || dir == 1)) return;
+	board->enable[num] = 1;
+	board->direction[num] = dir;
+    board->stop_mode[num] = NO_STOP;        // Run continuously - don't stop automatically
+    board->pwm[num] = pwm;
+    board->pwm_algorithm[num] = 0;
+}
+
 void move_to_disengaged_pos(ACTUATORS *board, int num) {
 	move_to_pos(board, num, BRAKING_DISENGAGED_POSITIONS[board->identity - ACTUATOR_BOARD_BRAKING_MIN][num]);
 }
@@ -255,7 +266,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     // Actuation signals and position feedback are updated here.
 
     // Check if actuator is even currently moving
-    if (!board->enable[num] || board->pos_fault[num]){
+    if (!board->enable[num] || board->pos_fault[0] || board->pos_fault[1]){
         // Actuator isn't currently moving so nothing to do here
         return;
     }
@@ -311,25 +322,33 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
         else if (!board->direction[num] && board->position[num] > board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
             board->pwm[num] -= MOVE_CYCLE_PWM_DECREASE;
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
         else{
-            board->stalled_cycles[num]++;
-            if (board->stalled_cycles[num] >= STALL_CYCLES_PWM_INCREASE){
+        	if(!(board->pos_fault[0] || board->pos_fault[1])) {
+        		board->stalled_cycles[num]++;
+        	}
+        	else {
+        		board->stalled_cycles[0] = 0;
+        		board->stalled_cycles[1] = 0;
+        	}
+            uint16_t required_stall_cycles = ((board->target_pwm[num] - board->pwm[num]) < 0.015 ) ? STALL_CYCLES_PWM_INCREASE * STALL_CYCLES_LAST_PWM_MULTIPLIER : STALL_CYCLES_PWM_INCREASE;
+            if (board->stalled_cycles[num] >= required_stall_cycles){
                 board->pwm[num] += 0.01;
                 board->stalled_cycles[num] = 0;
-
             }
+            //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
     }
     else{
         // Exponential relation function
-#if 0
-        // First, determine if we're stalled and need to switch to the other algorithm
+        // First, determine if we're stalled and need to stop the actuator.
         if (board->direction[num] && board->position[num] < board->prev_position[num]){
             board->prev_position[num] = board->position[num];
             board->stalled_cycles[num] = 0;
@@ -339,17 +358,21 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             board->stalled_cycles[num] = 0;
         }
         else{
-            board->stalled_cycles[num]++;
-            if (board->stalled_cycles[num] >= STALL_CYCLES_ALG_SWITCH){
+        	if(!(board->pos_fault[0] || board->pos_fault[1])) {
+        		board->stalled_cycles[num]++;
+        	}
+        	else {
+        		board->stalled_cycles[0] = 0;
+        		board->stalled_cycles[1] = 0;
+        	}
+            if (board->stalled_cycles[num] >= STALL_CYCLES_STOP){
+            	DEBUGOUT("Actuator %d[%d] stalled while moving to position! Disabling actuator pair!\n", board->identity, num);
                 board->stalled_cycles[num] = 0;
-                board->pwm_algorithm[num] = 0;
-
-#if PRINT_SENSOR_DATA_ACTIVE
-                DEBUGOUT("Switching to variable-PWM algorithm!\n");
-#endif
+                board->enable[0] = 0;
+                board->enable[1] = 0;
+                return;
             }
         }
-#endif
 
         // Otherwise, set the PWM based on the exponential function
         // Percentage of usable stroke length to travel => percentage of duty cycle to use (with minimum at 5%)
@@ -401,7 +424,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
     }
 
 #if PRINT_SENSOR_DATA_ACTIVE
-    DEBUGOUT("Output duty cycle is %f \n", board->pwm[num]);
+    //DEBUGOUT("Output duty cycle is %f \n", board->pwm[num]);
 #endif
 
 }
@@ -470,13 +493,23 @@ void update_actuator_control(ACTUATORS *board){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
         // PMW enable/speed signal
-        if (board->enable[output_counter] && !board->pos_fault[output_counter]){
+        if (board->enable[output_counter] && !(board->pos_fault[0] || board->pos_fault[1])){
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
         }
         else{
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], 0.0);
         }
     }
+}
+
+void actuator_pair_stop(ACTUATORS *board) {
+	actuator_single_stop(board, 0);
+	actuator_single_stop(board, 1);
+}
+
+void actuator_single_stop(ACTUATORS *board, int num) {
+	board->target_pos[num] = board->position[num];
+	board->enable[num] = 0;
 }
 
 void start_actuator_calibration() {
@@ -494,9 +527,7 @@ void update_actuator_calibration(ACTUATORS *board) {
 	case CALIBRATION_INIT:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_INIT\n");
-			//for(i=0; i<2; i++) {
-				move_to_disengaged_pos(board, i);
-			//}
+			start_actuator_disengage(board);
 			calibration_step++;
 		}
 		break;
@@ -504,7 +535,7 @@ void update_actuator_calibration(ACTUATORS *board) {
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_APPROACH\n");
 			//for(i=0; i<2; i++) {
-				move_to_pos(board, i, board->position[i] - 400);
+				move_to_pos(board, i, board->position[i] - 600);
 			//}
 			calibration_step++;
 		}
@@ -525,13 +556,102 @@ void update_actuator_calibration(ACTUATORS *board) {
 			//for(i=0; i<2; i++) {
 				board->calibrated_engaged_pos[i] = board->position[i];
 			//}
-			//for(i=0; i<2; i++) {
-				move_to_disengaged_pos(board, i);
-			//}
+			start_actuator_ready(board);
 			calibration_step = CALIBRATION_DONE;
 		}
 		break;
 	}
+}
+
+void start_actuator_engage(ACTUATORS *board) {
+	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+		return;
+	}
+
+#if 1
+	board->engage_step = ENGAGE_MOVE_TO_CHECKPOINT;
+#else
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+	}
+#endif
+}
+
+void update_actuator_engage(ACTUATORS *board) {
+	int i = 0;
+	int stopped = (board->enable[0] == 0) && (board->enable[1] == 0);
+
+	switch(board->engage_step) {
+	case ENGAGE_DONE:
+		// Nothing to do here.
+		break;
+	case ENGAGE_MOVE_TO_CHECKPOINT:
+		if(stopped) {
+			DEBUGOUT("ENGAGE_MOVE_TO_CHECKPOINT\n");
+			for(i=0; i<2; i++) {
+				start_actuator_ready(board);
+			}
+			board->engage_step++;
+		}
+		break;
+	case ENGAGE_MOVE_TO_TARGET:
+		if(stopped) {
+			DEBUGOUT("ENGAGE_MOVE_TO_TARGET\n");
+			for(i=0; i<2; i++) {
+				move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+			}
+			board->engage_step = ENGAGE_DONE;
+		}
+		break;
+	}
+}
+
+void start_actuator_ready(ACTUATORS *board) {
+	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+		return;
+	}
+
+	int i=0;
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */] + 250);
+	}
+}
+
+void start_actuator_disengage(ACTUATORS *board) {
+	int i=0;
+	for(i=0; i<2; i++) {
+		move_to_pos(board, i, BRAKING_DISENGAGED_POSITIONS[board->identity][i]);
+	}
+}
+
+void servprop_raise(ACTUATORS *board) {
+	move_time(board, 1, IN, SERVICE_PROP_RAISE_TIME, SERVICE_PROP_RAISE_PWM);
+}
+
+void servprop_lower(ACTUATORS *board) {
+	move_time(board, 1, OUT, SERVICE_PROP_LOWER_TIME, SERVICE_PROP_LOWER_PWM);
+}
+
+void servprop_drive_forwards(ACTUATORS *board) {
+	move_in_dir(board, 0, OUT, SERVICE_PROP_DRIVE_PWM);
+}
+
+void servprop_drive_backwards(ACTUATORS *board) {
+	move_in_dir(board, 0, IN, SERVICE_PROP_DRIVE_PWM);
+}
+
+void servprop_drive_stop(ACTUATORS *board) {
+	actuator_single_stop(board, 0);
+}
+
+void payload_raise(ACTUATORS *board) {
+	move_time(board, 0, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+	move_time(board, 1, OUT, PAYLOAD_RAISE_TIME, PAYLOAD_RAISE_PWM);
+}
+
+void payload_lower(ACTUATORS *board) {
+	move_time(board, 0, OUT, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
+	move_time(board, 1, OUT, PAYLOAD_LOWER_TIME, PAYLOAD_LOWER_PWM);
 }
 
 void PWM_Setup(const void * pwm, uint8_t pin){
