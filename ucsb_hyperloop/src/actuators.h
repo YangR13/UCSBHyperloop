@@ -104,8 +104,6 @@ enum engage_steps_enum {
 	ENGAGE_MOVE_TO_TARGET,
 };
 
-int calibration_step;
-
 typedef struct {
   uint8_t identity;
 
@@ -144,6 +142,7 @@ typedef struct {
   uint16_t stalled_cycles[2];   // Number of cycles since position feedback has changed
   uint16_t prev_position[2];    // Previous position feedback value
   int16_t calibrated_engaged_pos[2];
+  int calibration_step;
   int engage_step;
 
 } ACTUATORS;
@@ -168,7 +167,7 @@ void actuator_pair_stop(ACTUATORS *board);
 void actuator_single_stop(ACTUATORS *board, int num);
 
 // Braking actuator specific functions.
-void start_actuator_calibration();
+void start_actuator_calibration(ACTUATORS *board);
 void update_actuator_calibration(ACTUATORS *board);
 void start_actuator_engage(ACTUATORS *board);
 void update_actuator_engage(ACTUATORS *board);

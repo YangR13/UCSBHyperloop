@@ -170,11 +170,11 @@ void collectData(){
 
     if (BRAKING_ACTIVE){
         int i = 0;
-//        for (i = 0; i < 2; i++){
+        for (i = 0; i < 2; i++){
             update_actuator_board(braking_boards[i]);
             update_actuator_calibration(braking_boards[i]);
             update_actuator_engage(braking_boards[i]);
-//        }
+        }
     }
 
     if(SERVICE_PROPULSION_ACTIVE) {

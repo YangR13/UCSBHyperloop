@@ -95,8 +95,8 @@ void initializeSensorsAndControls(){
         int i;
         for (i = 0; i < 2; i++){
             braking_boards[i] = initialize_actuator_board(ACTUATOR_BOARD_BRAKING_MIN + i);
+            braking_boards[i]->calibration_step = CALIBRATION_DONE;
         }
-        calibration_step = CALIBRATION_DONE;
     }
 
     if (PAYLOAD_ACTUATORS_ACTIVE){

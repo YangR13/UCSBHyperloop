@@ -32,10 +32,12 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 #endif
 
 // This can't be imported from I2CPERIPHS because it's in the .c and not the .h.
-const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
+//const uint8_t ADC_Address_Select_Actuators[4] = {0x8, 0xA, 0x1A, 0x28};	// Board 0
 //const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x8, 0x1A, 0x28};	// Board 1. HACK: 1, 0, 2, 3
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x1A, 0x8, 0xA, 0x28};		// Board 2
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
+
+const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x1A, 0x8, 0x28};	// Board 1, 2, 0, 3
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
@@ -492,7 +494,7 @@ void update_actuator_control(ACTUATORS *board){
     for (output_counter = 0; output_counter < 2; output_counter++){
         // Direction signal
         GPIO_Write(BOARD_PIN_PORTS[(board->identity * 4) + output_counter], BOARD_PINS[(board->identity * 4) + output_counter], board->direction[output_counter]);
-        // PMW enable/speed signal
+        // PWM enable/speed signal
         if (board->enable[output_counter] && !(board->pos_fault[0] || board->pos_fault[1])){
             PWM_Write(BOARD_PWM_PORTS[(board->identity * 2) + output_counter], BOARD_PWM_CHANNELS[(board->identity * 2) + output_counter], board->pwm[output_counter]);
         }
@@ -512,15 +514,15 @@ void actuator_single_stop(ACTUATORS *board, int num) {
 	board->enable[num] = 0;
 }
 
-void start_actuator_calibration() {
-	calibration_step = CALIBRATION_INIT;
+void start_actuator_calibration(ACTUATORS *board) {
+	board->calibration_step = CALIBRATION_INIT;
 }
 
 void update_actuator_calibration(ACTUATORS *board) {
 	int i = 0;
-	int stopped = (board->enable[0] == 0) /*&& (board->enable[1] == 0)*/;
+	int stopped = (board->enable[0] == 0) && (board->enable[1] == 0);
 
-	switch(calibration_step) {
+	switch(board->calibration_step) {
 	case CALIBRATION_DONE:
 		// Nothing to do here.
 		break;
@@ -528,43 +530,43 @@ void update_actuator_calibration(ACTUATORS *board) {
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_INIT\n");
 			start_actuator_disengage(board);
-			calibration_step++;
+			board->calibration_step++;
 		}
 		break;
 	case CALIBRATION_APPROACH:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_APPROACH\n");
-			//for(i=0; i<2; i++) {
+			for(i=0; i<2; i++) {
 				move_to_pos(board, i, board->position[i] - 600);
-			//}
-			calibration_step++;
+			}
+			board->calibration_step++;
 		}
 		break;
 	case CALIBRATION_MOVE_TO_PWM:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_MOVE_TO_PWM\n");
-			//for(i=0; i<2; i++) {
+			for(i=0; i<2; i++) {
 				move_to_pwm(board, i, OUT, MIN_DUTY_CYCLE);
-			//}
-			calibration_step++;
+			}
+			board->calibration_step++;
 		}
 		break;
 	case CALIBRATION_DEINIT:
 		if(stopped) {
 			DEBUGOUT("CALIBRATION_DEINIT\n");
-			calibration_step++;
-			//for(i=0; i<2; i++) {
+			board->calibration_step++;
+			for(i=0; i<2; i++) {
 				board->calibrated_engaged_pos[i] = board->position[i];
-			//}
+			}
 			start_actuator_ready(board);
-			calibration_step = CALIBRATION_DONE;
+			board->calibration_step = CALIBRATION_DONE;
 		}
 		break;
 	}
 }
 
 void start_actuator_engage(ACTUATORS *board) {
-	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+	if(board->calibrated_engaged_pos[0] < 0 || board->calibrated_engaged_pos[1] < 0) {	// FIXME
 		return;
 	}
 
@@ -572,7 +574,7 @@ void start_actuator_engage(ACTUATORS *board) {
 	board->engage_step = ENGAGE_MOVE_TO_CHECKPOINT;
 #else
 	for(i=0; i<2; i++) {
-		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+		move_to_pos(board, i, board->calibrated_engaged_pos[i]);	// FIXME
 	}
 #endif
 }
@@ -598,7 +600,7 @@ void update_actuator_engage(ACTUATORS *board) {
 		if(stopped) {
 			DEBUGOUT("ENGAGE_MOVE_TO_TARGET\n");
 			for(i=0; i<2; i++) {
-				move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */]);	// FIXME
+				move_to_pos(board, i, board->calibrated_engaged_pos[i]);	// FIXME
 			}
 			board->engage_step = ENGAGE_DONE;
 		}
@@ -607,13 +609,13 @@ void update_actuator_engage(ACTUATORS *board) {
 }
 
 void start_actuator_ready(ACTUATORS *board) {
-	if(board->calibrated_engaged_pos[0] < 0 /*|| board->calibrated_engaged_pos[1] < 0*/) {	// FIXME
+	if(board->calibrated_engaged_pos[0] < 0 || board->calibrated_engaged_pos[1] < 0) {	// FIXME
 		return;
 	}
 
 	int i=0;
 	for(i=0; i<2; i++) {
-		move_to_pos(board, i, board->calibrated_engaged_pos[0 /* i */] + READY_OFFET_FROM_ENGAGED);
+		move_to_pos(board, i, board->calibrated_engaged_pos[i] + READY_OFFET_FROM_ENGAGED);
 	}
 }
 

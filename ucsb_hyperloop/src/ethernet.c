@@ -235,7 +235,7 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, CALIBRATE_SIG) == 0){
 		printf("CALIBRATE_SIG RECEIVED\n");
-		start_actuator_calibration();
+		start_actuator_calibration(braking_boards[0]);
 		//CALIBRATE_FLAG = 1;
 	}
 

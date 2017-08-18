@@ -176,6 +176,10 @@ void rangingSensorsInit(void)  {
 #endif // 0
 void rangingSensorsCalibrate()
 {
+	if(!RANGING_SENSORS_ACTIVE) {
+		return;
+	}
+
 	int i;
 	for(i=0; i < NUM_HEMS; i++) {
 		update_HEMS(motors[i]);

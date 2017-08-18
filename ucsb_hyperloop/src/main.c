@@ -67,6 +67,7 @@ int main(void)
 			collectBrakingPositionFlag = 0;
 			if(BRAKING_ACTIVE) {
 			    update_actuator_control(braking_boards[0]);
+			    update_actuator_control(braking_boards[1]);
 			}
 
 		    if(SERVICE_PROPULSION_ACTIVE) {
