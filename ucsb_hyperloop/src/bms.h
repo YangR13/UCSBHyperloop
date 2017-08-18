@@ -57,7 +57,7 @@ typedef struct{   //Designed for 3x 6S batteries;
   float battery_voltage[3];   //From left to right on the board.
   float cell_voltages[3][6];
   float charge_percent[3];
-  float charge_coulomb[3];
+  float cell_charge_coulomb[3][6];
   int temperatures[3][2];
   uint8_t amps;               //No onboard ammeter; relies on data from HEMS or other.
 
@@ -83,7 +83,7 @@ typedef struct{   // Designed for 4x 5S batteries;
   float battery_voltage[4];   // From left to right on the board.
   float cell_voltages[4][5];
   float charge_percent[4];
-  float charge_coulomb[4];
+  float cell_charge_coulomb[4][5];
   int temperatures[4][2];
   uint8_t amps[4];            // 4 current sensor ports, #1 and #2 currently unused.
 
@@ -106,7 +106,7 @@ typedef struct{   // Designed for 4x 5S batteries;
   float battery_voltage[2];   // From left to right on the board.
   float cell_voltages[2][5];
   float charge_percent[2];
-  float charge_coulomb[2];
+  float cell_charge_coulomb[2][5];
   int temperatures[2][2];
 
   float timestamp;
