@@ -65,6 +65,7 @@ Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
     bms->charge_percent[batt] = -1.0;
     bms->charge_coulomb[batt] = -1.0;
 
+
     // Initialize cell voltages to a default value
     int i = 0;
     for (i = 0; i < 6; i++) {
@@ -103,14 +104,23 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
       }
       prev_voltage = voltage;
     }
-    bms->battery_voltage[batt] = prev_voltage;
+    /*bms->battery_voltage[batt] = prev_voltage;
     bms->charge_coulomb[batt] = voltageToCharge22(prev_voltage);
+    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);*/
+    float cell_charge_coulomb[3][6];
+    float charge_sum = 0.0;
+    for (i = 0; i < 6; i++){
+        float total_voltage = bms->cell_voltages[batt][i] * 6.0;
+        cell_charge_coulomb[batt][i] = voltageToCharge22(total_voltage) / 6.0; //charge for each cell
+        charge_sum += cell_charge_coulomb[batt][i];
+        }
+    bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
     float max = 0.0;
-    for (i = 0; i < 5; i++){
+    for (i = 0; i < 6; i++){
         if (bms->cell_voltages[batt][i] < min){
             min = bms->cell_voltages[batt][i];
         }
@@ -218,8 +228,17 @@ void update_BMS_18V5(BMS_18V5* bms) {
       battery_voltage += voltage;
       //prev_voltage = voltage;
     }
-    bms->battery_voltage[batt] = battery_voltage;
+    /*bms->battery_voltage[batt] = battery_voltage;
     bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
+    bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);*/
+    float cell_charge_coulomb[4][5];
+    float charge_sum = 0.0;
+    for (i = 0; i < 5; i++){
+        float total_voltage = bms->cell_voltages[batt][i] * 5.0;
+    	cell_charge_coulomb[batt][i] = voltageToCharge18_5(total_voltage) / 5.0; //charge for each cell
+        charge_sum += cell_charge_coulomb[batt][i];
+    }
+    bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
@@ -355,9 +374,19 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
       battery_voltage += voltage;
       //prev_voltage = voltage;
     }
-    bms->battery_voltage[batt] = battery_voltage;
+    /*bms->battery_voltage[batt] = battery_voltage;
     bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
+    bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);*/
+    float cell_charge_coulomb[2][5];
+    float charge_sum = 0.0;
+    for (i = 0; i < 5; i++){
+        float total_voltage = bms->cell_voltages[batt][i] * 5.0;
+        cell_charge_coulomb[batt][i] = voltageToCharge18_5(total_voltage) / 5.0; //charge for each cell
+        charge_sum += cell_charge_coulomb[batt][i];
+    }
+    bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
+
     if (bms->battery_voltage[batt] < 1.0){
         // Total battery voltage < 1V? Probably disconnected. Clear alarm.
         new_alarms &= 0b01;
