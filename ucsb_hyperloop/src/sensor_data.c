@@ -241,7 +241,7 @@ void printSensorData(){
             	DEBUGOUT("Batt %d: (%f\%)\t %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, maglev_bmses[i]->charge_percent[j], maglev_bmses[i]->battery_voltage[j], maglev_bmses[i]->cell_voltages[j][0], maglev_bmses[i]->cell_voltages[j][1], maglev_bmses[i]->cell_voltages[j][2], maglev_bmses[i]->cell_voltages[j][3], maglev_bmses[i]->cell_voltages[j][4], maglev_bmses[i]->cell_voltages[j][5], maglev_bmses[i]->temperatures[j][0], maglev_bmses[i]->temperatures[j][1]);
             	int k = 0;
             	for (k = 0; k < 6; k++){
-            		DEBUGOUT("Cell %d: %fC", k, maglev_bmses[i]->cell_charge_coulomb[j][k]);
+            		DEBUGOUT("Cell %d: %fC ", k, maglev_bmses[i]->cell_charge_coulomb[j][k]);
             	}
             }
         }
@@ -256,7 +256,7 @@ void printSensorData(){
         	DEBUGOUT("Current sensor %d: %f \n", j, bms_18v5->amps);
         	int k = 0;
         	for (k = 0; k < 5; k++){
-        		DEBUGOUT("Cell: %d %.2fC", k, bms_18v5->cell_charge_coulomb[j][k]);
+        		DEBUGOUT("Cell: %d %.2fC ", k, bms_18v5->cell_charge_coulomb[j][k]);
         	}
         }
         DEBUGOUT("\n");
@@ -270,7 +270,7 @@ void printSensorData(){
         //}
         int k = 0;
         for (k = 0; k < 5; k++){
-        	DEBUGOUT("Cell: %d %.2fC", k, bms_18v5->cell_charge_coulomb[j][k]);
+        	DEBUGOUT("Cell: %d %.2fC ", k, pwr_dst_bms->cell_charge_coulomb[j][k]);
         }
         DEBUGOUT("\n");
     }

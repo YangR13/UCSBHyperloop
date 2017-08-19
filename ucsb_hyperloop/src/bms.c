@@ -371,8 +371,8 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
       battery_voltage += voltage;
       //prev_voltage = voltage;
     }
-    /*bms->battery_voltage[batt] = battery_voltage;
-    bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
+    bms->battery_voltage[batt] = battery_voltage;
+    /*bms->charge_coulomb[batt] = voltageToCharge18_5(battery_voltage);
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);*/
 
     float charge_sum = 0.0;
