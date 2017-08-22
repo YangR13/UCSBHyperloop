@@ -37,7 +37,7 @@ const uint8_t BOARD_PWM_CHANNELS[8] = {3, 4, 5, 6, 3, 4, 5, 6};
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x1A, 0x8, 0xA, 0x28};		// Board 2
 //const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0xA, 0x1A, 0x8};
 
-const uint8_t ADC_Address_Select_Actuators[4] = {0xA, 0x1A, 0x8, 0x28};	// Board 1, 2, 0, 3
+const uint8_t ADC_Address_Select_Actuators[4] = {0x28, 0x1A, 0x8, 0xA};	// Board 3, 2, 0, 1
 ACTUATORS* initialize_actuator_board(uint8_t identity) {
   ACTUATORS* board = malloc(sizeof(ACTUATORS));
   board->identity = identity;
@@ -227,7 +227,7 @@ void move_in_dir(ACTUATORS *board, int num, int dir, float pwm) {
 	board->direction[num] = dir;
     board->stop_mode[num] = NO_STOP;        // Run continuously - don't stop automatically
     board->pwm[num] = pwm;
-    board->pwm_algorithm[num] = 0;
+    board->pwm_algorithm[num] = 2;
 }
 
 void move_to_disengaged_pos(ACTUATORS *board, int num) {
@@ -251,6 +251,7 @@ void move_time(ACTUATORS *board, int num, int dir, int interval, float pwm){
     board->pwm[num] = pwm;
     board->enable[num] = 1;
     board->stop_mode[num] = STOP_FROM_TIME;
+    board->pwm_algorithm[num] = 2;
 
 }
 
@@ -348,7 +349,7 @@ void calculate_actuator_control(ACTUATORS *board, int num){
             //DEBUGOUT("%d\n", board->stalled_cycles[num]);
         }
     }
-    else{
+    else if (board->pwm_algorithm[num] == 1){
         // Exponential relation function
         // First, determine if we're stalled and need to stop the actuator.
         if (board->direction[num] && board->position[num] < board->prev_position[num]){

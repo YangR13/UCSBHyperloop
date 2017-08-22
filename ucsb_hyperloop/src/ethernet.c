@@ -256,12 +256,17 @@ void recvDataPacket() {
 
 	if(strcmp((char *)Net_Rx_Data, TIGHTEN_BRAKES_SIG) == 0){
 		printf("TIGHTEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] - 3);
+		//move_time(braking_boards[0], 0, 1, 1000, .1);
+		move_in_dir(braking_boards[0], 0, OUT, .2);
+		move_in_dir(braking_boards[0], 1, OUT, .2);
+
 	}
 
 	if(strcmp((char *)Net_Rx_Data, LOOSEN_BRAKES_SIG) == 0){
 		printf("LOOSEN_BRAKES_SIG RECEIVED\n");
-		move_to_pos(braking_boards[0], 0, braking_boards[0]->position[0] + 3);
+		//move_time(braking_boards[0], 0, 0, 1000, .1);
+		move_in_dir(braking_boards[0], 0, IN, .2);
+		move_in_dir(braking_boards[0], 1, IN, .2);
 	}
 
     if(strcmp((char *)Net_Rx_Data, "ENGINES_REVED_SIG\0") == 0){
