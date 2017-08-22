@@ -50,6 +50,7 @@ void initializeSensorsAndControls(){
     	sensorData.time_prev = getRuntime();
     	sensorData.oldPositionX = 0.0;
     	sensorData.validPosition = 0;
+    	sensorData.positionX = 0.0;
     	for(i=0; i<4; i++) {
         	sensorData.wheelTachPositionX[i] = 0.0;
         	sensorData.wheelTachAlive[i] = 1;

@@ -67,36 +67,33 @@ void logData(LOG_TYPE log_type) {
 		break;
 
 	case LOG_POWER_DISTRIBUTION:
-		// Power Distribution BMS Battery0 Voltage (High, Low), Battery1 Voltage (High, Low).
-		for(i=0; i<2; i++) {
-			v_low[i] = -1;
-			v_high[i] = -1;
-		}
-		for(i=0; i<2; i++) {
+		// Power Distribution BMS Battery0 Voltage (High, Low).
+		v_low[0] = -1;
+		v_high[0] = -1;
+		for(i=0; i<1; i++) {
 			for(j=0; j<5; j++){
 				float v = pwr_dst_bms->cell_voltages[i][j];
 				if(v_low[i] == -1 || v < v_low[i]) v_low[i] = v;
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			v_high[0], v_low[0], v_high[1], v_low[1]);
+		snprintf(data, 128, "%06.2f,%06.2f",
+			v_high[0], v_low[0]);
 		ethernet_add_data_to_packet(PD_BMS_VHL, -1, -1, data);
 
-		// Power Distribution BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			pwr_dst_bms->charge_coulomb[0], pwr_dst_bms->charge_percent[0],
-			pwr_dst_bms->charge_coulomb[1], pwr_dst_bms->charge_percent[1]);
+		// Power Distribution BMS Battery0 Charge (Coulomb, Percent).
+		snprintf(data, 128, "%06.2f,%06.2f",
+			pwr_dst_bms->charge_coulomb[0], pwr_dst_bms->charge_percent[0]);
 		ethernet_add_data_to_packet(PD_BMS_CHG, -1, -1, data);
 
-		// Power Distribution BMS Battery0 Temperature (High), Battery1 Temperature (High).
-		for(i=0; i<2; i++) {
+		// Power Distribution BMS Battery0 Temperature (High).
+		for(i=0; i<1; i++) {
 			int t0 = pwr_dst_bms->temperatures[i][0];
 			int t1 = pwr_dst_bms->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d,%d",
-			t_high[0], t_high[1]);
+		snprintf(data, 128, "%d",
+			t_high[0]);
 		ethernet_add_data_to_packet(PD_BMS_TH, -1, -1, data);
 
 		break;
@@ -258,47 +255,45 @@ void logData(LOG_TYPE log_type) {
 		break;
 
 	case LOG_SERV_PROP_PAYLOAD:
-		// Serv-Prop Actuator State (ENUM: 0-UNKNOWN, 1-LOWERED, 2-LOWERING, 3-RAISING, 4-RAISED), Payload Actuator State (ENUM: 0-UNKNOWN, 1-LOWERED, 2-LOWERING, 3-RAISING, 4-RAISED), Payload Motor State (ENUM: 0-UNKNOWN, 1-STATIONARY, 2-BACKWARDS, 3-FORWARDS).
-		snprintf(data, 128, "%d,%d,%d",
-			0, 0, 0);
+		// Serv-Prop Actuator State (ENUM: 0-UNKNOWN, 1-LOWERED, 2-LOWERING, 3-RAISING, 4-RAISED).
+		snprintf(data, 128, "%d",
+			0);
 		ethernet_add_data_to_packet(SP_S, -1, -1, data);
 
-		// Serv-Prop Actuator0 Temperature (0, 1), Serv-Prop Actuator1 Temperature (0, 1), Payload Actuator Temperature (0, 1), Payload Motor Temperature (0, 1).
-		snprintf(data, 128, "%d,%d,%d,%d,%d,%d,%d,%d",
-				service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3],
-				payload->temperatures[0], payload->temperatures[1], payload->temperatures[2], payload->temperatures[3]);
+		// Serv-Prop Actuator0 Temperature (0, 1), Serv-Prop Motor Temperature (0, 1).
+		snprintf(data, 128, "%d,%d,%d,%d",
+				service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3]); //STUB
 		ethernet_add_data_to_packet(SP_T, -1, -1, data);
 
-		// Serv-Prop / Payload BMS Battery0 Voltage (High, Low), Battery1 Voltage (High, Low).
-		for(i=2; i<4; i++) {
+		// Serv-Prop / Payload BMS Battery0 Voltage (High, Low).
+		for(i=2; i<3; i++) {
 			v_low[i] = -1;
 			v_high[i] = -1;
 		}
-		for(i=2; i<4; i++) {
+		for(i=2; i<3; i++) {
 			for(j=0; j<5; j++){
 				float v = bms_18v5->cell_voltages[i][j];
 				if(v_low[i] == -1 || v < v_low[i]) v_low[i] = v;
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			v_high[0], v_low[0], v_high[1], v_low[1]);
+		snprintf(data, 128, "%06.2f,%06.2f",
+			v_high[0], v_low[0]);
 		ethernet_add_data_to_packet(SP_BMS_VHL, -1, -1, data);
 
-		// Serv-Prop / Payload BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
-		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			bms_18v5->charge_coulomb[2], bms_18v5->charge_percent[2],
-			bms_18v5->charge_coulomb[3], bms_18v5->charge_percent[3]);
+		// Serv-Prop / BMS Battery0 Charge (Coulomb, Percent).
+		snprintf(data, 128, "%06.2f,%06.2f",
+			bms_18v5->charge_coulomb[2], bms_18v5->charge_percent[2]);
 		ethernet_add_data_to_packet(SP_BMS_CHG, -1, -1, data);
 
-		// Serv-Prop / Payload BMS Battery0 Temperature (High), Battery1 Temperature (High).
-		for(i=2; i<4; i++) {
+		// Serv-Prop / Payload BMS Battery0 Temperature (High).
+		for(i=2; i<3; i++) {
 			int t0 = bms_18v5->temperatures[i][0];
 			int t1 = bms_18v5->temperatures[i][1];
 			t_high[i] = (t0 > t1) ? t0 : t1;
 		}
-		snprintf(data, 128, "%d,%d",
-			t_high[0], t_high[1]);
+		snprintf(data, 128, "%d",
+			t_high[0]);
 		ethernet_add_data_to_packet(SP_BMS_TH, -1, -1, data);
 
 		break;

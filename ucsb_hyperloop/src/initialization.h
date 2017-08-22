@@ -11,8 +11,8 @@
 #define POSITIONING_ACTIVE			(MOTOR_BOARD_I2C_ACTIVE || PHOTO_ELECTRIC_ACTIVE)
 #define MOTOR_BOARD_I2C_ACTIVE		1
 #define GATHER_DATA_ACTIVE      	(ACCEL_ACTIVE || PHOTO_ELECTRIC_ACTIVE || RANGING_SENSORS_ACTIVE || ACCEL_ACTIVE || MOTOR_BOARD_I2C_ACTIVE || CONTACT_SENSOR_ACTIVE || ACTUATORS_ACTIVE || MAGLEV_BMS_ACTIVE || BMS_18V5_ACTIVE || PWR_DST_BMS_ACTIVE)
-#define MAGLEV_BMS_ACTIVE       	1 // You should only turn this off if you've manually checked all the maglev batteries.
-#define BMS_18V5_ACTIVE             1 // Set equal to ACTUATORS_ACTIVE?
+#define MAGLEV_BMS_ACTIVE       	0 // You should only turn this off if you've manually checked all the maglev batteries.
+#define BMS_18V5_ACTIVE             0 // Set equal to ACTUATORS_ACTIVE?
 #define PWR_DST_BMS_ACTIVE          1 // You should only turn this off if you're working with a bare board and not the whole pod.
 #define I2C_ACTIVE					(MOTOR_BOARD_I2C_ACTIVE || ACCEL_ACTIVE || MAGLEV_BMS_ACTIVE || BMS_18V5_ACTIVE || PWR_DST_BMS_ACTIVE || ACTUATORS_ACTIVE)
 #define	CONTACT_SENSOR_ACTIVE		0

@@ -715,7 +715,7 @@ void Wiz_TCP_Connect(uint8_t n) {
 	Tx_Buf[4] = REMOTE_IP0; // 192
 	Tx_Buf[5] = REMOTE_IP1;	// 168
 	Tx_Buf[6] = REMOTE_IP2; // 1
-	Tx_Buf[7] = REMOTE_IP3; // 100
+	Tx_Buf[7] = REMOTE_IP3; // 105
 	spi_Send_Blocking(Sn_DIPR_BASE + offset, 0x0004);
 
 	/* Socket n Destination Port Register (Sn_PORT) */

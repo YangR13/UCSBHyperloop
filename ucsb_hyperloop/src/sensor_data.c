@@ -8,6 +8,7 @@
 #include "photo_electric.h"
 #include "timer.h"
 #include "bms.h"
+#include "I2CPERIPHS.h"
 
 void CalibrationData( I2C_ID_T id ){
 	XYZ initialAccel = getInitialAccelMatrix(id);
@@ -88,6 +89,9 @@ void collectData(){
 		float total_dist_since_last_check = 0.0;
 		int numAlive = 0;								//number of non-faulted tachometers
 
+		for(i=0; i<4; i++){  //get position of each tach
+			sensorData.wheelTachPositionX[i] = motors[i]->wheel_tach_spokes_counter * .575;
+		}
 		// Update average wheel tach postition.
 		for(i=0; i<4; i++) {
 			if(sensorData.wheelTachAlive[i]){
