@@ -313,7 +313,6 @@ void recvDataPacket() {
 		DEBUGOUT("MaxTime received: %s\n", token[1]);
 		timing_profile_t_min = atoi(token[0]);
 		timing_profile_t_max = atoi(token[1]);
-		//DEBUGOUT("dacValue = %f\n", dacValue);
 	}
 
 	if(strstr((char *)Net_Rx_Data, INITTIME) != NULL) {	// Initialize Time
@@ -442,6 +441,21 @@ void recvDataPacket() {
 		printf("ETHERNET: Finish Service Propulsion\n");
 		servprop_raise(service_prop);
 	}
+
+	// Initiate calibration.
+		if(strcmp((char *)Net_Rx_Data, "INITCAL\0") == 0){
+			printf("ETHERNET: Initiate calibration\n");
+			//reset tachnometers so x reads 0
+			sensorData.positionX = 0;
+			//calibrate accelerometers
+
+			//calibrate brakes
+			//feed 4.8 V to maglev
+			set_motor_throttle(0, 4.8);
+			set_motor_throttle(1, 4.8);
+			set_motor_throttle(2, 4.8);
+			set_motor_throttle(3, 4.8);
+		}
 
 	if(pos != 0) {
 		Wiz_Send_Blocking(SOCKET_ID, Net_Tx_Data);
