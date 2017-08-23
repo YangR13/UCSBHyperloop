@@ -109,13 +109,16 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
     bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);*/
     float cell_charge_coulomb[3][6];
     float charge_sum = 0.0;
+    float voltage_sum = 0.0;
     for (i = 0; i < 6; i++){
         float total_voltage = bms->cell_voltages[batt][i] * 6.0;
         cell_charge_coulomb[batt][i] = voltageToCharge22(total_voltage) / 6.0; //charge for each cell
         charge_sum += cell_charge_coulomb[batt][i];
+        voltage_sum += bms->cell_voltages[batt][i];
         }
     bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
+    bms->battery_voltage[batt] = voltage_sum;
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
@@ -233,13 +236,16 @@ void update_BMS_18V5(BMS_18V5* bms) {
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);*/
     float cell_charge_coulomb[4][5];
     float charge_sum = 0.0;
+    float voltage_sum = 0.0;
     for (i = 0; i < 5; i++){
         float total_voltage = bms->cell_voltages[batt][i] * 5.0;
     	cell_charge_coulomb[batt][i] = voltageToCharge18_5(total_voltage) / 5.0; //charge for each cell
         charge_sum += cell_charge_coulomb[batt][i];
+        voltage_sum += bms->cell_voltages[batt][i];
     }
     bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
+    bms->battery_voltage[batt] = voltage_sum;
 
     // Check cell voltages for a substantial imbalance, set an alarm if present
     float min = 9.9;
@@ -361,11 +367,12 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
   int new_alarms = 0b00;
 
   //for (batt = 0; batt < 2; batt++) {
-	  battery_voltage = 0;
+	battery_voltage = 0;
     prev_voltage = 0;
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0/* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
       if(i == 0) voltage *= 2;
+      //if(i == 4) voltage /= 1.2127;
       bms->cell_voltages[batt][i] = voltage/* - prev_voltage*/;
       if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
           // Set an alarm if any cell is below minimum safe voltage
@@ -379,13 +386,16 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);*/
     float cell_charge_coulomb[2][5];
     float charge_sum = 0.0;
+    float voltage_sum = 0.0;
     for (i = 0; i < 5; i++){
         float total_voltage = bms->cell_voltages[batt][i] * 5.0;
         cell_charge_coulomb[batt][i] = voltageToCharge18_5(total_voltage) / 5.0; //charge for each cell
         charge_sum += cell_charge_coulomb[batt][i];
+        voltage_sum += bms->cell_voltages[batt][i];
     }
     bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
+    bms->battery_voltage[batt] = voltage_sum;
 
     if (bms->battery_voltage[batt] < 1.0){
         // Total battery voltage < 1V? Probably disconnected. Clear alarm.

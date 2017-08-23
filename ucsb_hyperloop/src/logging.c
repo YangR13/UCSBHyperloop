@@ -220,7 +220,7 @@ void logData(LOG_TYPE log_type) {
 			braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
 		ethernet_add_data_to_packet(B_B_T, -1, -1, data);
 
-		// Braking BMS Battery0 Voltage (High, Low), Battery1 Voltage (High, Low).
+		// Braking BMS Battery0 Voltage (High, Low), Battery1 Voltage (High, Low), Current (Back, Front).
 		for(i=0; i<2; i++) {
 			v_low[i] = -1;
 			v_high[i] = -1;
@@ -232,8 +232,8 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f",
-			v_high[0], v_low[0], v_high[1], v_low[1]);
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f,%06.2f,%d,%d",
+			v_high[0], v_low[0], v_high[1], v_low[1], bms_18v5->amps[3], bms_18v5->amps[2]);
 		ethernet_add_data_to_packet(B_BMS_VHL, -1, -1, data);
 
 		// Braking BMS Battery0 Charge (Coulomb, Percent), Battery1 Charge (Coulomb, Percent).
@@ -265,7 +265,7 @@ void logData(LOG_TYPE log_type) {
 				service_prop->temperatures[0], service_prop->temperatures[1], service_prop->temperatures[2], service_prop->temperatures[3]); //STUB
 		ethernet_add_data_to_packet(SP_T, -1, -1, data);
 
-		// Serv-Prop / Payload BMS Battery0 Voltage (High, Low).
+		// Serv-Prop / Payload BMS Battery0 Voltage (High, Low), Current.
 		for(i=2; i<3; i++) {
 			v_low[i] = -1;
 			v_high[i] = -1;
@@ -277,8 +277,8 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f,%06.2f",
-			v_high[0], v_low[0]);
+		snprintf(data, 128, "%06.2f,%06.2f,%d",
+			v_high[0], v_low[0], bms_18v5->amps[1]);
 		ethernet_add_data_to_packet(SP_BMS_VHL, -1, -1, data);
 
 		// Serv-Prop / BMS Battery0 Charge (Coulomb, Percent).
