@@ -102,13 +102,25 @@ void Wiz_Network_Init() {
 }
 
 /* Wiznet Network Register Sanity Check */
-void Wiz_Check_Network_Registers() {
+int Wiz_Check_Network_Registers() {
+	int success = 1;
+
 	/* Read Source Hardware Address Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = 0xFF; // Dummy data
 	Tx_Buf[7] = Tx_Buf[8] = Tx_Buf[9] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SHAR, 0x0006);
 	DEBUGOUT("MAC Address: %x:%x:%x:%x:%x:%x\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6],
-			Rx_Buf[7], Rx_Buf[8], Rx_Buf[9]);
+		Rx_Buf[7], Rx_Buf[8], Rx_Buf[9]);
+
+	uint64_t temp = 0;
+	int i;
+	for(i=4; i<=9; i++) {
+		temp = (temp << 8) | Rx_Buf[i];
+	}
+	
+	if(temp == 0 || temp == 0xFFFFFFFFFFFF) {
+		success = 0;
+	}
 
 	/* Read Gateway Address Register */
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
@@ -124,6 +136,9 @@ void Wiz_Check_Network_Registers() {
 	Tx_Buf[4] = Tx_Buf[5] = Tx_Buf[6] = Tx_Buf[7] = 0xFF; // Dummy data
 	spi_Recv_Blocking(SIPR, 0x0004);
 	DEBUGOUT("Source IP: %u.%u.%u.%u\n", Rx_Buf[4], Rx_Buf[5], Rx_Buf[6], Rx_Buf[7]);
+
+	DEBUGOUT("Wiz_Check_Network_Registers() result: %s!\n", (success) ? "SUCCESS" : "ERROR");
+	return success;
 }
 
 /* Socket Interrupt Initialization */
@@ -899,20 +914,24 @@ void Wiz_Restart() {
 	/* Software Reset Wiznet (Mode Register) */
 	Tx_Buf[4] = 0x80; // Data
 	spi_Send_Blocking(MR, 0x0001);
-}
-
-/* Initialize Wiznet Device */
-void ethernetInit(uint8_t protocol, uint8_t socket) {
-	Wiz_SSP_Init();
-	Wiz_Restart();
 	uint16_t i, j;
 	for (i = 0; i < 60000; i++) {
 		for (j = 0; j < 60; j++) { }
 	}
+}
 
-	Wiz_Init();
-	Wiz_Network_Init();
-	Wiz_Check_Network_Registers();
+/* Initialize Wiznet Device */
+void ethernetInit(uint8_t protocol, uint8_t socket) {
+	int success = 1;
+	Wiz_SSP_Init();
+	do {
+		ethernetModuleHardwareReset();
+		Wiz_Restart();
+		Wiz_Init();
+		Wiz_Network_Init();
+		success = Wiz_Check_Network_Registers();
+	} while(!success);
+
 	Wiz_Memory_Init();
 	if(protocol) {
 		Wiz_Int_Init(socket);
@@ -937,4 +956,17 @@ void Wiz_Deinit(uint8_t protocol, uint8_t socket) {
 
 	/* DeInitialize SSP peripheral */
 	Chip_SSP_DeInit(LPC_SSP1);
+}
+
+void ethernetModuleHardwareReset() {
+	uint32_t startTime = getRuntime();
+	Chip_GPIO_SetPinState(LPC_GPIO, ETHERNET_RESET_PORT, ETHERNET_RESET_PIN, 0);
+
+	// Wait 1ms (2 us required).
+	while(getRuntime() < startTime + 1);
+
+	Chip_GPIO_SetPinState(LPC_GPIO, ETHERNET_RESET_PORT, ETHERNET_RESET_PIN, 1);
+
+	// Wait 150ms.
+	while(getRuntime() < startTime + 1 + 150);
 }

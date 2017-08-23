@@ -113,6 +113,10 @@ void initializeSensorsAndControls(){
 
 void initializeCommunications(){
     if(ETHERNET_ACTIVE){
+        // Initialize Wiznet module hardware reset pin.
+        GPIO_Output_Init(ETHERNET_RESET_PORT, ETHERNET_RESET_PIN);
+        
+        // Initialize Wiznet module.
         ethernetInit(PROTO_TCP, 0);
         //sendSensorDataTimerInit(LPC_TIMER2, TIMER2_IRQn, 4);
 

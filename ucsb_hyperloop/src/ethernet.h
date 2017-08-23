@@ -7,6 +7,10 @@
 #define WIZNET_INT_PORT					0
 #define WIZNET_INT_PIN					4
 
+// J7[16]
+#define ETHERNET_RESET_PORT				4
+#define ETHERNET_RESET_PIN				31
+
 /* SSP Constants */
 #define LPC_SSP           				LPC_SSP1
 #define SSP_IRQ           				SSP1_IRQn
@@ -176,7 +180,7 @@ void Wiz_Restart();
 void Wiz_Init();
 void Wiz_SSP_Init();
 void Wiz_Network_Init();
-void Wiz_Check_Network_Registers();
+int Wiz_Check_Network_Registers();
 void Wiz_Memory_Init();
 void Wiz_Int_Init(uint8_t n);
 void Wiz_TCP_Init(uint8_t n);
@@ -202,5 +206,8 @@ int tx_pos;
 void ethernet_prepare_packet();
 void ethernet_add_data_to_packet(char *method, int index, int sensorNum,char* val);
 void ethernet_send_packet();
+
+// Wiznet module hardware reset.
+void ethernetModuleHardwareReset();
 
 #endif
