@@ -52,6 +52,9 @@ int maglev_fault_from_sensors();
 int payload_fault_from_sensors();
 int service_fault_from_sensors();
 
+// Calculate distance to brake.
+float calculate_braking_distance(float velocity);
+
 // Assertion function
 void Q_onAssert(char const Q_ROM * const Q_ROM_VAR file, int line);
 

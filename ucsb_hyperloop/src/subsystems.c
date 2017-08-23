@@ -164,7 +164,7 @@ void braking_service_state_machine(){
             // Distance lockout threshold reached - allow braking requests now
             ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_PERMIT);
         }
-        else if (!Braking_HSM.distance_lockout && sensorData.positionX > 600 && sensorData.contact_sensor_pushed){	// TODO: Make 600 m into a constant in the header file, and replace with REAL value!
+        else if (!Braking_HSM.distance_lockout && sensorData.positionX > calculate_braking_distance(sensorData.velocityX) && sensorData.contact_sensor_pushed){	// TODO: Make 600 m into a constant in the header file, and replace with REAL value!
             // Distance threshold reached - request braking now
             ISSUE_SIG(Braking_HSM, BRAKES_DISTANCE_ENGAGE);
         }
@@ -457,6 +457,19 @@ int service_fault_from_sensors(){
 	return 0;
 }
 
+// TODO: Fill in the values for the pod!
+float calculate_braking_distance(
+	float velocity	// m/s
+){
+	const float podMass = 0;	// kg
+	const float brakingForce = 0;	// N
+	const float totalDistance = 0;	// m
+	const float safetyMarginDistance = 0;	// m
+	
+	// D_Braking = D_Total - (1/2 * V_Current^2 * M_Pod / F_Braking) - D_SafetyMargin
+	const float brakingDistance = totalDistance - (1/2 * pow(velocity, 2) * podMass * brakingForce) - safetyMarginDistance;
+	return brakingDistance;
+}
 
 void go_routine(){
 	// Do some rad stuff.
