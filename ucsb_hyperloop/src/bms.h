@@ -69,7 +69,7 @@ typedef struct{   //Designed for 3x 6S batteries;
 } Maglev_BMS;
 
 Maglev_BMS* initialize_Maglev_BMS(uint8_t identity);
-uint8_t update_Maglev_BMS(Maglev_BMS* bms);
+void update_Maglev_BMS(Maglev_BMS* bms);
 
 // 18V5 BMS
 

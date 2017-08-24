@@ -86,67 +86,62 @@ Maglev_BMS* initialize_Maglev_BMS(uint8_t identity) {
   return bms;
 }
 
-uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
+void update_Maglev_BMS(Maglev_BMS* bms) {
   int batt, i;
-  float prev_voltage;
   int new_alarms = 0b00;
 
   //0x19 FLOAT LOW
   //0x0B FLOAT HIGH
   //0x18 FLOAT FLOAT
   for (batt = 0; batt < 3; batt++) {
-    prev_voltage = 0;
-    for (i = 0; i < 6; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 /* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
-      if(i == 0) voltage *= 2;
-      bms->cell_voltages[batt][i] = voltage - prev_voltage;
-      if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
-          // Set an alarm if any cell is below minimum safe voltage
-          new_alarms |= 0b10;
+	  for (i = 0; i < 6; i++) {
+		  bms->cell_voltages[batt][i] = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 /* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
+		  if(i == 0){
+			  bms->cell_voltages[batt][0] *= 2.0;
+		  }
+		  if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
+			  // Set an alarm if any cell is below minimum safe voltage
+			  new_alarms |= 0b10;
+		  }
+	  }
+	  float cell_charge_coulomb[3][6];
+	  float charge_sum = 0.0;
+	  float voltage_sum = 0.0;
+	  for (i = 0; i < 6; i++){
+		  float total_voltage = bms->cell_voltages[batt][i] * 6.0;
+		  cell_charge_coulomb[batt][i] = voltageToCharge22(total_voltage) / 6.0; //charge for each cell
+		  charge_sum += cell_charge_coulomb[batt][i];
+		  voltage_sum += bms->cell_voltages[batt][i];
       }
-      prev_voltage = voltage;
-    }
-    //bms->battery_voltage[batt] = prev_voltage;
-    bms->charge_coulomb[batt] = voltageToCharge22(prev_voltage);
-    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
-    float cell_charge_coulomb[3][6];
-    float charge_sum = 0.0;
-    float voltage_sum = 0.0;
-    for (i = 0; i < 6; i++){
-        float total_voltage = bms->cell_voltages[batt][i] * 6.0;
-        cell_charge_coulomb[batt][i] = voltageToCharge22(total_voltage) / 6.0; //charge for each cell
-        charge_sum += cell_charge_coulomb[batt][i];
-        voltage_sum += bms->cell_voltages[batt][i];
-        }
-    bms->charge_coulomb[batt] = charge_sum;
-    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
-    bms->battery_voltage[batt] = voltage_sum;
+	  bms->charge_coulomb[batt] = charge_sum;
+	  bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
+	  bms->battery_voltage[batt] = voltage_sum;
 
-    // Check cell voltages for a substantial imbalance, set an alarm if present
-    float min = 9.9;
-    float max = 0.0;
-    for (i = 0; i < 6; i++){
-        if (bms->cell_voltages[batt][i] < min){
-            min = bms->cell_voltages[batt][i];
-        }
-        if (bms->cell_voltages[batt][i] > max){
-            max = bms->cell_voltages[batt][i];
-        }
-    }
-    if ((max - min) > MAX_MAGLEV_BATT_CELL_DELTA){
-        new_alarms |= 0b10;
-    }
+	  // Check cell voltages for a substantial imbalance, set an alarm if present
+	  float min = 9.9;
+	  float max = 0.0;
+	  for (i = 0; i < 6; i++){
+		  if (bms->cell_voltages[batt][i] < min){
+			  min = bms->cell_voltages[batt][i];
+		  }
+		  if (bms->cell_voltages[batt][i] > max){
+			  max = bms->cell_voltages[batt][i];
+		  }
+	  }
+	  if ((max - min) > MAX_MAGLEV_BATT_CELL_DELTA){
+		  new_alarms |= 0b10;
+	  }
 
     //Record Temperatures
-    int temp_counter = 0;
-    for (temp_counter = 0; temp_counter < 2; temp_counter++) {
-      int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
-      new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
-      bms->temperatures[batt][temp_counter] = new_temperature;
-      if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
-        new_alarms |= 0b01;
-      }
-    }
+	  int temp_counter = 0;
+	  for (temp_counter = 0; temp_counter < 2; temp_counter++) {
+		  int new_temperature = calculate_temperature(ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], temp_counter + 6));
+		  new_temperature = ((1 - THERMISTOR_AVG_WEIGHT) * new_temperature + THERMISTOR_AVG_WEIGHT * bms->temperatures[batt][temp_counter]);
+		  bms->temperatures[batt][temp_counter] = new_temperature;
+		  if (new_temperature > BATT_MAX_TEMP || new_temperature < BATT_MIN_TEMP) {
+			  new_alarms |= 0b01;
+		  }
+	  }
   }
 
   // Update alarm flags in the Maglev BMS struct
@@ -163,7 +158,7 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
 
   GPIO_Write(HUB_AUX_GPIO_REGISTER[MAGLEV_BMS_HUB_PORT[bms->identity][0]], HUB_AUX_PINS[MAGLEV_BMS_HUB_PORT[bms->identity][0]][MAGLEV_BMS_HUB_PORT[bms->identity][1]], bms->relay_active_low);
 
-  return bms->alarm;
+  return;//bms->alarm;
 }
 
 // 18.5V BMS
@@ -207,14 +202,14 @@ BMS_18V5* initialize_BMS_18V5(uint8_t identity) {
 void update_BMS_18V5(BMS_18V5* bms) {
   int batt, i;
   float battery_voltage;
-  float prev_voltage;
+  //float prev_voltage;
   // New alarms set this update cycle: 0 and 1 are braking pairs, 2 is service propulsion + payload actuators
 
   int new_alarms[3] = {0,0,0};
 
   for (batt = 0; batt < 4; batt++) {
 	  battery_voltage = 0;
-    prev_voltage = 0;
+    //prev_voltage = 0;
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_18V5_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0/* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
       if(i == 0) voltage *= 2;
@@ -365,16 +360,12 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
   int batt = 0;
   int i;
   float battery_voltage;
-  float prev_voltage;
+  //float prev_voltage;
   int new_alarms = 0b00;
-  float ten_charge_values[10] = {0.0};
-  int array_count = 0;
-  float charge_average = 0.0;
-  float time_stored;
 
   //for (batt = 0; batt < 2; batt++) {
 	battery_voltage = 0;
-    prev_voltage = 0;
+    //prev_voltage = 0;
     for (i = 0; i < 5; i++) {
       float voltage = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0/* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
       if(i == 0) voltage *= 2;
