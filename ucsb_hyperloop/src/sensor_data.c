@@ -281,6 +281,8 @@ void printSensorData(){
             DEBUGOUT("Batt %d: %.2fC (%.2f%%)\t %f v \t cell voltages %f \t %f \t %f \t %f \t %f \t temperatures %d \t %d \n", j, pwr_dst_bms->charge_coulomb[j], pwr_dst_bms->charge_percent[j] * 100, pwr_dst_bms->battery_voltage[j], pwr_dst_bms->cell_voltages[j][0], pwr_dst_bms->cell_voltages[j][1], pwr_dst_bms->cell_voltages[j][2], pwr_dst_bms->cell_voltages[j][3], pwr_dst_bms->cell_voltages[j][4], pwr_dst_bms->temperatures[j][0], pwr_dst_bms->temperatures[j][1]);
         //}
         DEBUGOUT("\n");
+        DEBUGOUT("Power Distribution Current: %.2fA", pwr_dst_bms->amps);
+        DEBUGOUT("\n");
     }
 
     if (CONTACT_SENSOR_ACTIVE){

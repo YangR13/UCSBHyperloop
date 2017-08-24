@@ -108,6 +108,7 @@ typedef struct{   // Designed for 4x 5S batteries;
   float charge_percent[2];
   float charge_coulomb[2];
   int temperatures[2][2];
+  uint8_t amps;
 
   float timestamp;
   uint8_t alarm;

@@ -6,6 +6,7 @@
 #include "bms.h"
 #include "stdint.h"
 #include "I2CPERIPHS.h"
+#include "timer.h"
 
 // Maglev_BMS Data:
 const uint8_t MAGLEV_BMS_HUB_PORT[NUM_MAGLEV_BMS][2] = {   //Max 1 per I2C bus or Hub
@@ -96,7 +97,8 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
   for (batt = 0; batt < 3; batt++) {
     prev_voltage = 0;
     for (i = 0; i < 6; i++) {
-      float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i];
+      float voltage = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[batt], i) / MAX12BITVAL * 5.0 /* * MAGLEV_BMS_CAL_CONVERSIONS[bms->identity][batt][i]*/;
+      if(i == 0) voltage *= 2;
       bms->cell_voltages[batt][i] = voltage - prev_voltage;
       if (bms->cell_voltages[batt][i] < MIN_CELL_VOLTS){
           // Set an alarm if any cell is below minimum safe voltage
@@ -104,9 +106,9 @@ uint8_t update_Maglev_BMS(Maglev_BMS* bms) {
       }
       prev_voltage = voltage;
     }
-    /*bms->battery_voltage[batt] = prev_voltage;
+    //bms->battery_voltage[batt] = prev_voltage;
     bms->charge_coulomb[batt] = voltageToCharge22(prev_voltage);
-    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);*/
+    bms->charge_percent[batt] = percentCharge22(bms->charge_coulomb[batt]);
     float cell_charge_coulomb[3][6];
     float charge_sum = 0.0;
     float voltage_sum = 0.0;
@@ -365,6 +367,10 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
   float battery_voltage;
   float prev_voltage;
   int new_alarms = 0b00;
+  float ten_charge_values[10] = {0.0};
+  int array_count = 0;
+  float charge_average = 0.0;
+  float time_stored;
 
   //for (batt = 0; batt < 2; batt++) {
 	battery_voltage = 0;
@@ -393,6 +399,14 @@ uint8_t update_PWR_DST_BMS(PWR_DST_BMS* bms) {
         charge_sum += cell_charge_coulomb[batt][i];
         voltage_sum += bms->cell_voltages[batt][i];
     }
+
+    uint16_t ammeter_ratio = ADC_read(bms->bus, I2C_ADC_PWR_DST_subBMS_Addresses[batt], 7);
+    uint8_t new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_5V0REF / 2) / AMMETER_10A_SENSITIVITY; // Done in mV
+    /*if (new_amps >= MAX_BRAKING_CURRENT){
+        new_alarms[i % 2] |= 0b01;
+    }*/
+    bms->amps = new_amps;
+
     bms->charge_coulomb[batt] = charge_sum;
     bms->charge_percent[batt] = percentCharge18_5(bms->charge_coulomb[batt]);
     bms->battery_voltage[batt] = voltage_sum;

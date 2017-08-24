@@ -67,7 +67,7 @@ void logData(LOG_TYPE log_type) {
 		break;
 
 	case LOG_POWER_DISTRIBUTION:
-		// Power Distribution BMS Battery0 Voltage (High, Low).
+		// Power Distribution BMS Battery0 Voltage (High, Low), Current.
 		v_low[0] = -1;
 		v_high[0] = -1;
 		for(i=0; i<1; i++) {
@@ -77,8 +77,8 @@ void logData(LOG_TYPE log_type) {
 				if(v_high[i] == -1 || v > v_high[i]) v_high[i] = v;
 			}
 		}
-		snprintf(data, 128, "%06.2f,%06.2f",
-			v_high[0], v_low[0]);
+		snprintf(data, 128, "%06.2f,%06.2f,%06.2f",
+			v_high[0], v_low[0], pwr_dst_bms->amps);
 		ethernet_add_data_to_packet(PD_BMS_VHL, -1, -1, data);
 
 		// Power Distribution BMS Battery0 Charge (Coulomb, Percent).
@@ -278,7 +278,7 @@ void logData(LOG_TYPE log_type) {
 			}
 		}
 		snprintf(data, 128, "%06.2f,%06.2f,%d",
-			v_high[0], v_low[0], bms_18v5->amps[1]);
+			v_high[2], v_low[2], bms_18v5->amps[1]);
 		ethernet_add_data_to_packet(SP_BMS_VHL, -1, -1, data);
 
 		// Serv-Prop / BMS Battery0 Charge (Coulomb, Percent).
