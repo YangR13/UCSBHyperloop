@@ -289,7 +289,7 @@ void update_BMS_18V5(BMS_18V5* bms) {
         // Read from ADC to get voltage
         uint16_t ammeter_ratio = ADC_read(bms->bus, I2C_ADC_Maglev_subBMS_Addresses[i], 7);
         uint8_t new_amps = 0.0;
-        if (i == 0 || i == 3){
+        if (i == 0 || i == 1){
             // ACS770 - Braking actuator pairs
             new_amps = abs(1000 * ammeter_ratio * BMS_18V5_CAL_5V0REF / MAX12BITVAL - 1000 * BMS_18V5_CAL_5V0REF / 2) / AMMETER_150A_SENSITIVITY; // Done in mV
             if (new_amps >= MAX_BRAKING_CURRENT){
