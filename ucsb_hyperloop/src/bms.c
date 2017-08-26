@@ -25,7 +25,7 @@ const float MAGLEV_BMS_CAL_CONVERSIONS[NUM_MAGLEV_BMS][3][6] = {
     {2.0, 2.0, 3.0, 4.0, 5.02, 5.99}    //SubBMS2
   }
 };
-const uint8_t I2C_ADC_Maglev_subBMS_Addresses[3] = {0x19, 0x0B, 0x18};
+const uint8_t I2C_ADC_Maglev_subBMS_Addresses[3] = {0x09, 0x0B, 0x18};
 
 // BMS_18V5 Data:
 const uint8_t BMS_18V5_HUB_PORT[1][2] = {   // Only 1
