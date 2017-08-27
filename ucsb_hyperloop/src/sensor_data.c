@@ -298,15 +298,18 @@ void printSensorData(){
     }
 
     if (BRAKING_ACTIVE){
-        DEBUGOUT("Braking board 0 sensor data:\n");
-        DEBUGOUT("B0 Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
+        //DEBUGOUT("Braking board 0 sensor data:\n");
+        //DEBUGOUT("B0 Thermistors: %d | %d | %d | %d\n", braking_boards[0]->temperatures[0], braking_boards[0]->temperatures[1], braking_boards[0]->temperatures[2], braking_boards[0]->temperatures[3]);
         DEBUGOUT("B1 Thermistors: %d | %d | %d | %d\n", braking_boards[1]->temperatures[0], braking_boards[1]->temperatures[1], braking_boards[1]->temperatures[2], braking_boards[1]->temperatures[3]);
-        DEBUGOUT("B0 Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
+        //DEBUGOUT("B0 Position: %d | %d \n", braking_boards[0]->position[0], braking_boards[0]->position[1]);
         DEBUGOUT("B1 Position: %d | %d \n", braking_boards[1]->position[0], braking_boards[1]->position[1]);
-        DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
-        DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
-        DEBUGOUT("Actuator 0 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
-        DEBUGOUT("Actuator 1 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[1], braking_boards[0]->pwm[1], braking_boards[0]->direction[1], braking_boards[0]->target_pos[1]);
+        //DEBUGOUT("Current: %d | %d \n", braking_boards[0]->amps[0], braking_boards[0]->amps[1]);
+        //DEBUGOUT("Bridge fault flag: %d | %d \n", braking_boards[0]->bridge_fault[0], braking_boards[0]->bridge_fault[1]);
+        //DEBUGOUT("B0 Actuator 0 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[0], braking_boards[0]->pwm[0], braking_boards[0]->direction[0], braking_boards[0]->target_pos[0]);
+        //DEBUGOUT("B0 Actuator 1 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[0]->enable[1], braking_boards[0]->pwm[1], braking_boards[0]->direction[1], braking_boards[0]->target_pos[1]);
+        DEBUGOUT("B1 Actuator 0 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[1]->enable[0], braking_boards[1]->pwm[0], braking_boards[1]->direction[0], braking_boards[1]->target_pos[0]);
+        DEBUGOUT("B1 Actuator 1 -> Enable: %d | PWM: %f | Direction: %d | Target_pos: %d\n", braking_boards[1]->enable[1], braking_boards[1]->pwm[1], braking_boards[1]->direction[1], braking_boards[1]->target_pos[1]);
+
         DEBUGOUT("\n\n");
     }
 

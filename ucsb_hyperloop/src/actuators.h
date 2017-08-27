@@ -33,8 +33,8 @@ enum ACTUATOR_BOARDS {
 
 // Actuator disengaged starting positions.
 static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
-	{ 3700, 3700 },	// Front.
-	{ 3700, 3700 }	// Back.
+	{ 3500, 3500 },	// Front.
+	{ 3500, 3500 }	// Back.
 };
 
 #define READY_OFFET_FROM_ENGAGED	250
@@ -66,9 +66,9 @@ static const float BRAKING_DISENGAGED_POSITIONS[2][2] = {
 #define PAYLOAD_LOWER_TIME 1000 // ms
 #define PAYLOAD_LOWER_PWM 0.25
 #define SERVICE_PROP_LOWER_TIME 20000 // ms
-#define SERVICE_PROP_LOWER_PWM 0.25
+#define SERVICE_PROP_LOWER_PWM 0.10
 #define SERVICE_PROP_RAISE_TIME 20000 // ms
-#define SERVICE_PROP_RAISE_PWM 0.25
+#define SERVICE_PROP_RAISE_PWM 0.10
 #define SERVICE_PROP_DRIVE_PWM 0.25
 
 #define POS_MOV_AVG_ALPHA 0.50 // Alpha for position feedback moving average
